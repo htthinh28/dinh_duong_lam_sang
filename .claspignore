@@ -5,7 +5,7 @@ thu-vien/**
 **/chandoan-html/**
 
 # Dev / CI
-node_modules/
+**/node_modules/**
 package.json
 package-lock.json
 .github/
