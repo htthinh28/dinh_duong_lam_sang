@@ -107,6 +107,27 @@
     display: none !important;
   }
 
+  body[data-staff-root="tv"] #section-dd-pack {
+    display: none !important;
+  }
+  #section-thu-vien-pack {
+    min-height: calc(100vh - 2.5rem);
+    display: flex;
+    flex-direction: column;
+  }
+  #thuVienFrameWrap {
+    flex: 1;
+    min-height: calc(100vh - 11rem);
+    background: #fff;
+  }
+  #thuVienFrame {
+    width: 100%;
+    height: calc(100vh - 11rem);
+    min-height: 480px;
+    border: 0;
+    display: block;
+  }
+
   /* Utility classes */
   .text-upper { text-transform: uppercase; }
   .pointer { cursor: pointer; }

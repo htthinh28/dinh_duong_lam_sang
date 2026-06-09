@@ -1,0 +1,5 @@
+# Không đẩy thư viện (~30MB) lên Google Apps Script — host qua GitHub Pages
+thu-vien/
+thu-vien/**
+**/*.mjs
+**/chandoan-html/**

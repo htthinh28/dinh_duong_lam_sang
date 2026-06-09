@@ -193,6 +193,9 @@
       <button type="button" class="nav-link" id="sidebarNavQt" onclick="setStaffRootNav('qt')" title="Quản trị hệ thống">
         <i class="fas fa-user-shield"></i> <span class="nav-text">Quản trị</span>
       </button>
+      <button type="button" class="nav-link" id="sidebarNavTv" onclick="setStaffRootNav('tv')" title="Thư viện tra cứu — Dược thư, ICD-10, JCI, NĐ 90">
+        <i class="fas fa-book-medical"></i> <span class="nav-text">Thư viện</span>
+      </button>
     </div>
   </div>
 
@@ -2966,6 +2969,33 @@
     </div>
 
   </div><!-- #section-dd-pack -->
+
+    <div id="section-thu-vien-pack" class="d-none d-print-none">
+      <div class="cdss-glass rounded-4 p-2 p-md-3 border border-white border-opacity-25 shadow-lg mb-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div>
+          <h5 class="text-primary fw-bold mb-0"><i class="fas fa-book-medical me-2"></i>THƯ VIỆN</h5>
+          <small class="text-muted">Dược thư · ICD-10 · JCI · Nghị định 90/2026 · Kháng sinh</small>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          <button type="button" class="btn btn-sm btn-outline-primary" onclick="reloadThuVienFrame(true)" title="Tải lại thư viện">
+            <i class="fas fa-rotate-right"></i> Tải lại
+          </button>
+          <button type="button" class="btn btn-sm btn-primary" onclick="openThuVienInNewTab()" title="Mở thư viện trong tab mới">
+            <i class="fas fa-up-right-from-square"></i> Mở tab mới
+          </button>
+        </div>
+      </div>
+      <div id="thuVienFrameWrap" class="cdss-glass rounded-4 border border-white border-opacity-25 shadow-lg overflow-hidden position-relative">
+        <div id="thuVienFrameLoading" class="text-center text-muted py-5">
+          <i class="fas fa-spinner fa-spin fa-2x mb-3 d-block text-primary"></i>
+          Đang tải thư viện tra cứu...
+        </div>
+        <iframe id="thuVienFrame" class="d-none" title="Thư viện tra cứu TĐYT Phương Châu"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals allow-popups-to-escape-sandbox"
+          loading="lazy"></iframe>
+      </div>
+    </div>
+
   </div><!-- main-content -->
 
   <div class="modal fade" id="addRefModal" tabindex="-1">

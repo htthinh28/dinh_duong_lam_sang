@@ -32,6 +32,28 @@ function getPublicWebAppUrl() {
   }
 }
 
+/** URL trang thư viện (iframe sidebar THƯ VIỆN). Ưu tiên SYS_CONFIG · THU_VIEN_URL. */
+function getThuVienEmbedUrl() {
+  var fallback = "https://htthinh28.github.io/dinh_duong_lam_sang/thu-vien/";
+  try {
+    var ss = getDatabase();
+    var sheet = ss.getSheetByName("SYS_CONFIG");
+    if (sheet) {
+      var data = sheet.getDataRange().getValues();
+      var i;
+      for (i = 1; i < data.length; i++) {
+        if (String(data[i][0]).trim() === "THU_VIEN_URL" && data[i][1]) {
+          var url = String(data[i][1]).trim();
+          if (url) return url;
+        }
+      }
+    }
+  } catch (e) {
+    Logger.log("getThuVienEmbedUrl: " + e);
+  }
+  return fallback;
+}
+
 /**
  * Đăng ký tài khoản nhân viên — chờ duyệt (Status PENDING_APPROVAL).
  */
@@ -215,6 +237,7 @@ function setupDatabaseStructure(ss, options) {
     let s = ss.insertSheet("SYS_CONFIG");
     s.appendRow(["Key", "Value", "Description", "Type"]);
     s.appendRow(["HOSPITAL_NAME", "ỨNG DỤNG HỖ TRỢ RA QUYẾT ĐỊNH LÂM SÀNG (CDSS)", "Tên hiển thị", "TEXT"]);
+    s.appendRow(["THU_VIEN_URL", "https://htthinh28.github.io/dinh_duong_lam_sang/thu-vien/", "URL nhúng thư viện tra cứu", "TEXT"]);
     s.appendRow(["MODULE_1_ACTIVE", "TRUE", "Bật module Tiếp nhận", "BOOLEAN"]);
     s.setFrozenRows(1);
   }
