@@ -3,7 +3,7 @@
 // Đơn vị: BVQT Phương Châu Sóc Trăng
 // Quản lý: BS. Hồ Tấn Thịnh
 // Tiêu chuẩn: JCI (MCI.19, COP.3, SQE.8 - Phân quyền & Bảo mật)
-// Phiên bản: 5.3 (Final Fix - Stable Connection)
+// Phiên bản: 5.4 (Module Thư viện — iframe + GitHub Pages)
 // ============================================================================
 
 // ============================================================================
@@ -32,9 +32,14 @@ function getPublicWebAppUrl() {
   }
 }
 
-/** URL trang thư viện (iframe sidebar THƯ VIỆN). Ưu tiên SYS_CONFIG · THU_VIEN_URL. */
-function getThuVienEmbedUrl() {
-  var fallback = "https://htthinh28.github.io/dinh_duong_lam_sang/thu-vien/";
+/** Danh sách URL host thư viện (thử lần lượt nếu iframe lỗi). */
+function getThuVienEmbedUrls() {
+  var defaults = [
+    "https://htthinh28.github.io/dinh_duong_lam_sang/",
+    "https://cdn.jsdelivr.net/gh/htthinh28/dinh_duong_lam_sang@main/thu-vien/index.html"
+  ];
+  var urls = [];
+  var custom = "";
   try {
     var ss = getDatabase();
     var sheet = ss.getSheetByName("SYS_CONFIG");
@@ -43,15 +48,30 @@ function getThuVienEmbedUrl() {
       var i;
       for (i = 1; i < data.length; i++) {
         if (String(data[i][0]).trim() === "THU_VIEN_URL" && data[i][1]) {
-          var url = String(data[i][1]).trim();
-          if (url) return url;
+          custom = String(data[i][1]).trim();
+          break;
         }
       }
     }
   } catch (e) {
-    Logger.log("getThuVienEmbedUrl: " + e);
+    Logger.log("getThuVienEmbedUrls: " + e);
   }
-  return fallback;
+  if (custom) {
+    if (custom.indexOf("github.io") >= 0) {
+      custom = custom.replace(/\/thu-vien\/?$/i, "/");
+    }
+    urls.push(custom);
+  }
+  defaults.forEach(function (u) {
+    if (urls.indexOf(u) < 0) urls.push(u);
+  });
+  return urls;
+}
+
+/** URL trang thư viện (tương thích cũ). */
+function getThuVienEmbedUrl() {
+  var list = getThuVienEmbedUrls();
+  return list.length ? list[0] : "https://htthinh28.github.io/dinh_duong_lam_sang/";
 }
 
 /**
@@ -237,7 +257,7 @@ function setupDatabaseStructure(ss, options) {
     let s = ss.insertSheet("SYS_CONFIG");
     s.appendRow(["Key", "Value", "Description", "Type"]);
     s.appendRow(["HOSPITAL_NAME", "ỨNG DỤNG HỖ TRỢ RA QUYẾT ĐỊNH LÂM SÀNG (CDSS)", "Tên hiển thị", "TEXT"]);
-    s.appendRow(["THU_VIEN_URL", "https://htthinh28.github.io/dinh_duong_lam_sang/thu-vien/", "URL nhúng thư viện tra cứu", "TEXT"]);
+    s.appendRow(["THU_VIEN_URL", "https://htthinh28.github.io/dinh_duong_lam_sang/", "URL nhúng thư viện tra cứu", "TEXT"]);
     s.appendRow(["MODULE_1_ACTIVE", "TRUE", "Bật module Tiếp nhận", "BOOLEAN"]);
     s.setFrozenRows(1);
   }
@@ -1824,3 +1844,5 @@ function quanTriLayQuyenCuaToi(email) {
     return { error: "Không lấy được quyền: " + (e && e.message ? e.message : e) };
   }
 }
+
+// sync 2026-06-09 thu-vien fix

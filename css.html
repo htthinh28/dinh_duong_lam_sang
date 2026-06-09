@@ -110,9 +110,13 @@
   body[data-staff-root="tv"] #section-dd-pack {
     display: none !important;
   }
+  body[data-staff-root="tv"] #section-thu-vien-pack:not(.d-none) {
+    display: flex !important;
+    flex-direction: column;
+    width: 100%;
+  }
   #section-thu-vien-pack {
     min-height: calc(100vh - 2.5rem);
-    display: flex;
     flex-direction: column;
   }
   #thuVienFrameWrap {

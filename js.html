@@ -5934,53 +5934,98 @@ function setStaffRootNav(root) {
 }
 
 function loadThuVienFrame(forceReload) {
+  const pack = document.getElementById('section-thu-vien-pack');
   const frame = document.getElementById('thuVienFrame');
   const loading = document.getElementById('thuVienFrameLoading');
+  if (!pack) {
+    alert('Module Thư viện chưa được triển khai trên phiên bản web này. Vui lòng cập nhật triển khai Apps Script (phiên bản mới).');
+    return;
+  }
   if (!frame) return;
-  const applyUrl = (url) => {
-    if (!url) {
-      if (loading) {
-        loading.classList.remove('d-none');
-        loading.innerHTML = '<i class="fas fa-triangle-exclamation fa-2x mb-3 d-block text-warning"></i>Chưa cấu hình URL thư viện (SYS_CONFIG · THU_VIEN_URL).';
-      }
+
+  const defaultUrls = [
+    'https://htthinh28.github.io/dinh_duong_lam_sang/',
+    'https://cdn.jsdelivr.net/gh/htthinh28/dinh_duong_lam_sang@main/thu-vien/index.html'
+  ];
+
+  const showLoadError = (tried) => {
+    if (!loading) return;
+    loading.classList.remove('d-none');
+    loading.innerHTML =
+      '<i class="fas fa-triangle-exclamation fa-2x mb-3 d-block text-danger"></i>' +
+      '<p class="mb-2">Không tải được thư viện từ máy chủ.</p>' +
+      '<p class="small text-muted mb-3">Đã thử: ' + (tried || []).map((u) => '<code class="d-block text-break">' + u + '</code>').join('') + '</p>' +
+      '<button type="button" class="btn btn-sm btn-primary me-2" onclick="reloadThuVienFrame(true)"><i class="fas fa-rotate-right"></i> Thử lại</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-primary" onclick="openThuVienInNewTab()"><i class="fas fa-up-right-from-square"></i> Mở tab mới</button>';
+    frame.classList.add('d-none');
+  };
+
+  const tryUrlAt = (urls, index, bust) => {
+    if (!urls || index >= urls.length) {
+      showLoadError(urls);
       return;
     }
-    THU_VIEN_EMBED_URL = url;
-    if (forceReload) frame.removeAttribute('data-loaded');
-    if (frame.dataset.loaded === '1' && !forceReload) {
-      frame.classList.remove('d-none');
-      loading?.classList.add('d-none');
-      return;
-    }
+    const url = urls[index];
+    let settled = false;
     if (loading) {
       loading.classList.remove('d-none');
-      loading.innerHTML = '<i class="fas fa-spinner fa-spin fa-2x mb-3 d-block text-primary"></i>Đang tải thư viện tra cứu...';
+      loading.innerHTML =
+        '<i class="fas fa-spinner fa-spin fa-2x mb-3 d-block text-primary"></i>' +
+        'Đang tải thư viện (' + (index + 1) + '/' + urls.length + ')...';
     }
     frame.classList.add('d-none');
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      frame.onload = null;
+      tryUrlAt(urls, index + 1, bust);
+    }, 25000);
+
     frame.onload = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      THU_VIEN_EMBED_URL = url;
       frame.dataset.loaded = '1';
       frame.classList.remove('d-none');
       loading?.classList.add('d-none');
     };
     frame.onerror = () => {
-      if (loading) {
-        loading.classList.remove('d-none');
-        loading.innerHTML = '<i class="fas fa-triangle-exclamation fa-2x mb-3 d-block text-danger"></i>Không tải được thư viện. Thử <button type="button" class="btn btn-sm btn-primary" onclick="openThuVienInNewTab()">mở tab mới</button>.';
-      }
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      tryUrlAt(urls, index + 1, bust);
     };
-    const bust = forceReload ? ((url.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now()) : '';
     frame.src = url + bust;
   };
+
+  const start = (urls) => {
+    const list = (Array.isArray(urls) ? urls : [urls]).filter(Boolean);
+    if (!list.length) {
+      showLoadError([]);
+      return;
+    }
+    if (forceReload) frame.removeAttribute('data-loaded');
+    if (frame.dataset.loaded === '1' && THU_VIEN_EMBED_URL && !forceReload) {
+      frame.classList.remove('d-none');
+      loading?.classList.add('d-none');
+      return;
+    }
+    const bust = forceReload ? ((list[0].indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now()) : '';
+    tryUrlAt(list, 0, bust);
+  };
+
   if (THU_VIEN_EMBED_URL && !forceReload) {
-    applyUrl(THU_VIEN_EMBED_URL);
+    start([THU_VIEN_EMBED_URL]);
     return;
   }
   if (typeof google !== 'undefined' && google.script && google.script.run) {
-    google.script.run.withSuccessHandler(applyUrl).withFailureHandler(() => {
-      applyUrl('https://htthinh28.github.io/dinh_duong_lam_sang/thu-vien/');
-    }).getThuVienEmbedUrl();
+    google.script.run
+      .withSuccessHandler(start)
+      .withFailureHandler(() => start(defaultUrls))
+      .getThuVienEmbedUrls();
   } else {
-    applyUrl('https://htthinh28.github.io/dinh_duong_lam_sang/thu-vien/');
+    start(defaultUrls);
   }
 }
 

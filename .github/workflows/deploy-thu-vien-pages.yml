@@ -1,0 +1,34 @@
+# Host thu muc thu-vien len GitHub Pages (can bat Pages > Source: GitHub Actions trong repo)
+name: Deploy Thu vien to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'thu-vien/**'
+      - '.github/workflows/deploy-thu-vien-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-thu-vien
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: thu-vien
+      - id: deployment
+        uses: actions/deploy-pages@v4
