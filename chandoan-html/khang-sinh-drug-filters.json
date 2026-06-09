@@ -1,0 +1,1677 @@
+{
+  "tags": [
+    {
+      "id": "aciclovir",
+      "label": "Aciclovir",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "amikacin",
+      "label": "Amikacin",
+      "priority": true,
+      "priorityGroup": 2
+    },
+    {
+      "id": "amphotericin-b",
+      "label": "Amphotericin B",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "anidulafungin",
+      "label": "Anidulafungin",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "caspofungin",
+      "label": "Caspofungin",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "cefiderocol",
+      "label": "Cefiderocol",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "ceftazidim-avibactam",
+      "label": "Ceftazidim-avibactam",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "ceftobiprol",
+      "label": "Ceftobiprol",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "ceftolozan-tazobactam",
+      "label": "Ceftolozan-tazobactam",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "ciprofloxacin",
+      "label": "Ciprofloxacin",
+      "priority": true,
+      "priorityGroup": 2
+    },
+    {
+      "id": "colistin",
+      "label": "Colistin",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "dalbavancin",
+      "label": "Dalbavancin",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "dalfopristin-quinupristin",
+      "label": "Dalfopristin-quinupristin",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "doripenem",
+      "label": "Doripenem",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "eravacyclin",
+      "label": "Eravacyclin",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "ertapenem",
+      "label": "Ertapenem",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "fosfomycin",
+      "label": "Fosfomycin",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "gentamicin",
+      "label": "Gentamicin",
+      "priority": true,
+      "priorityGroup": 2
+    },
+    {
+      "id": "imipenem",
+      "label": "Imipenem",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "isavuconazol",
+      "label": "Isavuconazol",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "levofloxacin",
+      "label": "Levofloxacin",
+      "priority": true,
+      "priorityGroup": 2
+    },
+    {
+      "id": "linezolid",
+      "label": "Linezolid*",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "lomefloxacin",
+      "label": "Lomefloxacin",
+      "priority": true,
+      "priorityGroup": 2
+    },
+    {
+      "id": "meropenem",
+      "label": "Meropenem",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "micafungin",
+      "label": "Micafungin",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "moxifloxacin",
+      "label": "Moxifloxacin",
+      "priority": true,
+      "priorityGroup": 2
+    },
+    {
+      "id": "netilmicin",
+      "label": "Netilmicin",
+      "priority": true,
+      "priorityGroup": 2
+    },
+    {
+      "id": "norfloxacin",
+      "label": "Norfloxacin",
+      "priority": true,
+      "priorityGroup": 2
+    },
+    {
+      "id": "ofloxacin",
+      "label": "Ofloxacin",
+      "priority": true,
+      "priorityGroup": 2
+    },
+    {
+      "id": "omadacyclin",
+      "label": "Omadacyclin",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "oritavancin",
+      "label": "Oritavancin",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "pefloxacin",
+      "label": "Pefloxacin",
+      "priority": true,
+      "priorityGroup": 2
+    },
+    {
+      "id": "plazomicin",
+      "label": "Plazomicin",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "posaconazol",
+      "label": "Posaconazol",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "sparfloxacin",
+      "label": "Sparfloxacin",
+      "priority": true,
+      "priorityGroup": 2
+    },
+    {
+      "id": "tedizolid",
+      "label": "Tedizolid",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "teicoplanin",
+      "label": "Teicoplanin",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "telavancin",
+      "label": "Telavancin",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "tigecyclin",
+      "label": "Tigecyclin*",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "tobramycin",
+      "label": "Tobramycin",
+      "priority": true,
+      "priorityGroup": 2
+    },
+    {
+      "id": "valganciclovir",
+      "label": "Valganciclovir",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "vancomycin",
+      "label": "Vancomycin",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "voriconazol",
+      "label": "Voriconazol",
+      "priority": true,
+      "priorityGroup": 1
+    },
+    {
+      "id": "acid-nalidixic",
+      "label": "Acid nalidixic"
+    },
+    {
+      "id": "amoxicilin",
+      "label": "Amoxicilin"
+    },
+    {
+      "id": "amoxicilin-va-kali-clavulanat",
+      "label": "Amoxicilin và kali clavulanat"
+    },
+    {
+      "id": "amoxicillin",
+      "label": "Amoxicillin"
+    },
+    {
+      "id": "ampicilin",
+      "label": "Ampicilin"
+    },
+    {
+      "id": "ampicilin-va-sulbactam",
+      "label": "Ampicilin và sulbactam"
+    },
+    {
+      "id": "ampicillin",
+      "label": "Ampicillin"
+    },
+    {
+      "id": "azithromycin",
+      "label": "Azithromycin"
+    },
+    {
+      "id": "aztreonam",
+      "label": "Aztreonam"
+    },
+    {
+      "id": "bacitracin",
+      "label": "Bacitracin"
+    },
+    {
+      "id": "benzathin-penicilin-g",
+      "label": "Benzathin penicilin G"
+    },
+    {
+      "id": "benzathine-penicillin-g",
+      "label": "Benzathine penicillin G"
+    },
+    {
+      "id": "benzylpenicilin-penicilin-g",
+      "label": "Benzylpenicilin (Penicilin G)"
+    },
+    {
+      "id": "bleomycin",
+      "label": "Bleomycin"
+    },
+    {
+      "id": "capreomycin",
+      "label": "Capreomycin"
+    },
+    {
+      "id": "cefaclor",
+      "label": "Cefaclor"
+    },
+    {
+      "id": "cefadroxil",
+      "label": "Cefadroxil"
+    },
+    {
+      "id": "cefalexin",
+      "label": "Cefalexin"
+    },
+    {
+      "id": "cefalotin",
+      "label": "Cefalotin"
+    },
+    {
+      "id": "cefamandol",
+      "label": "Cefamandol"
+    },
+    {
+      "id": "cefapirin-natri",
+      "label": "Cefapirin natri"
+    },
+    {
+      "id": "cefazolin",
+      "label": "Cefazolin"
+    },
+    {
+      "id": "cefdinir",
+      "label": "Cefdinir*"
+    },
+    {
+      "id": "cefditoren-pivoxil",
+      "label": "Cefditoren pivoxil"
+    },
+    {
+      "id": "cefepim",
+      "label": "Cefepim"
+    },
+    {
+      "id": "cefepime",
+      "label": "Cefepime"
+    },
+    {
+      "id": "cefixim",
+      "label": "Cefixim"
+    },
+    {
+      "id": "cefoperazon",
+      "label": "Cefoperazon"
+    },
+    {
+      "id": "cefotaxim",
+      "label": "Cefotaxim"
+    },
+    {
+      "id": "cefotaxime",
+      "label": "Cefotaxime"
+    },
+    {
+      "id": "cefotiam",
+      "label": "Cefotiam"
+    },
+    {
+      "id": "cefoxitin",
+      "label": "Cefoxitin*"
+    },
+    {
+      "id": "cefpirom",
+      "label": "Cefpirom"
+    },
+    {
+      "id": "cefpodoxim-proxetil",
+      "label": "Cefpodoxim proxetil"
+    },
+    {
+      "id": "ceftazidim",
+      "label": "Ceftazidim"
+    },
+    {
+      "id": "ceftazidime",
+      "label": "Ceftazidime"
+    },
+    {
+      "id": "ceftibuten",
+      "label": "Ceftibuten*"
+    },
+    {
+      "id": "ceftriaxon",
+      "label": "Ceftriaxon"
+    },
+    {
+      "id": "ceftriaxone",
+      "label": "Ceftriaxone"
+    },
+    {
+      "id": "cefuroxim",
+      "label": "Cefuroxim"
+    },
+    {
+      "id": "cefuroxime",
+      "label": "Cefuroxime"
+    },
+    {
+      "id": "cetradin",
+      "label": "Cetradin"
+    },
+    {
+      "id": "chloramphenicol",
+      "label": "Chloramphenicol"
+    },
+    {
+      "id": "clarithromycin",
+      "label": "Clarithromycin"
+    },
+    {
+      "id": "clavulanate",
+      "label": "Clavulanate"
+    },
+    {
+      "id": "clindamycin",
+      "label": "Clindamycin"
+    },
+    {
+      "id": "cloramphenicol",
+      "label": "Cloramphenicol"
+    },
+    {
+      "id": "cloxacilin",
+      "label": "Cloxacilin"
+    },
+    {
+      "id": "co-trimoxazol",
+      "label": "Co-trimoxazol"
+    },
+    {
+      "id": "co-trimoxazole",
+      "label": "Co-trimoxazole"
+    },
+    {
+      "id": "cycloserin",
+      "label": "Cycloserin"
+    },
+    {
+      "id": "daptomycin",
+      "label": "Daptomycin*"
+    },
+    {
+      "id": "daunorubicin-daunomycin",
+      "label": "Daunorubicin (Daunomycin)"
+    },
+    {
+      "id": "doxycyclin",
+      "label": "Doxycyclin"
+    },
+    {
+      "id": "doxycycline",
+      "label": "Doxycycline"
+    },
+    {
+      "id": "ertapenem-natri",
+      "label": "Ertapenem natri"
+    },
+    {
+      "id": "erythromycin",
+      "label": "Erythromycin"
+    },
+    {
+      "id": "flucloxacilin",
+      "label": "Flucloxacilin"
+    },
+    {
+      "id": "gemifloxacin",
+      "label": "Gemifloxacin"
+    },
+    {
+      "id": "imipenem-va-cilastatin",
+      "label": "Imipenem và cilastatin"
+    },
+    {
+      "id": "kanamycin",
+      "label": "Kanamycin"
+    },
+    {
+      "id": "lincomycin-hydroclorid",
+      "label": "Lincomycin hydroclorid"
+    },
+    {
+      "id": "metronidazol",
+      "label": "Metronidazol"
+    },
+    {
+      "id": "metronidazole",
+      "label": "Metronidazole"
+    },
+    {
+      "id": "minocyclin",
+      "label": "Minocyclin"
+    },
+    {
+      "id": "mitomycin",
+      "label": "Mitomycin"
+    },
+    {
+      "id": "moxifloxacin-hydroclorid",
+      "label": "Moxifloxacin hydroclorid"
+    },
+    {
+      "id": "mupirocin",
+      "label": "Mupirocin"
+    },
+    {
+      "id": "neomycin",
+      "label": "Neomycin"
+    },
+    {
+      "id": "nitrofurantoin",
+      "label": "Nitrofurantoin"
+    },
+    {
+      "id": "oseltamivir",
+      "label": "Oseltamivir"
+    },
+    {
+      "id": "oxacilin-natri",
+      "label": "Oxacilin natri"
+    },
+    {
+      "id": "oxacillin",
+      "label": "Oxacillin"
+    },
+    {
+      "id": "oxytetracyclin",
+      "label": "Oxytetracyclin"
+    },
+    {
+      "id": "pefloxacin-mesylat",
+      "label": "Pefloxacin mesylat"
+    },
+    {
+      "id": "penicilin",
+      "label": "Penicilin"
+    },
+    {
+      "id": "penicillin",
+      "label": "Penicillin"
+    },
+    {
+      "id": "phenoxymethylpenicilin-penicilin-v",
+      "label": "Phenoxymethylpenicilin (Penicilin V)"
+    },
+    {
+      "id": "piperacilin",
+      "label": "Piperacilin"
+    },
+    {
+      "id": "piperacilin-tazobactam",
+      "label": "Piperacilin - Tazobactam*"
+    },
+    {
+      "id": "piperacillin",
+      "label": "Piperacillin"
+    },
+    {
+      "id": "polymyxin",
+      "label": "Polymyxin"
+    },
+    {
+      "id": "polymyxin-b",
+      "label": "Polymyxin B"
+    },
+    {
+      "id": "procain-penicilin-g-procain-benzylpenicilin",
+      "label": "Procain penicilin G (Procain benzylpenicilin)"
+    },
+    {
+      "id": "rifampicin",
+      "label": "Rifampicin"
+    },
+    {
+      "id": "roxithromycin",
+      "label": "Roxithromycin"
+    },
+    {
+      "id": "spectinomycin",
+      "label": "Spectinomycin"
+    },
+    {
+      "id": "spiramycin",
+      "label": "Spiramycin"
+    },
+    {
+      "id": "streptomycin",
+      "label": "Streptomycin"
+    },
+    {
+      "id": "sulbactam",
+      "label": "Sulbactam"
+    },
+    {
+      "id": "sulfamethoxazole",
+      "label": "Sulfamethoxazole"
+    },
+    {
+      "id": "tazobactam",
+      "label": "Tazobactam"
+    },
+    {
+      "id": "tetracyclin",
+      "label": "Tetracyclin"
+    },
+    {
+      "id": "ticarcilin",
+      "label": "Ticarcilin"
+    },
+    {
+      "id": "ticarcilin-va-acid-clavulanic",
+      "label": "Ticarcilin và acid clavulanic*"
+    },
+    {
+      "id": "trimethoprim",
+      "label": "Trimethoprim"
+    }
+  ],
+  "index": {
+    "penicilin": [
+      "khang-sinh-2015::danh-muc-bang",
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::khai-niem-duoc-ong-hoc-duoc-luc-hoc-pk-pd-va-ung-dung",
+      "khang-sinh-2015::ai-cuong-ve-vi-khuan-hoc",
+      "khang-sinh-2015::su-e-khang-khang-sinh-cua-vi-khuan",
+      "khang-sinh-2015::gian-phe-quan",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::su-dung-khang-sinh-ieu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::ap-xe-phoi",
+      "khang-sinh-2015::tran-mu-mang-phoi",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::thap-tim",
+      "khang-sinh-2015::viem-noi-tam-mac-nhiem-khuan",
+      "khang-sinh-2015::nhot",
+      "khang-sinh-2015::viem-nang-long",
+      "khang-sinh-2015::viem-mo-bao",
+      "khang-sinh-2015::viem-khop-nhiem-khuan",
+      "khang-sinh-2015::viem-co-ap-xe-co-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-hat-to-phi",
+      "khang-sinh-2015::nhiem-khuan-nang-do-san-khoa",
+      "khang-sinh-2015::benh-giang-mai",
+      "khang-sinh-2015::su-dung-khang-sinh-trong-nhan-khoa",
+      "khang-sinh-2015::viem-to-chuc-hoc-mat",
+      "khang-sinh-2015::viem-mang-nao-mu",
+      "khang-sinh-2015::viem-than-be-than-cap",
+      "khang-sinh-2015::viem-bang-quang-cap",
+      "khang-sinh-2015::phu-luc-1-huong-dan-xu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::phu-luc-3-lua-chon-khang-sinh-du-phong-phau-thuat"
+    ],
+    "ciprofloxacin": [
+      "khang-sinh-2015::danh-muc-hinh-ve",
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::khai-niem-duoc-ong-hoc-duoc-luc-hoc-pk-pd-va-ung-dung",
+      "khang-sinh-2015::cac-nguyen-tac-su-dung-khang-sinh",
+      "khang-sinh-2015::gian-phe-quan",
+      "khang-sinh-2015::ot-cap-benh-phoi-tac-nghen-man-tinh",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::tran-mu-mang-phoi",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::viem-noi-tam-mac-nhiem-khuan",
+      "khang-sinh-2015::tieu-chay-do-vi-khuan",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::ap-xe-gan-do-vi-khuan",
+      "khang-sinh-2015::viem-tuy-cap-co-nhiem-khuan",
+      "khang-sinh-2015::viem-phuc-mac",
+      "khang-sinh-2015::viem-khop-nhiem-khuan",
+      "khang-sinh-2015::viem-xuong-tuy-nhiem-khuan",
+      "khang-sinh-2015::benh-ha-cam",
+      "khang-sinh-2015::su-dung-khang-sinh-trong-nhan-khoa",
+      "khang-sinh-2015::viem-ket-mac-cap",
+      "khang-sinh-2015::viem-ket-mac-do-lau-cau",
+      "khang-sinh-2015::viem-mu-noi-nhan-sau-vet-thuong-xuyen-nhan-cau",
+      "khang-sinh-2015::viem-mang-nao-mu",
+      "khang-sinh-2015::viem-than-be-than-cap",
+      "khang-sinh-2015::soi-than-tiet-nieu-nhiem-khuan",
+      "khang-sinh-2015::suy-giam-mien-dich-giam-bach-cau-hat-trung-tinh-va-sau-",
+      "khang-sinh-2015::phu-luc-2-lieu-khang-sinh-trong-du-phong-phau-thuat",
+      "khang-sinh-2015::phu-luc-3-lua-chon-khang-sinh-du-phong-phau-thuat",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "ofloxacin": [
+      "khang-sinh-2015::danh-muc-hinh-ve",
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::khai-niem-duoc-ong-hoc-duoc-luc-hoc-pk-pd-va-ung-dung",
+      "khang-sinh-2015::cac-nguyen-tac-su-dung-khang-sinh",
+      "khang-sinh-2015::gian-phe-quan",
+      "khang-sinh-2015::ot-cap-benh-phoi-tac-nghen-man-tinh",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::tran-mu-mang-phoi",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::viem-noi-tam-mac-nhiem-khuan",
+      "khang-sinh-2015::tieu-chay-do-vi-khuan",
+      "khang-sinh-2015::diet-helicobacter-pylori-trong-benh-ly-da-day-ta-trang",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::ap-xe-gan-do-vi-khuan",
+      "khang-sinh-2015::viem-tuy-cap-co-nhiem-khuan",
+      "khang-sinh-2015::viem-phuc-mac",
+      "khang-sinh-2015::viem-khop-nhiem-khuan",
+      "khang-sinh-2015::viem-xuong-tuy-nhiem-khuan",
+      "khang-sinh-2015::viem-co-ap-xe-co-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-hat-to-phi",
+      "khang-sinh-2015::benh-ha-cam",
+      "khang-sinh-2015::su-dung-khang-sinh-trong-nhan-khoa",
+      "khang-sinh-2015::viem-ket-mac-cap",
+      "khang-sinh-2015::viem-ket-mac-do-lau-cau",
+      "khang-sinh-2015::viem-giac-mac-do-vi-khuan",
+      "khang-sinh-2015::viem-mu-noi-nhan-sau-vet-thuong-xuyen-nhan-cau",
+      "khang-sinh-2015::viem-tui-le",
+      "khang-sinh-2015::viem-mang-nao-mu",
+      "khang-sinh-2015::viem-than-be-than-cap",
+      "khang-sinh-2015::soi-than-tiet-nieu-nhiem-khuan",
+      "khang-sinh-2015::viem-nieu-ao-cap-khong-do-lau",
+      "khang-sinh-2015::suy-giam-mien-dich-giam-bach-cau-hat-trung-tinh-va-sau-",
+      "khang-sinh-2015::phu-luc-2-lieu-khang-sinh-trong-du-phong-phau-thuat",
+      "khang-sinh-2015::phu-luc-3-lua-chon-khang-sinh-du-phong-phau-thuat",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "ticarcilin": [
+      "khang-sinh-2015::danh-muc-hinh-ve",
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::khai-niem-duoc-ong-hoc-duoc-luc-hoc-pk-pd-va-ung-dung",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::viem-phuc-mac"
+    ],
+    "tobramycin": [
+      "khang-sinh-2015::danh-muc-hinh-ve",
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::khai-niem-duoc-ong-hoc-duoc-luc-hoc-pk-pd-va-ung-dung",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::ap-xe-gan-do-vi-khuan",
+      "khang-sinh-2015::su-dung-khang-sinh-trong-nhan-khoa",
+      "khang-sinh-2015::viem-ket-mac-do-lau-cau",
+      "khang-sinh-2015::viem-giac-mac-do-vi-khuan",
+      "khang-sinh-2015::viem-mu-noi-nhan-sau-vet-thuong-xuyen-nhan-cau",
+      "khang-sinh-2015::viem-mang-nao-mu",
+      "khang-sinh-2015::suy-giam-mien-dich-giam-bach-cau-hat-trung-tinh-va-sau-",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "sulfamethoxazole": [
+      "khang-sinh-2015::tu-viet-tat-tieng-anh"
+    ],
+    "trimethoprim": [
+      "khang-sinh-2015::tu-viet-tat-tieng-anh",
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::su-e-khang-khang-sinh-cua-vi-khuan",
+      "khang-sinh-2015::su-dung-khang-sinh-trong-nhan-khoa",
+      "khang-sinh-2015::viem-than-be-than-cap",
+      "khang-sinh-2015::soi-than-tiet-nieu-nhiem-khuan",
+      "khang-sinh-2015::viem-nieu-ao-cap-khong-do-lau",
+      "khang-sinh-2015::viem-bang-quang-cap"
+    ],
+    "penicillin": [
+      "khang-sinh-2015::loi-noi-au",
+      "khang-sinh-2015::su-e-khang-khang-sinh-cua-vi-khuan",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::ap-xe-gan-do-vi-khuan",
+      "khang-sinh-2015::viem-ket-mac-do-lau-cau",
+      "khang-sinh-2015::phu-luc-3-lua-chon-khang-sinh-du-phong-phau-thuat",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "acid-nalidixic": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung"
+    ],
+    "amikacin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::gian-phe-quan",
+      "khang-sinh-2015::ot-cap-benh-phoi-tac-nghen-man-tinh",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::ap-xe-phoi",
+      "khang-sinh-2015::tran-mu-mang-phoi",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::ap-xe-gan-do-vi-khuan",
+      "khang-sinh-2015::viem-khop-nhiem-khuan",
+      "khang-sinh-2015::viem-xuong-tuy-nhiem-khuan",
+      "khang-sinh-2015::viem-co-ap-xe-co-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-hat-to-phi",
+      "khang-sinh-2015::su-dung-khang-sinh-trong-nhan-khoa",
+      "khang-sinh-2015::viem-mu-noi-nhan-sau-vet-thuong-xuyen-nhan-cau",
+      "khang-sinh-2015::viem-mang-nao-mu",
+      "khang-sinh-2015::viem-than-be-than-cap",
+      "khang-sinh-2015::suy-giam-mien-dich-giam-bach-cau-hat-trung-tinh-va-sau-",
+      "khang-sinh-2015::phu-luc-1-huong-dan-xu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "amoxicilin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::cac-nguyen-tac-su-dung-khang-sinh",
+      "khang-sinh-2015::ai-cuong-ve-vi-khuan-hoc",
+      "khang-sinh-2015::gian-phe-quan",
+      "khang-sinh-2015::ot-cap-benh-phoi-tac-nghen-man-tinh",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::su-dung-khang-sinh-ieu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::ap-xe-phoi",
+      "khang-sinh-2015::tran-mu-mang-phoi",
+      "khang-sinh-2015::viem-noi-tam-mac-nhiem-khuan",
+      "khang-sinh-2015::nhot",
+      "khang-sinh-2015::viem-nang-long",
+      "khang-sinh-2015::viem-mo-bao",
+      "khang-sinh-2015::diet-helicobacter-pylori-trong-benh-ly-da-day-ta-trang",
+      "khang-sinh-2015::viem-khop-nhiem-khuan",
+      "khang-sinh-2015::viem-to-chuc-hoc-mat",
+      "khang-sinh-2015::viem-tui-le",
+      "khang-sinh-2015::viem-than-be-than-cap",
+      "khang-sinh-2015::soi-than-tiet-nieu-nhiem-khuan",
+      "khang-sinh-2015::viem-bang-quang-cap",
+      "khang-sinh-2015::phu-luc-1-huong-dan-xu-tri-viem-phoi-cong-ong-o-tre-em"
+    ],
+    "ampicilin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::cac-nguyen-tac-su-dung-khang-sinh",
+      "khang-sinh-2015::gian-phe-quan",
+      "khang-sinh-2015::ot-cap-benh-phoi-tac-nghen-man-tinh",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::su-dung-khang-sinh-ieu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::ap-xe-phoi",
+      "khang-sinh-2015::tran-mu-mang-phoi",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::viem-noi-tam-mac-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::ap-xe-gan-do-vi-khuan",
+      "khang-sinh-2015::viem-co-ap-xe-co-nhiem-khuan",
+      "khang-sinh-2015::benh-ha-cam",
+      "khang-sinh-2015::viem-mang-nao-mu",
+      "khang-sinh-2015::viem-than-be-than-cap",
+      "khang-sinh-2015::soi-than-tiet-nieu-nhiem-khuan",
+      "khang-sinh-2015::phu-luc-1-huong-dan-xu-tri-viem-phoi-cong-ong-o-tre-em"
+    ],
+    "azithromycin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::cac-nguyen-tac-su-dung-khang-sinh",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::su-dung-khang-sinh-ieu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::viem-noi-tam-mac-nhiem-khuan",
+      "khang-sinh-2015::nhot",
+      "khang-sinh-2015::viem-nang-long",
+      "khang-sinh-2015::tieu-chay-do-vi-khuan",
+      "khang-sinh-2015::nhiem-khuan-nang-do-san-khoa",
+      "khang-sinh-2015::viem-am-ao-nieu-ao-do-vi-khuan",
+      "khang-sinh-2015::benh-lau",
+      "khang-sinh-2015::benh-ha-cam",
+      "khang-sinh-2015::su-dung-khang-sinh-trong-nhan-khoa",
+      "khang-sinh-2015::benh-mat-hot",
+      "khang-sinh-2015::phu-luc-1-huong-dan-xu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "aztreonam": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::khai-niem-duoc-ong-hoc-duoc-luc-hoc-pk-pd-va-ung-dung",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::ap-xe-gan-do-vi-khuan",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "cefaclor": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::phu-luc-1-huong-dan-xu-tri-viem-phoi-cong-ong-o-tre-em"
+    ],
+    "cefadroxil": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung"
+    ],
+    "cefazolin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::viem-noi-tam-mac-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::viem-co-ap-xe-co-nhiem-khuan",
+      "khang-sinh-2015::su-dung-khang-sinh-trong-du-phong-san-khoa",
+      "khang-sinh-2015::phu-luc-2-lieu-khang-sinh-trong-du-phong-phau-thuat",
+      "khang-sinh-2015::phu-luc-3-lua-chon-khang-sinh-du-phong-phau-thuat",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "cefdinir": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::phu-luc-3-lua-chon-khang-sinh-du-phong-phau-thuat"
+    ],
+    "cefepim": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::viem-noi-tam-mac-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::ap-xe-gan-do-vi-khuan",
+      "khang-sinh-2015::viem-mang-nao-mu",
+      "khang-sinh-2015::suy-giam-mien-dich-giam-bach-cau-hat-trung-tinh-va-sau-",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "cefoperazon": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::ap-xe-gan-do-vi-khuan",
+      "khang-sinh-2015::viem-than-be-than-cap",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "cefotaxim": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::cac-nguyen-tac-su-dung-khang-sinh",
+      "khang-sinh-2015::gian-phe-quan",
+      "khang-sinh-2015::ot-cap-benh-phoi-tac-nghen-man-tinh",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::su-dung-khang-sinh-ieu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::ap-xe-phoi",
+      "khang-sinh-2015::tran-mu-mang-phoi",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::viem-phuc-mac",
+      "khang-sinh-2015::viem-khop-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-hat-to-phi",
+      "khang-sinh-2015::su-dung-khang-sinh-trong-nhan-khoa",
+      "khang-sinh-2015::viem-ket-mac-do-lau-cau",
+      "khang-sinh-2015::viem-to-chuc-hoc-mat",
+      "khang-sinh-2015::viem-mang-nao-mu",
+      "khang-sinh-2015::viem-than-be-than-cap",
+      "khang-sinh-2015::soi-than-tiet-nieu-nhiem-khuan",
+      "khang-sinh-2015::phu-luc-1-huong-dan-xu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "cefoxitin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::su-dung-khang-sinh-trong-du-phong-san-khoa",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "ceftazidim": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::gian-phe-quan",
+      "khang-sinh-2015::ot-cap-benh-phoi-tac-nghen-man-tinh",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::ap-xe-phoi",
+      "khang-sinh-2015::tran-mu-mang-phoi",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::ap-xe-gan-do-vi-khuan",
+      "khang-sinh-2015::viem-khop-nhiem-khuan",
+      "khang-sinh-2015::viem-xuong-tuy-nhiem-khuan",
+      "khang-sinh-2015::viem-co-ap-xe-co-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-hat-to-phi",
+      "khang-sinh-2015::viem-ket-mac-cap",
+      "khang-sinh-2015::viem-to-chuc-hoc-mat",
+      "khang-sinh-2015::viem-mu-noi-nhan-sau-vet-thuong-xuyen-nhan-cau",
+      "khang-sinh-2015::viem-mang-nao-mu",
+      "khang-sinh-2015::suy-giam-mien-dich-giam-bach-cau-hat-trung-tinh-va-sau-",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "ceftibuten": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung"
+    ],
+    "ceftriaxon": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::ot-cap-benh-phoi-tac-nghen-man-tinh",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::viem-noi-tam-mac-nhiem-khuan",
+      "khang-sinh-2015::viem-mo-bao",
+      "khang-sinh-2015::tieu-chay-do-vi-khuan",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::ap-xe-gan-do-vi-khuan",
+      "khang-sinh-2015::viem-phuc-mac",
+      "khang-sinh-2015::viem-khop-nhiem-khuan",
+      "khang-sinh-2015::viem-co-ap-xe-co-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-hat-to-phi",
+      "khang-sinh-2015::nhiem-khuan-nang-do-san-khoa",
+      "khang-sinh-2015::viem-am-ao-nieu-ao-do-vi-khuan",
+      "khang-sinh-2015::benh-lau",
+      "khang-sinh-2015::benh-ha-cam",
+      "khang-sinh-2015::viem-ket-mac-cap",
+      "khang-sinh-2015::viem-ket-mac-do-lau-cau",
+      "khang-sinh-2015::viem-to-chuc-hoc-mat",
+      "khang-sinh-2015::viem-mang-nao-mu",
+      "khang-sinh-2015::viem-than-be-than-cap",
+      "khang-sinh-2015::soi-than-tiet-nieu-nhiem-khuan",
+      "khang-sinh-2015::phu-luc-1-huong-dan-xu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::phu-luc-3-lua-chon-khang-sinh-du-phong-phau-thuat",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "cefuroxim": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::ot-cap-benh-phoi-tac-nghen-man-tinh",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::su-dung-khang-sinh-ieu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::viem-giac-mac-do-vi-khuan",
+      "khang-sinh-2015::viem-tui-le",
+      "khang-sinh-2015::viem-than-be-than-cap",
+      "khang-sinh-2015::soi-than-tiet-nieu-nhiem-khuan",
+      "khang-sinh-2015::phu-luc-1-huong-dan-xu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "clarithromycin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::su-dung-khang-sinh-ieu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::viem-noi-tam-mac-nhiem-khuan",
+      "khang-sinh-2015::diet-helicobacter-pylori-trong-benh-ly-da-day-ta-trang",
+      "khang-sinh-2015::benh-lau",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "clindamycin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::khai-niem-duoc-ong-hoc-duoc-luc-hoc-pk-pd-va-ung-dung",
+      "khang-sinh-2015::cac-nguyen-tac-su-dung-khang-sinh",
+      "khang-sinh-2015::ap-xe-phoi",
+      "khang-sinh-2015::tran-mu-mang-phoi",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::viem-noi-tam-mac-nhiem-khuan",
+      "khang-sinh-2015::nhot",
+      "khang-sinh-2015::viem-nang-long",
+      "khang-sinh-2015::viem-khop-nhiem-khuan",
+      "khang-sinh-2015::viem-xuong-tuy-nhiem-khuan",
+      "khang-sinh-2015::viem-co-ap-xe-co-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-hat-to-phi",
+      "khang-sinh-2015::nhiem-khuan-nang-do-san-khoa",
+      "khang-sinh-2015::viem-am-ao-nieu-ao-do-vi-khuan",
+      "khang-sinh-2015::phu-luc-2-lieu-khang-sinh-trong-du-phong-phau-thuat",
+      "khang-sinh-2015::phu-luc-3-lua-chon-khang-sinh-du-phong-phau-thuat",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "cloramphenicol": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::su-dung-khang-sinh-trong-nhan-khoa",
+      "khang-sinh-2015::viem-bo-mi-do-vi-khuan"
+    ],
+    "cloxacilin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::viem-noi-tam-mac-nhiem-khuan",
+      "khang-sinh-2015::nhot",
+      "khang-sinh-2015::viem-nang-long",
+      "khang-sinh-2015::viem-to-chuc-hoc-mat"
+    ],
+    "co-trimoxazol": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::khai-niem-duoc-ong-hoc-duoc-luc-hoc-pk-pd-va-ung-dung",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::su-dung-khang-sinh-ieu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::viem-phuc-mac",
+      "khang-sinh-2015::benh-ha-cam",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "colistin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::su-e-khang-khang-sinh-cua-vi-khuan",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::suy-giam-mien-dich-giam-bach-cau-hat-trung-tinh-va-sau-",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "daptomycin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::khai-niem-duoc-ong-hoc-duoc-luc-hoc-pk-pd-va-ung-dung",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::viem-khop-nhiem-khuan",
+      "khang-sinh-2015::viem-xuong-tuy-nhiem-khuan",
+      "khang-sinh-2015::viem-co-ap-xe-co-nhiem-khuan",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "doripenem": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::ap-xe-gan-do-vi-khuan",
+      "khang-sinh-2015::viem-phuc-mac"
+    ],
+    "doxycyclin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::cac-nguyen-tac-su-dung-khang-sinh",
+      "khang-sinh-2015::viem-phe-quan-cap-o-nguoi-lon",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::tieu-chay-do-vi-khuan",
+      "khang-sinh-2015::viem-khop-nhiem-khuan",
+      "khang-sinh-2015::viem-am-ao-nieu-ao-do-vi-khuan",
+      "khang-sinh-2015::benh-lau",
+      "khang-sinh-2015::viem-bo-mi-do-vi-khuan",
+      "khang-sinh-2015::viem-nieu-ao-cap-khong-do-lau",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "ertapenem": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::viem-phuc-mac",
+      "khang-sinh-2015::viem-than-be-than-cap"
+    ],
+    "erythromycin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::cac-nguyen-tac-su-dung-khang-sinh",
+      "khang-sinh-2015::su-e-khang-khang-sinh-cua-vi-khuan",
+      "khang-sinh-2015::gian-phe-quan",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::su-dung-khang-sinh-ieu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::thap-tim",
+      "khang-sinh-2015::nhot",
+      "khang-sinh-2015::viem-nang-long",
+      "khang-sinh-2015::tieu-chay-do-vi-khuan",
+      "khang-sinh-2015::viem-khop-nhiem-khuan",
+      "khang-sinh-2015::benh-giang-mai",
+      "khang-sinh-2015::benh-lau",
+      "khang-sinh-2015::benh-ha-cam",
+      "khang-sinh-2015::su-dung-khang-sinh-trong-nhan-khoa",
+      "khang-sinh-2015::viem-ket-mac-do-lau-cau",
+      "khang-sinh-2015::viem-nieu-ao-cap-khong-do-lau",
+      "khang-sinh-2015::phu-luc-1-huong-dan-xu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "gentamicin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::cac-nguyen-tac-su-dung-khang-sinh",
+      "khang-sinh-2015::gian-phe-quan",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::ap-xe-phoi",
+      "khang-sinh-2015::tran-mu-mang-phoi",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::viem-noi-tam-mac-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::ap-xe-gan-do-vi-khuan",
+      "khang-sinh-2015::viem-khop-nhiem-khuan",
+      "khang-sinh-2015::viem-xuong-tuy-nhiem-khuan",
+      "khang-sinh-2015::viem-co-ap-xe-co-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-hat-to-phi",
+      "khang-sinh-2015::nhiem-khuan-nang-do-san-khoa",
+      "khang-sinh-2015::su-dung-khang-sinh-trong-nhan-khoa",
+      "khang-sinh-2015::viem-ket-mac-do-lau-cau",
+      "khang-sinh-2015::viem-giac-mac-do-vi-khuan",
+      "khang-sinh-2015::viem-mu-noi-nhan-sau-vet-thuong-xuyen-nhan-cau",
+      "khang-sinh-2015::viem-mang-nao-mu",
+      "khang-sinh-2015::viem-than-be-than-cap",
+      "khang-sinh-2015::suy-giam-mien-dich-giam-bach-cau-hat-trung-tinh-va-sau-",
+      "khang-sinh-2015::phu-luc-2-lieu-khang-sinh-trong-du-phong-phau-thuat",
+      "khang-sinh-2015::phu-luc-3-lua-chon-khang-sinh-du-phong-phau-thuat",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "imipenem": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::gian-phe-quan",
+      "khang-sinh-2015::ot-cap-benh-phoi-tac-nghen-man-tinh",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::tran-mu-mang-phoi",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::ap-xe-gan-do-vi-khuan",
+      "khang-sinh-2015::viem-tuy-cap-co-nhiem-khuan",
+      "khang-sinh-2015::viem-phuc-mac",
+      "khang-sinh-2015::viem-than-be-than-cap",
+      "khang-sinh-2015::suy-giam-mien-dich-giam-bach-cau-hat-trung-tinh-va-sau-",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "kanamycin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::benh-ha-cam",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "levofloxacin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::gian-phe-quan",
+      "khang-sinh-2015::ot-cap-benh-phoi-tac-nghen-man-tinh",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::tran-mu-mang-phoi",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::diet-helicobacter-pylori-trong-benh-ly-da-day-ta-trang",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::ap-xe-gan-do-vi-khuan",
+      "khang-sinh-2015::viem-phuc-mac",
+      "khang-sinh-2015::viem-khop-nhiem-khuan",
+      "khang-sinh-2015::viem-xuong-tuy-nhiem-khuan",
+      "khang-sinh-2015::viem-co-ap-xe-co-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-hat-to-phi",
+      "khang-sinh-2015::su-dung-khang-sinh-trong-nhan-khoa",
+      "khang-sinh-2015::viem-ket-mac-cap",
+      "khang-sinh-2015::viem-giac-mac-do-vi-khuan",
+      "khang-sinh-2015::viem-tui-le",
+      "khang-sinh-2015::viem-than-be-than-cap",
+      "khang-sinh-2015::suy-giam-mien-dich-giam-bach-cau-hat-trung-tinh-va-sau-",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "linezolid": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::khai-niem-duoc-ong-hoc-duoc-luc-hoc-pk-pd-va-ung-dung",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::viem-xuong-tuy-nhiem-khuan",
+      "khang-sinh-2015::viem-co-ap-xe-co-nhiem-khuan"
+    ],
+    "meropenem": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::gian-phe-quan",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::tran-mu-mang-phoi",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::ap-xe-gan-do-vi-khuan",
+      "khang-sinh-2015::viem-tuy-cap-co-nhiem-khuan",
+      "khang-sinh-2015::viem-phuc-mac",
+      "khang-sinh-2015::viem-mang-nao-mu",
+      "khang-sinh-2015::viem-than-be-than-cap",
+      "khang-sinh-2015::suy-giam-mien-dich-giam-bach-cau-hat-trung-tinh-va-sau-",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "metronidazol": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::khai-niem-duoc-ong-hoc-duoc-luc-hoc-pk-pd-va-ung-dung",
+      "khang-sinh-2015::gian-phe-quan",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::ap-xe-phoi",
+      "khang-sinh-2015::tran-mu-mang-phoi",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::tieu-chay-do-vi-khuan",
+      "khang-sinh-2015::diet-helicobacter-pylori-trong-benh-ly-da-day-ta-trang",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::ap-xe-gan-do-vi-khuan",
+      "khang-sinh-2015::viem-tuy-cap-co-nhiem-khuan",
+      "khang-sinh-2015::viem-phuc-mac",
+      "khang-sinh-2015::nhiem-khuan-nang-do-san-khoa",
+      "khang-sinh-2015::viem-am-ao-nieu-ao-do-vi-khuan",
+      "khang-sinh-2015::viem-nieu-ao-cap-khong-do-lau",
+      "khang-sinh-2015::phu-luc-2-lieu-khang-sinh-trong-du-phong-phau-thuat",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "minocyclin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::viem-co-ap-xe-co-nhiem-khuan"
+    ],
+    "moxifloxacin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::gian-phe-quan",
+      "khang-sinh-2015::ot-cap-benh-phoi-tac-nghen-man-tinh",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::tran-mu-mang-phoi",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::ap-xe-gan-do-vi-khuan",
+      "khang-sinh-2015::viem-phuc-mac",
+      "khang-sinh-2015::viem-co-ap-xe-co-nhiem-khuan",
+      "khang-sinh-2015::viem-am-ao-nieu-ao-do-vi-khuan",
+      "khang-sinh-2015::su-dung-khang-sinh-trong-nhan-khoa",
+      "khang-sinh-2015::viem-ket-mac-cap",
+      "khang-sinh-2015::viem-giac-mac-do-vi-khuan",
+      "khang-sinh-2015::viem-tui-le",
+      "khang-sinh-2015::suy-giam-mien-dich-giam-bach-cau-hat-trung-tinh-va-sau-",
+      "khang-sinh-2015::phu-luc-3-lua-chon-khang-sinh-du-phong-phau-thuat",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "norfloxacin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::tieu-chay-do-vi-khuan",
+      "khang-sinh-2015::viem-phuc-mac",
+      "khang-sinh-2015::su-dung-khang-sinh-trong-nhan-khoa",
+      "khang-sinh-2015::viem-than-be-than-cap",
+      "khang-sinh-2015::soi-than-tiet-nieu-nhiem-khuan",
+      "khang-sinh-2015::viem-bang-quang-cap"
+    ],
+    "oxytetracyclin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung"
+    ],
+    "piperacilin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::gian-phe-quan",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::tran-mu-mang-phoi",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::ap-xe-gan-do-vi-khuan",
+      "khang-sinh-2015::viem-phuc-mac",
+      "khang-sinh-2015::viem-co-ap-xe-co-nhiem-khuan",
+      "khang-sinh-2015::suy-giam-mien-dich-giam-bach-cau-hat-trung-tinh-va-sau-"
+    ],
+    "polymyxin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::cac-nguyen-tac-su-dung-khang-sinh",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::su-dung-khang-sinh-trong-nhan-khoa",
+      "khang-sinh-2015::viem-ket-mac-cap",
+      "khang-sinh-2015::viem-giac-mac-do-vi-khuan",
+      "khang-sinh-2015::viem-bo-mi-do-vi-khuan",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "polymyxin-b": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::su-dung-khang-sinh-trong-nhan-khoa",
+      "khang-sinh-2015::viem-ket-mac-cap",
+      "khang-sinh-2015::viem-giac-mac-do-vi-khuan",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "roxithromycin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::nhot",
+      "khang-sinh-2015::viem-nang-long",
+      "khang-sinh-2015::viem-mo-bao"
+    ],
+    "spiramycin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung"
+    ],
+    "streptomycin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::su-e-khang-khang-sinh-cua-vi-khuan",
+      "khang-sinh-2015::benh-ha-cam",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "sulbactam": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::gian-phe-quan",
+      "khang-sinh-2015::ot-cap-benh-phoi-tac-nghen-man-tinh",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::su-dung-khang-sinh-ieu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::ap-xe-phoi",
+      "khang-sinh-2015::tran-mu-mang-phoi",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::viem-noi-tam-mac-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::ap-xe-gan-do-vi-khuan",
+      "khang-sinh-2015::viem-co-ap-xe-co-nhiem-khuan",
+      "khang-sinh-2015::viem-than-be-than-cap",
+      "khang-sinh-2015::viem-bang-quang-cap",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "tazobactam": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::gian-phe-quan",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::tran-mu-mang-phoi",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::ap-xe-gan-do-vi-khuan",
+      "khang-sinh-2015::viem-phuc-mac",
+      "khang-sinh-2015::viem-co-ap-xe-co-nhiem-khuan",
+      "khang-sinh-2015::suy-giam-mien-dich-giam-bach-cau-hat-trung-tinh-va-sau-",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "teicoplanin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::viem-noi-tam-mac-nhiem-khuan",
+      "khang-sinh-2015::viem-khop-nhiem-khuan",
+      "khang-sinh-2015::viem-xuong-tuy-nhiem-khuan",
+      "khang-sinh-2015::suy-giam-mien-dich-giam-bach-cau-hat-trung-tinh-va-sau-"
+    ],
+    "tetracyclin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::khai-niem-duoc-ong-hoc-duoc-luc-hoc-pk-pd-va-ung-dung",
+      "khang-sinh-2015::cac-nguyen-tac-su-dung-khang-sinh",
+      "khang-sinh-2015::su-e-khang-khang-sinh-cua-vi-khuan",
+      "khang-sinh-2015::viem-phe-quan-cap-o-nguoi-lon",
+      "khang-sinh-2015::diet-helicobacter-pylori-trong-benh-ly-da-day-ta-trang",
+      "khang-sinh-2015::viem-khop-nhiem-khuan",
+      "khang-sinh-2015::benh-giang-mai",
+      "khang-sinh-2015::benh-lau",
+      "khang-sinh-2015::benh-ha-cam",
+      "khang-sinh-2015::su-dung-khang-sinh-trong-nhan-khoa",
+      "khang-sinh-2015::viem-ket-mac-do-lau-cau",
+      "khang-sinh-2015::benh-mat-hot"
+    ],
+    "vancomycin": [
+      "khang-sinh-2015::cac-nhom-khang-sinh-va-tac-dung",
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::khai-niem-duoc-ong-hoc-duoc-luc-hoc-pk-pd-va-ung-dung",
+      "khang-sinh-2015::cac-nguyen-tac-su-dung-khang-sinh",
+      "khang-sinh-2015::su-e-khang-khang-sinh-cua-vi-khuan",
+      "khang-sinh-2015::gian-phe-quan",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::su-dung-khang-sinh-ieu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::ap-xe-phoi",
+      "khang-sinh-2015::tran-mu-mang-phoi",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::viem-noi-tam-mac-nhiem-khuan",
+      "khang-sinh-2015::tieu-chay-do-vi-khuan",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::viem-khop-nhiem-khuan",
+      "khang-sinh-2015::viem-xuong-tuy-nhiem-khuan",
+      "khang-sinh-2015::viem-co-ap-xe-co-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-hat-to-phi",
+      "khang-sinh-2015::su-dung-khang-sinh-trong-nhan-khoa",
+      "khang-sinh-2015::viem-to-chuc-hoc-mat",
+      "khang-sinh-2015::viem-mu-noi-nhan-sau-vet-thuong-xuyen-nhan-cau",
+      "khang-sinh-2015::viem-mang-nao-mu",
+      "khang-sinh-2015::suy-giam-mien-dich-giam-bach-cau-hat-trung-tinh-va-sau-",
+      "khang-sinh-2015::phu-luc-1-huong-dan-xu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::phu-luc-2-lieu-khang-sinh-trong-du-phong-phau-thuat",
+      "khang-sinh-2015::phu-luc-3-lua-chon-khang-sinh-du-phong-phau-thuat",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "flucloxacilin": [
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::viem-noi-tam-mac-nhiem-khuan",
+      "khang-sinh-2015::viem-to-chuc-hoc-mat"
+    ],
+    "fosfomycin": [
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "rifampicin": [
+      "khang-sinh-2015::co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+      "khang-sinh-2015::khai-niem-duoc-ong-hoc-duoc-luc-hoc-pk-pd-va-ung-dung",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::viem-xuong-tuy-nhiem-khuan",
+      "khang-sinh-2015::viem-mang-nao-mu",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "amphotericin-b": [
+      "khang-sinh-2015::khai-niem-duoc-ong-hoc-duoc-luc-hoc-pk-pd-va-ung-dung",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::viem-mu-noi-nhan-sau-vet-thuong-xuyen-nhan-cau"
+    ],
+    "netilmicin": [
+      "khang-sinh-2015::khai-niem-duoc-ong-hoc-duoc-luc-hoc-pk-pd-va-ung-dung",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "chloramphenicol": [
+      "khang-sinh-2015::su-e-khang-khang-sinh-cua-vi-khuan",
+      "khang-sinh-2015::su-dung-khang-sinh-ieu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::benh-ha-cam",
+      "khang-sinh-2015::viem-mang-nao-mu",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "oseltamivir": [
+      "khang-sinh-2015::viem-phe-quan-cap-o-nguoi-lon",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong"
+    ],
+    "piperacilin-tazobactam": [
+      "khang-sinh-2015::gian-phe-quan",
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::viem-phoi-benh-vien",
+      "khang-sinh-2015::tran-mu-mang-phoi",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::nhiem-khuan-uong-mat",
+      "khang-sinh-2015::ap-xe-gan-do-vi-khuan",
+      "khang-sinh-2015::viem-phuc-mac",
+      "khang-sinh-2015::viem-co-ap-xe-co-nhiem-khuan",
+      "khang-sinh-2015::suy-giam-mien-dich-giam-bach-cau-hat-trung-tinh-va-sau-"
+    ],
+    "benzylpenicilin-penicilin-g": [
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong"
+    ],
+    "ceftriaxone": [
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong",
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::viem-phuc-mac",
+      "khang-sinh-2015::viem-ket-mac-do-lau-cau",
+      "khang-sinh-2015::phu-luc-1-huong-dan-xu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::phu-luc-3-lua-chon-khang-sinh-du-phong-phau-thuat",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "gemifloxacin": [
+      "khang-sinh-2015::viem-phoi-mac-phai-o-cong-ong"
+    ],
+    "amoxicillin": [
+      "khang-sinh-2015::su-dung-khang-sinh-ieu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "cefuroxime": [
+      "khang-sinh-2015::su-dung-khang-sinh-ieu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "piperacillin": [
+      "khang-sinh-2015::viem-phoi-lien-quan-en-tho-may",
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "cefotaxime": [
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::viem-ket-mac-do-lau-cau",
+      "khang-sinh-2015::phu-luc-1-huong-dan-xu-tri-viem-phoi-cong-ong-o-tre-em",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "cefpirom": [
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan"
+    ],
+    "ceftazidime": [
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "metronidazole": [
+      "khang-sinh-2015::nhiem-khuan-huyet-va-soc-nhiem-khuan",
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "mupirocin": [
+      "khang-sinh-2015::nhot",
+      "khang-sinh-2015::viem-nang-long"
+    ],
+    "neomycin": [
+      "khang-sinh-2015::nhot",
+      "khang-sinh-2015::viem-nang-long",
+      "khang-sinh-2015::su-dung-khang-sinh-trong-nhan-khoa",
+      "khang-sinh-2015::viem-ket-mac-cap",
+      "khang-sinh-2015::viem-giac-mac-do-vi-khuan"
+    ],
+    "cefotiam": [
+      "khang-sinh-2015::nhiem-khuan-uong-mat"
+    ],
+    "spectinomycin": [
+      "khang-sinh-2015::viem-khop-nhiem-khuan",
+      "khang-sinh-2015::benh-lau",
+      "khang-sinh-2015::benh-ha-cam"
+    ],
+    "benzathin-penicilin-g": [
+      "khang-sinh-2015::benh-giang-mai"
+    ],
+    "cefixim": [
+      "khang-sinh-2015::benh-lau"
+    ],
+    "bacitracin": [
+      "khang-sinh-2015::su-dung-khang-sinh-trong-nhan-khoa",
+      "khang-sinh-2015::viem-ket-mac-do-lau-cau"
+    ],
+    "nitrofurantoin": [
+      "khang-sinh-2015::soi-than-tiet-nieu-nhiem-khuan",
+      "khang-sinh-2015::viem-bang-quang-cap"
+    ],
+    "ampicillin": [
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "bleomycin": [
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "cefamandol": [
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "cefepime": [
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "clavulanate": [
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "co-trimoxazole": [
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "doxycycline": [
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ],
+    "oxacillin": [
+      "khang-sinh-2015::phu-luc-4-huong-dan-tiem-truyen-mot-so-loai-khang-sinh"
+    ]
+  },
+  "priorityCatalog": {
+    "title": "DANH MỤC KHÁNG SINH ƯU TIÊN QUẢN LÝ TẠI BỆNH VIỆN",
+    "source": "QĐ 5631/QĐ-BYT ngày 31/12/2020 — Phụ lục 2",
+    "note": "Danh mục chính thức quản lý kháng sinh tại bệnh viện (708/QĐ-BYT không có phụ lục này)."
+  },
+  "priorityIds": [
+    "aciclovir",
+    "amikacin",
+    "amphotericin-b",
+    "anidulafungin",
+    "caspofungin",
+    "cefiderocol",
+    "ceftazidim-avibactam",
+    "ceftobiprol",
+    "ceftolozan-tazobactam",
+    "ciprofloxacin",
+    "colistin",
+    "dalbavancin",
+    "dalfopristin-quinupristin",
+    "doripenem",
+    "eravacyclin",
+    "ertapenem",
+    "fosfomycin",
+    "gentamicin",
+    "imipenem",
+    "isavuconazol",
+    "levofloxacin",
+    "linezolid",
+    "lomefloxacin",
+    "meropenem",
+    "micafungin",
+    "moxifloxacin",
+    "netilmicin",
+    "norfloxacin",
+    "ofloxacin",
+    "omadacyclin",
+    "oritavancin",
+    "pefloxacin",
+    "plazomicin",
+    "posaconazol",
+    "sparfloxacin",
+    "tedizolid",
+    "teicoplanin",
+    "telavancin",
+    "tigecyclin",
+    "tobramycin",
+    "valganciclovir",
+    "vancomycin",
+    "voriconazol"
+  ]
+}
