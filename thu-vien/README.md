@@ -1,6 +1,21 @@
 # Thư viện tra cứu (TĐYT Phương Châu)
 
-Thư mục này chứa **Dược thư Phương Châu** (file chính: `index.html`) và tài nguyên kèm theo (`chandoan-html/`, `pdfs/`, …).
+Thư mục này là bản **module THƯ VIỆN** trong CDSS, đồng bộ từ Desktop:
+
+`C:\Users\admin\Desktop\Thu vien\Dược thư Phương Châu - CHỈ MỞ FILE NÀY.html`
+
+File chính host web: `index.html` (bản sao file trên). Kèm `chandoan-html/`, `pdfs/`, `Nghi dinh 90 2026.html`.
+
+## Cập nhật từ Desktop
+
+```powershell
+cd "g:\My Drive\App script\Dinh duong\thu-vien"
+powershell -ExecutionPolicy Bypass -File .\sync-from-desktop.ps1
+cd ..
+git add thu-vien
+git commit -m "Cap nhat thu vien tu Desktop"
+git push origin main
+```
 
 ## Dùng trong CDSS
 
