@@ -24,3 +24,6 @@ dist/
 
 # Logs
 *.log
+
+# Node (clasp dev)
+node_modules/

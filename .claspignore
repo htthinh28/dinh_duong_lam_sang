@@ -3,3 +3,16 @@ thu-vien/
 thu-vien/**
 **/*.mjs
 **/chandoan-html/**
+
+# Dev / CI
+node_modules/
+package.json
+package-lock.json
+.github/
+android-webview/
+**/.git/**
+**/.gitignore
+**/.cursor/**
+**/*.md
+**/*.b64.txt
+**/*.ps1

@@ -1,0 +1,44 @@
+name: Push to Apps Script
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'js.html'
+      - 'css.html'
+      - 'Mã.js'
+      - 'logoB64.html'
+      - 'appsscript.json'
+      - '.claspignore'
+      - '.github/workflows/clasp-push.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  clasp-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install clasp
+        run: npm install -g @google/clasp
+
+      - name: Configure clasp credentials
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          if [ -z "$CLASPRC_JSON" ]; then
+            echo "::error::Thiếu secret CLASPRC_JSON. Chạy clasp login trên máy local, copy nội dung ~/.clasprc.json vào GitHub Secrets."
+            exit 1
+          fi
+          echo "$CLASPRC_JSON" > ~/.clasprc.json
+
+      - name: Push to Apps Script
+        run: clasp push -f
