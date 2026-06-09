@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CDSS Dinh dưỡng lâm sàng</string>
+    <string name="offline_message">Khong co ket noi mang. Vui long kiem tra Internet va mo lai ung dung.</string>
+    <string name="retry">Thu lai</string>
+    <string name="refresh_page">Tải lại trang</string>
+</resources>

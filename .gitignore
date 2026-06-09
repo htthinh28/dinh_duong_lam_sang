@@ -1,0 +1,26 @@
+# Cursor / IDE
+.cursor/
+.idea/
+*.iml
+
+# Android build & secrets
+android-webview/.gradle/
+android-webview/**/build/
+android-webview/local.properties
+android-webview/keystore.properties
+android-webview/*.jks
+android-webview/*.keystore
+android-webview/tools/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Build output
+dist/
+*.apk
+*.aab
+
+# Logs
+*.log
