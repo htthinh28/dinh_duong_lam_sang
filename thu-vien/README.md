@@ -2,9 +2,9 @@
 
 Thư mục này là bản **module THƯ VIỆN** trong CDSS, đồng bộ từ Desktop:
 
-`C:\Users\admin\Desktop\Thu vien\Dược thư Phương Châu - CHỈ MỞ FILE NÀY.html`
+`C:\Users\admin\Desktop\Thu vien\index thu vien.txt` (ưu tiên) hoặc file HTML lớn trong cùng thư mục.
 
-File chính host web: `index.html` (bản sao file trên). Kèm `chandoan-html/`, `pdfs/`, `Nghi dinh 90 2026.html`.
+File chính host web: `index.html` (đồng bộ từ `index thu vien.txt`). Kèm `chandoan-html/`, `pdfs/`, `Nghi dinh 90 2026.html`.
 
 ## Cập nhật từ Desktop
 

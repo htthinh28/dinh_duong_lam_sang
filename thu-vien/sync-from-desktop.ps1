@@ -7,11 +7,16 @@ if (-not (Test-Path -LiteralPath $src)) {
     throw "Khong tim thay: $src"
 }
 
-$main = Get-ChildItem -LiteralPath $src -File -Filter '*.html' |
-    Where-Object { $_.Length -gt 1MB } |
-    Sort-Object Length -Descending |
-    Select-Object -First 1
-if (-not $main) { throw 'Khong tim thay file HTML chinh tren Desktop.' }
+$indexTxt = Join-Path $src 'index thu vien.txt'
+if (Test-Path -LiteralPath $indexTxt) {
+    $main = Get-Item -LiteralPath $indexTxt
+} else {
+    $main = Get-ChildItem -LiteralPath $src -File -Filter '*.html' |
+        Where-Object { $_.Length -gt 1MB } |
+        Sort-Object Length -Descending |
+        Select-Object -First 1
+}
+if (-not $main) { throw 'Khong tim thay index thu vien.txt hoac file HTML chinh tren Desktop.' }
 
 function Sync-Dir($name) {
     $from = Join-Path $src $name
@@ -31,7 +36,11 @@ if (Test-Path -LiteralPath $nd90) {
 }
 
 Copy-Item -LiteralPath $main.FullName -Destination (Join-Path $dst 'index.html') -Force
-Copy-Item -LiteralPath $main.FullName -Destination (Join-Path $dst $main.Name) -Force
+if ($main.Extension -ieq '.txt') {
+    Copy-Item -LiteralPath $main.FullName -Destination (Join-Path $dst 'index-thu-vien-source.txt') -Force
+} else {
+    Copy-Item -LiteralPath $main.FullName -Destination (Join-Path $dst $main.Name) -Force
+}
 
 $chan = Join-Path $dst 'chandoan-html'
 Get-ChildItem -LiteralPath $chan -Filter '*.js' -ErrorAction SilentlyContinue | ForEach-Object {
@@ -40,7 +49,8 @@ Get-ChildItem -LiteralPath $chan -Filter '*.js' -ErrorAction SilentlyContinue | 
     Move-Item -LiteralPath $_.FullName -Destination $mjs -Force
 }
 
-foreach ($html in @('index.html', $main.Name)) {
+$extraHtml = if ($main.Extension -ieq '.txt') { 'index-thu-vien-source.txt' } else { $main.Name }
+foreach ($html in @('index.html', $extraHtml)) {
     $path = Join-Path $dst $html
     if (-not (Test-Path -LiteralPath $path)) { continue }
     $text = [System.IO.File]::ReadAllText($path)

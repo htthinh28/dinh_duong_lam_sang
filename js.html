@@ -5968,7 +5968,8 @@ function loadThuVienFrame(forceReload) {
         loading.innerHTML = '<i class="fas fa-triangle-exclamation fa-2x mb-3 d-block text-danger"></i>Không tải được thư viện. Thử <button type="button" class="btn btn-sm btn-primary" onclick="openThuVienInNewTab()">mở tab mới</button>.';
       }
     };
-    frame.src = url;
+    const bust = forceReload ? ((url.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now()) : '';
+    frame.src = url + bust;
   };
   if (THU_VIEN_EMBED_URL && !forceReload) {
     applyUrl(THU_VIEN_EMBED_URL);
