@@ -1,0 +1,31 @@
+# Đẩy thu-vien/ lên nhánh gh-pages (Settings → Pages → branch gh-pages / root)
+name: Deploy thu-vien to gh-pages branch
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'thu-vien/**'
+      - '.github/workflows/deploy-thu-vien-gh-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gh-pages-thu-vien
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to gh-pages branch
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: thu-vien
+          branch: gh-pages
+          clean: true
+          commit-message: 'Deploy thu-vien static site'

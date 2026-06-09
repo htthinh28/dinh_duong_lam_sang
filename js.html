@@ -5902,6 +5902,20 @@ const THU_VIEN_DEFAULT_URLS = [
 ];
 const THU_VIEN_LOAD_TIMEOUT_MS = 90000;
 const THU_VIEN_PROBE_TIMEOUT_MS = 12000;
+const THU_VIEN_READY_TIMEOUT_MS = 60000;
+let thuVienPendingReady = null;
+
+window.addEventListener('message', (ev) => {
+  if (!ev.data || ev.data.type !== 'thuVienAppReady') return;
+  const frame = document.getElementById('thuVienFrame');
+  if (!frame || !frame.contentWindow || ev.source !== frame.contentWindow) return;
+  frame.dataset.appReady = '1';
+  if (thuVienPendingReady) {
+    clearTimeout(thuVienPendingReady.timer);
+    thuVienPendingReady.resolve();
+    thuVienPendingReady = null;
+  }
+});
 
 function mergeThuVienUrlList(serverUrls) {
   const out = [];
@@ -5995,18 +6009,44 @@ function loadThuVienFrame(forceReload) {
   if (!frame) return;
 
   const showLoadError = (tried) => {
+    THU_VIEN_EMBED_URL = '';
+    frame.removeAttribute('data-loaded');
+    frame.removeAttribute('data-app-ready');
+    frame.src = 'about:blank';
     if (!loading) return;
     loading.classList.remove('d-none');
     loading.innerHTML =
+      '<div class="thu-vien-error-panel p-3 p-md-4">' +
       '<i class="fas fa-triangle-exclamation fa-2x mb-3 d-block text-danger"></i>' +
-      '<p class="mb-2 fw-semibold">Không tải được thư viện từ máy chủ.</p>' +
-      '<p class="small text-muted mb-2">Nguyên nhân thường gặp: <strong>GitHub Pages chưa bật</strong> hoặc workflow deploy chưa chạy thành công. File thư viện ~31MB nên không dùng được jsDelivr (giới hạn 20MB).</p>' +
-      '<p class="small text-muted mb-2">Cách khắc phục: GitHub → Settings → Pages → Source: <strong>GitHub Actions</strong>, rồi chạy workflow <code>Deploy Thu vien to GitHub Pages</code>. Hoặc đặt URL host khác trong Sheet <code>SYS_CONFIG</code> → <code>THU_VIEN_URL</code>.</p>' +
-      '<p class="small text-muted mb-3">Đã thử: ' + (tried || []).map((u) => '<code class="d-block text-break">' + u + '</code>').join('') + '</p>' +
-      '<button type="button" class="btn btn-sm btn-primary me-2" onclick="reloadThuVienFrame(true)"><i class="fas fa-rotate-right"></i> Thử lại</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-primary" onclick="openThuVienInNewTab()"><i class="fas fa-up-right-from-square"></i> Mở tab mới</button>';
+      '<p class="mb-2 fw-semibold text-dark">Chưa tải được Thư viện tra cứu</p>' +
+      '<p class="small text-secondary mb-2">Máy chủ thư viện chưa sẵn sàng (GitHub Pages trả 404). File ~31MB cần host riêng — không dùng được jsDelivr.</p>' +
+      '<p class="small text-secondary mb-3">Quản trị viên: GitHub → <strong>Settings → Pages</strong> → nhánh <strong>gh-pages</strong> / thư mục <strong>/ (root)</strong>. Hoặc đặt <code>THU_VIEN_URL</code> trong Sheet SYS_CONFIG.</p>' +
+      ((tried && tried.length) ? '<p class="small text-muted mb-3">Đã thử: ' + tried.map((u) => '<code class="d-block text-break">' + u + '</code>').join('') + '</p>' : '') +
+      '<div class="d-flex flex-wrap gap-2 justify-content-center">' +
+      '<button type="button" class="btn btn-sm btn-primary" onclick="reloadThuVienFrame(true)"><i class="fas fa-rotate-right"></i> Thử lại</button>' +
+      '<button type="button" class="btn btn-sm btn-outline-primary" onclick="openThuVienInNewTab()"><i class="fas fa-up-right-from-square"></i> Mở tab mới</button>' +
+      '</div></div>';
     frame.classList.add('d-none');
   };
+
+  const waitThuVienAppReady = () => new Promise((resolve, reject) => {
+    if (frame.dataset.appReady === '1') {
+      resolve();
+      return;
+    }
+    const timer = setTimeout(() => {
+      thuVienPendingReady = null;
+      reject(new Error('ready-timeout'));
+    }, THU_VIEN_READY_TIMEOUT_MS);
+    thuVienPendingReady = {
+      timer,
+      resolve: () => {
+        clearTimeout(timer);
+        thuVienPendingReady = null;
+        resolve();
+      }
+    };
+  });
 
   const tryUrlAt = (urls, index, bust) => {
     if (!urls || index >= urls.length) {
@@ -6031,12 +6071,28 @@ function loadThuVienFrame(forceReload) {
 
     frame.onload = () => {
       if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      THU_VIEN_EMBED_URL = url;
-      frame.dataset.loaded = '1';
-      frame.classList.remove('d-none');
-      loading?.classList.add('d-none');
+      if (loading) {
+        loading.classList.remove('d-none');
+        loading.innerHTML =
+          '<i class="fas fa-spinner fa-spin fa-2x mb-3 d-block text-primary"></i>' +
+          'Đang mở thư viện (~30MB, có thể mất 1–2 phút)...';
+      }
+      waitThuVienAppReady().then(() => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        THU_VIEN_EMBED_URL = url;
+        frame.dataset.loaded = '1';
+        frame.classList.remove('d-none');
+        loading?.classList.add('d-none');
+      }).catch(() => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        frame.removeAttribute('data-app-ready');
+        frame.onload = null;
+        tryUrlAt(urls, index + 1, bust);
+      });
     };
     frame.onerror = () => {
       if (settled) return;
@@ -6053,8 +6109,12 @@ function loadThuVienFrame(forceReload) {
       showLoadError([]);
       return;
     }
-    if (forceReload) frame.removeAttribute('data-loaded');
-    if (frame.dataset.loaded === '1' && THU_VIEN_EMBED_URL && !forceReload) {
+    if (forceReload) {
+      frame.removeAttribute('data-loaded');
+      frame.removeAttribute('data-app-ready');
+      THU_VIEN_EMBED_URL = '';
+    }
+    if (frame.dataset.loaded === '1' && frame.dataset.appReady === '1' && THU_VIEN_EMBED_URL && !forceReload) {
       frame.classList.remove('d-none');
       loading?.classList.add('d-none');
       return;
@@ -6062,11 +6122,6 @@ function loadThuVienFrame(forceReload) {
     const bust = forceReload ? ((list[0].indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now()) : '';
     tryUrlAt(list, 0, bust);
   };
-
-  if (THU_VIEN_EMBED_URL && !forceReload) {
-    start([THU_VIEN_EMBED_URL]);
-    return;
-  }
 
   if (loading) {
     loading.classList.remove('d-none');
@@ -6081,8 +6136,7 @@ function loadThuVienFrame(forceReload) {
       start(reachable);
       return;
     }
-    // Vẫn thử iframe nếu HEAD bị chặn CORS nhưng trang vẫn tải được.
-    start(urls);
+    showLoadError(urls);
   });
 }
 
