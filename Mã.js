@@ -34,9 +34,9 @@ function getPublicWebAppUrl() {
 
 /** Danh sách URL host thư viện (thử lần lượt nếu iframe lỗi). */
 function getThuVienEmbedUrls() {
+  // index.html ~31MB — jsDelivr giới hạn 20MB/file, chỉ dùng GitHub Pages hoặc URL tùy chỉnh.
   var defaults = [
-    "https://htthinh28.github.io/dinh_duong_lam_sang/",
-    "https://cdn.jsdelivr.net/gh/htthinh28/dinh_duong_lam_sang@main/thu-vien/index.html"
+    "https://htthinh28.github.io/dinh_duong_lam_sang/"
   ];
   var urls = [];
   var custom = "";

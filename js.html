@@ -5896,11 +5896,57 @@ function initApp() {
 }
 
 let THU_VIEN_EMBED_URL = '';
-/** URL host thư viện — tải iframe ngay, không chờ google.script.run (tránh log warden BUSY/IDLE). */
+/** URL host thư viện (index.html ~31MB — cần GitHub Pages; jsDelivr giới hạn 20MB/file). */
 const THU_VIEN_DEFAULT_URLS = [
-  'https://htthinh28.github.io/dinh_duong_lam_sang/',
-  'https://cdn.jsdelivr.net/gh/htthinh28/dinh_duong_lam_sang@main/thu-vien/index.html'
+  'https://htthinh28.github.io/dinh_duong_lam_sang/'
 ];
+const THU_VIEN_LOAD_TIMEOUT_MS = 90000;
+const THU_VIEN_PROBE_TIMEOUT_MS = 12000;
+
+function mergeThuVienUrlList(serverUrls) {
+  const out = [];
+  (Array.isArray(serverUrls) ? serverUrls : []).concat(THU_VIEN_DEFAULT_URLS).forEach((u) => {
+    const url = String(u || '').trim();
+    if (url && out.indexOf(url) < 0) out.push(url);
+  });
+  return out;
+}
+
+function fetchThuVienUrlsFromServer() {
+  return new Promise((resolve) => {
+    if (typeof google === 'undefined' || !google.script || !google.script.run) {
+      resolve(THU_VIEN_DEFAULT_URLS);
+      return;
+    }
+    google.script.run
+      .withSuccessHandler((urls) => resolve(mergeThuVienUrlList(urls)))
+      .withFailureHandler(() => resolve(THU_VIEN_DEFAULT_URLS))
+      .getThuVienEmbedUrls();
+  });
+}
+
+async function probeThuVienUrl(url) {
+  const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = ctrl ? setTimeout(() => ctrl.abort(), THU_VIEN_PROBE_TIMEOUT_MS) : null;
+  try {
+    const res = await fetch(url, { method: 'HEAD', cache: 'no-store', signal: ctrl ? ctrl.signal : undefined });
+    if (!res.ok) return false;
+    const ct = (res.headers.get('content-type') || '').toLowerCase();
+    return !ct || ct.indexOf('text/html') >= 0;
+  } catch (e) {
+    return false;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+async function filterReachableThuVienUrls(urls) {
+  const reachable = [];
+  for (let i = 0; i < urls.length; i++) {
+    if (await probeThuVienUrl(urls[i])) reachable.push(urls[i]);
+  }
+  return reachable;
+}
 
 /** Sidebar: Dinh dưỡng / Quản trị / Thư viện */
 function setStaffRootNav(root) {
@@ -5953,7 +5999,9 @@ function loadThuVienFrame(forceReload) {
     loading.classList.remove('d-none');
     loading.innerHTML =
       '<i class="fas fa-triangle-exclamation fa-2x mb-3 d-block text-danger"></i>' +
-      '<p class="mb-2">Không tải được thư viện từ máy chủ.</p>' +
+      '<p class="mb-2 fw-semibold">Không tải được thư viện từ máy chủ.</p>' +
+      '<p class="small text-muted mb-2">Nguyên nhân thường gặp: <strong>GitHub Pages chưa bật</strong> hoặc workflow deploy chưa chạy thành công. File thư viện ~31MB nên không dùng được jsDelivr (giới hạn 20MB).</p>' +
+      '<p class="small text-muted mb-2">Cách khắc phục: GitHub → Settings → Pages → Source: <strong>GitHub Actions</strong>, rồi chạy workflow <code>Deploy Thu vien to GitHub Pages</code>. Hoặc đặt URL host khác trong Sheet <code>SYS_CONFIG</code> → <code>THU_VIEN_URL</code>.</p>' +
       '<p class="small text-muted mb-3">Đã thử: ' + (tried || []).map((u) => '<code class="d-block text-break">' + u + '</code>').join('') + '</p>' +
       '<button type="button" class="btn btn-sm btn-primary me-2" onclick="reloadThuVienFrame(true)"><i class="fas fa-rotate-right"></i> Thử lại</button>' +
       '<button type="button" class="btn btn-sm btn-outline-primary" onclick="openThuVienInNewTab()"><i class="fas fa-up-right-from-square"></i> Mở tab mới</button>';
@@ -5979,7 +6027,7 @@ function loadThuVienFrame(forceReload) {
       settled = true;
       frame.onload = null;
       tryUrlAt(urls, index + 1, bust);
-    }, 25000);
+    }, THU_VIEN_LOAD_TIMEOUT_MS);
 
     frame.onload = () => {
       if (settled) return;
@@ -6019,8 +6067,23 @@ function loadThuVienFrame(forceReload) {
     start([THU_VIEN_EMBED_URL]);
     return;
   }
-  // Tải iframe ngay bằng URL mặc định; không chặn chờ server (log warden IDLE/BUSY là bình thường).
-  start(THU_VIEN_DEFAULT_URLS);
+
+  if (loading) {
+    loading.classList.remove('d-none');
+    loading.innerHTML =
+      '<i class="fas fa-spinner fa-spin fa-2x mb-3 d-block text-primary"></i>' +
+      'Đang kiểm tra máy chủ thư viện...';
+  }
+
+  fetchThuVienUrlsFromServer().then(async (urls) => {
+    const reachable = await filterReachableThuVienUrls(urls);
+    if (reachable.length) {
+      start(reachable);
+      return;
+    }
+    // Vẫn thử iframe nếu HEAD bị chặn CORS nhưng trang vẫn tải được.
+    start(urls);
+  });
 }
 
 function reloadThuVienFrame(force) {

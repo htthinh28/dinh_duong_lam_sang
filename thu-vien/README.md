@@ -32,3 +32,11 @@ Có thể đổi trong Google Sheet → sheet **SYS_CONFIG** → key `THU_VIEN_U
 3. URL sau deploy: `https://htthinh28.github.io/dinh_duong_lam_sang/`
 
 **Lưu ý:** File `index.html` ~30MB; lần tải đầu có thể chậm. Thư mục này **không** được `clasp push` (xem `.claspignore`). Dữ liệu `chandoan-html/*.mjs` dùng đuôi `.mjs` (không phải `.js`) để tránh clasp đẩy nhầm lên Apps Script — gây lỗi `window is not defined`.
+
+## Khắc phục "Thư viện không hiển thị nội dung"
+
+1. **Bật GitHub Pages:** Repo → Settings → Pages → Source: **GitHub Actions** (bắt buộc).
+2. **Chạy deploy:** Actions → `Deploy Thu vien to GitHub Pages` → Run workflow (hoặc push thay đổi trong `thu-vien/`).
+3. **Kiểm tra URL:** Mở `https://htthinh28.github.io/dinh_duong_lam_sang/` — phải thấy giao diện thư viện, không phải trang 404 GitHub.
+4. **Không dùng jsDelivr** cho `index.html` (~31MB vượt giới hạn 20MB của CDN).
+5. **URL tùy chỉnh:** Sheet `SYS_CONFIG` → `THU_VIEN_URL` (host phải cho phép nhúng iframe và phục vụ cả thư mục `chandoan-html/`).
