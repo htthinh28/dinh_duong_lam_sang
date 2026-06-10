@@ -27,3 +27,4 @@ dist/
 
 # Node (clasp dev)
 node_modules/
+.clasprc.json
