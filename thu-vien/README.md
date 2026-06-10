@@ -33,6 +33,8 @@ Có thể đổi trong Google Sheet → sheet **SYS_CONFIG** → key `THU_VIEN_U
 2. GitHub → **Settings** → **Pages** → Source: **Deploy from a branch** → Branch: **gh-pages** / **/ (root)** → Save.
 3. URL: `https://htthinh28.github.io/dinh_duong_lam_sang/`
 
+**CDN dự phòng (không cần bật Pages):** `https://cdn.statically.io/gh/htthinh28/dinh_duong_lam_sang@gh-pages/index.html` — CDSS dùng URL này mặc định.
+
 **Cách 2:** GitHub Actions artifact — workflow `deploy-thu-vien-pages.yml` (cần bật Pages → Source: GitHub Actions).
 
 **Lưu ý:** File `index.html` ~30MB; lần tải đầu có thể chậm. Thư mục này **không** được `clasp push` (xem `.claspignore`). Dữ liệu `chandoan-html/*.mjs` dùng đuôi `.mjs` (không phải `.js`) để tránh clasp đẩy nhầm lên Apps Script — gây lỗi `window is not defined`.

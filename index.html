@@ -2988,8 +2988,12 @@
       </div>
       <div id="thuVienFrameWrap" class="cdss-glass rounded-4 border border-white border-opacity-25 shadow-lg overflow-hidden position-relative">
         <div id="thuVienFrameLoading" class="text-center text-muted py-5">
-          <i class="fas fa-spinner fa-spin fa-2x mb-3 d-block text-primary"></i>
-          Đang tải thư viện tra cứu...
+          <div id="thuVienStaticShell" class="thu-vien-static-shell">
+            <i class="fas fa-book-medical fa-2x mb-3 d-block text-primary"></i>
+            <p class="fw-bold text-dark mb-2">Đang mở Thư viện tra cứu…</p>
+            <p class="small text-secondary mb-0">Dược thư · ICD-10 · JCI · Kháng sinh · NĐ 90</p>
+            <p class="small text-muted mt-2 mb-0">Lần đầu có thể mất 1–2 phút (dữ liệu ~30MB).</p>
+          </div>
         </div>
         <iframe id="thuVienFrame" class="d-none" title="Thư viện tra cứu TĐYT Phương Châu"
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals allow-popups-to-escape-sandbox"></iframe>
@@ -3197,6 +3201,25 @@
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   
   <?!= include('js'); ?>
+  <script>
+  (function () {
+    var cdn = '<?= THU_VIEN_CDN_URL ?>';
+    if (typeof THU_VIEN_DEFAULT_URLS !== 'undefined' && THU_VIEN_DEFAULT_URLS.indexOf(cdn) < 0) {
+      THU_VIEN_DEFAULT_URLS.unshift(cdn);
+    }
+    var origNav = window.setStaffRootNav;
+    if (typeof origNav === 'function') {
+      window.setStaffRootNav = function (root) {
+        origNav(root);
+        if (root === 'tv') {
+          var loading = document.getElementById('thuVienFrameLoading');
+          var shell = document.getElementById('thuVienStaticShell');
+          if (loading && shell) loading.classList.remove('d-none');
+        }
+      };
+    }
+  })();
+  </script>
 
 </body>
 </html>

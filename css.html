@@ -140,7 +140,8 @@
     padding: 1.25rem;
     background: rgba(255, 255, 255, 0.92);
   }
-  .thu-vien-error-panel {
+  .thu-vien-error-panel,
+  .thu-vien-static-shell {
     max-width: 36rem;
     margin: 0 auto;
     text-align: center;
@@ -148,6 +149,12 @@
     border-radius: 1rem;
     border: 1px solid rgba(216, 27, 96, 0.15);
     box-shadow: 0 8px 24px rgba(31, 38, 135, 0.08);
+    padding: 1.25rem 1rem;
+  }
+  body[data-staff-root="tv"] #section-thu-vien-pack {
+    display: flex !important;
+    flex-direction: column;
+    min-height: calc(100dvh - 0.5rem);
   }
 
   /* Utility classes */

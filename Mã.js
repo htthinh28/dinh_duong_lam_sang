@@ -11,11 +11,17 @@
 // ============================================================================
 
 function doGet() {
-  return HtmlService.createTemplateFromFile('index')
-    .evaluate()
+  var tpl = HtmlService.createTemplateFromFile('index');
+  tpl.THU_VIEN_CDN_URL = getThuVienCdnUrl_();
+  return tpl.evaluate()
     .setTitle('CDSS — Hỗ trợ ra quyết định lâm sàng')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/** URL CDN thư viện (nhánh gh-pages — không cần bật GitHub Pages). */
+function getThuVienCdnUrl_() {
+  return "https://cdn.statically.io/gh/htthinh28/dinh_duong_lam_sang@gh-pages/index.html";
 }
 
 function include(filename) {
@@ -34,8 +40,8 @@ function getPublicWebAppUrl() {
 
 /** Danh sách URL host thư viện (thử lần lượt nếu iframe lỗi). */
 function getThuVienEmbedUrls() {
-  // index.html ~31MB — jsDelivr giới hạn 20MB/file, chỉ dùng GitHub Pages hoặc URL tùy chỉnh.
   var defaults = [
+    getThuVienCdnUrl_(),
     "https://htthinh28.github.io/dinh_duong_lam_sang/"
   ];
   var urls = [];
@@ -257,7 +263,7 @@ function setupDatabaseStructure(ss, options) {
     let s = ss.insertSheet("SYS_CONFIG");
     s.appendRow(["Key", "Value", "Description", "Type"]);
     s.appendRow(["HOSPITAL_NAME", "ỨNG DỤNG HỖ TRỢ RA QUYẾT ĐỊNH LÂM SÀNG (CDSS)", "Tên hiển thị", "TEXT"]);
-    s.appendRow(["THU_VIEN_URL", "https://htthinh28.github.io/dinh_duong_lam_sang/", "URL nhúng thư viện tra cứu", "TEXT"]);
+    s.appendRow(["THU_VIEN_URL", getThuVienCdnUrl_(), "URL nhúng thư viện tra cứu", "TEXT"]);
     s.appendRow(["MODULE_1_ACTIVE", "TRUE", "Bật module Tiếp nhận", "BOOLEAN"]);
     s.setFrozenRows(1);
   }
@@ -1843,6 +1849,27 @@ function quanTriLayQuyenCuaToi(email) {
   } catch (e) {
     return { error: "Không lấy được quyền: " + (e && e.message ? e.message : e) };
   }
+}
+
+/** Chạy 1 lần trong Trình chỉnh sửa Apps Script: cập nhật THU_VIEN_URL sang CDN gh-pages. */
+function fixThuVienUrlConfig() {
+  var ss = getDatabase();
+  var sheet = ss.getSheetByName("SYS_CONFIG");
+  if (!sheet) throw new Error("Không có sheet SYS_CONFIG");
+  var data = sheet.getDataRange().getValues();
+  var url = getThuVienCdnUrl_();
+  var found = false;
+  var i;
+  for (i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === "THU_VIEN_URL") {
+      sheet.getRange(i + 1, 2).setValue(url);
+      found = true;
+      break;
+    }
+  }
+  if (!found) sheet.appendRow(["THU_VIEN_URL", url, "URL nhúng thư viện tra cứu", "TEXT"]);
+  Logger.log("Đã đặt THU_VIEN_URL = " + url);
+  return url;
 }
 
 // sync 2026-06-09 thu-vien fix

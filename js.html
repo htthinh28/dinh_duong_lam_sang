@@ -5896,8 +5896,9 @@ function initApp() {
 }
 
 let THU_VIEN_EMBED_URL = '';
-/** URL host thư viện (index.html ~31MB — cần GitHub Pages; jsDelivr giới hạn 20MB/file). */
+/** URL host thư viện — CDN gh-pages (không cần bật GitHub Pages) rồi github.io. */
 const THU_VIEN_DEFAULT_URLS = [
+  'https://cdn.statically.io/gh/htthinh28/dinh_duong_lam_sang@gh-pages/index.html',
   'https://htthinh28.github.io/dinh_duong_lam_sang/'
 ];
 const THU_VIEN_LOAD_TIMEOUT_MS = 90000;
@@ -5946,7 +5947,7 @@ async function probeThuVienUrl(url) {
     const res = await fetch(url, { method: 'HEAD', cache: 'no-store', signal: ctrl ? ctrl.signal : undefined });
     if (!res.ok) return false;
     const ct = (res.headers.get('content-type') || '').toLowerCase();
-    return !ct || ct.indexOf('text/html') >= 0;
+    return !ct || ct.indexOf('text/html') >= 0 || ct.indexOf('text/plain') >= 0 || ct.indexOf('application/octet-stream') >= 0;
   } catch (e) {
     return false;
   } finally {
@@ -6027,6 +6028,7 @@ function loadThuVienFrame(forceReload) {
       '<button type="button" class="btn btn-sm btn-outline-primary" onclick="openThuVienInNewTab()"><i class="fas fa-up-right-from-square"></i> Mở tab mới</button>' +
       '</div></div>';
     frame.classList.add('d-none');
+    document.getElementById('thuVienStaticShell')?.classList.add('d-none');
   };
 
   const waitThuVienAppReady = () => new Promise((resolve, reject) => {
@@ -6085,6 +6087,7 @@ function loadThuVienFrame(forceReload) {
         frame.dataset.loaded = '1';
         frame.classList.remove('d-none');
         loading?.classList.add('d-none');
+        document.getElementById('thuVienStaticShell')?.classList.add('d-none');
       }).catch(() => {
         if (settled) return;
         settled = true;
