@@ -5936,6 +5936,81 @@ function escapeThuVienStatusText(text) {
   }[ch]));
 }
 
+function getThuVienSidebarRightPx() {
+  const sidebar = document.querySelector('.sidebar-container');
+  if (!sidebar) return 0;
+  const rect = sidebar.getBoundingClientRect();
+  return Math.max(0, Math.round(rect.right || rect.width || 0));
+}
+
+function hideThuVienMobileRescue() {
+  const rescue = document.getElementById('thuVienMobileRescue');
+  if (rescue) rescue.style.display = 'none';
+}
+
+function showThuVienMobileRescue(forceReload) {
+  const left = getThuVienSidebarRightPx();
+  let rescue = document.getElementById('thuVienMobileRescue');
+  if (!rescue) {
+    rescue = document.createElement('div');
+    rescue.id = 'thuVienMobileRescue';
+    rescue.innerHTML = `
+      <div class="thu-vien-mobile-rescue-head">
+        <div>
+          <div class="fw-bold text-primary"><i class="fas fa-book-medical me-1"></i> THƯ VIỆN</div>
+          <div class="small text-muted">Khung dự phòng mobile</div>
+        </div>
+        <div class="d-flex gap-1">
+          <button type="button" class="btn btn-sm btn-outline-primary" id="thuVienMobileRescueReload"><i class="fas fa-rotate-right"></i></button>
+          <button type="button" class="btn btn-sm btn-primary" id="thuVienMobileRescueOpen"><i class="fas fa-up-right-from-square"></i></button>
+        </div>
+      </div>
+      <div id="thuVienMobileRescueStatus" class="small text-dark px-2 py-2 border-bottom">
+        <i class="fas fa-spinner fa-spin me-1 text-primary"></i> Đang mở Thư viện...
+      </div>
+      <iframe id="thuVienMobileRescueFrame" title="Thư viện tra cứu dự phòng"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals allow-popups-to-escape-sandbox"></iframe>
+    `;
+    document.body.appendChild(rescue);
+    document.getElementById('thuVienMobileRescueReload')?.addEventListener('click', () => showThuVienMobileRescue(true));
+    document.getElementById('thuVienMobileRescueOpen')?.addEventListener('click', openThuVienInNewTab);
+  }
+  rescue.style.cssText = [
+    'position:fixed',
+    'top:0',
+    'right:0',
+    'bottom:0',
+    'left:' + left + 'px',
+    'z-index:1200',
+    'display:flex',
+    'flex-direction:column',
+    'background:#fff',
+    'box-shadow:-8px 0 24px rgba(31,38,135,.12)'
+  ].join(';');
+  const head = rescue.querySelector('.thu-vien-mobile-rescue-head');
+  if (head) {
+    head.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.75rem;border-bottom:1px solid rgba(216,27,96,.12);background:#fff';
+  }
+  const frame = document.getElementById('thuVienMobileRescueFrame');
+  const status = document.getElementById('thuVienMobileRescueStatus');
+  if (frame) {
+    frame.style.cssText = 'display:block;width:100%;border:0;flex:1 1 auto;min-height:0;background:#fff';
+    frame.onload = () => {
+      if (status) status.innerHTML = '<i class="fas fa-circle-check text-success me-1"></i> Đã mở khung Thư viện. Nếu nội dung vẫn trắng, bấm <strong>Mở tab mới</strong>.';
+    };
+    frame.onerror = () => {
+      if (status) status.innerHTML = '<i class="fas fa-triangle-exclamation text-danger me-1"></i> Không tải được iframe. Bấm <strong>Mở tab mới</strong>.';
+    };
+    if (forceReload || !frame.getAttribute('src')) {
+      const url = THU_VIEN_EMBED_URL || THU_VIEN_DEFAULT_URLS[0];
+      const bust = forceReload ? ((url.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now()) : '';
+      if (status) status.innerHTML = '<i class="fas fa-spinner fa-spin me-1 text-primary"></i> Đang tải Thư viện từ CDN...';
+      frame.src = url + bust;
+      THU_VIEN_EMBED_URL = url;
+    }
+  }
+}
+
 function mergeThuVienUrlList(serverUrls) {
   const out = [];
   (Array.isArray(serverUrls) ? serverUrls : []).concat(THU_VIEN_DEFAULT_URLS).forEach((u) => {
@@ -6078,6 +6153,7 @@ function setStaffRootNav(root) {
   const hasStoredSession = !!sessionStorage.getItem('PC_USER_SESSION');
   const hasCurrentUser = typeof CURRENT_USER !== 'undefined' && CURRENT_USER && CURRENT_USER.email;
   if (!hasStoredSession && !hasCurrentUser) return;
+  if (root !== 'tv') hideThuVienMobileRescue();
   const dd = document.getElementById('section-dd-pack');
   const tv = root === 'tv' ? ensureThuVienPackExists() : document.getElementById('section-thu-vien-pack');
   ['sidebarNavDd', 'sidebarNavQt', 'sidebarNavTv'].forEach((id) => document.getElementById(id)?.classList.remove('active'));
@@ -6103,6 +6179,7 @@ function setStaffRootNav(root) {
   if (root === 'tv') {
     document.getElementById('sidebarNavTv')?.classList.add('active');
     ensureThuVienShellVisible();
+    showThuVienMobileRescue(false);
     scheduleThuVienShellRescue();
     loadThuVienFrame();
   }
