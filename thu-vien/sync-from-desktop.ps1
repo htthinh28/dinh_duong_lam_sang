@@ -50,17 +50,60 @@ Get-ChildItem -LiteralPath $chan -Filter '*.js' -ErrorAction SilentlyContinue | 
 }
 
 $extraHtml = if ($main.Extension -ieq '.txt') { 'index-thu-vien-source.txt' } else { $main.Name }
-foreach ($html in @('index.html', $extraHtml)) {
-    $path = Join-Path $dst $html
-    if (-not (Test-Path -LiteralPath $path)) { continue }
+
+function Patch-ThuVienIframeIntegration($path) {
+    if (-not (Test-Path -LiteralPath $path)) { return }
     $text = [System.IO.File]::ReadAllText($path)
+    $orig = $text
+
     $text = $text.Replace('chandoan-html/khang-sinh-2015-meta.js', 'chandoan-html/khang-sinh-2015-meta.mjs')
     $text = $text.Replace('chandoan-html/khang-sinh-2015.js', 'chandoan-html/khang-sinh-2015.mjs')
     $text = $text.Replace('chandoan-html/vi-sinh-lam-sang-2025-meta.js', 'chandoan-html/vi-sinh-lam-sang-2025-meta.mjs')
     $text = $text.Replace('chandoan-html/vi-sinh-lam-sang-2025.js', 'chandoan-html/vi-sinh-lam-sang-2025.mjs')
     $text = $text.Replace('chandoan-html/khang-sinh-drug-filters.js', 'chandoan-html/khang-sinh-drug-filters.mjs')
     $text = $text.Replace('vi-sinh-lam-sang-2025-meta.js', 'vi-sinh-lam-sang-2025-meta.mjs')
-    [System.IO.File]::WriteAllText($path, $text)
+
+    if ($text -notmatch 'thuVienAppReady') {
+        $readyBlock = @'
+            try {
+                window.parent.postMessage({ type: 'thuVienAppReady', v: 1 }, '*');
+            } catch (e) { /* nhúng iframe */ }
+'@
+        $text = [regex]::Replace(
+            $text,
+            "(\s*document\.documentElement\.removeAttribute\('data-restore-section'\);\s*finishAppScreenRestore\(saved\);)",
+            "`$1`r`n$readyBlock",
+            1
+        )
+    }
+
+    if ($text -notmatch 'Đang kiểm tra dữ liệu cục bộ' -and $text -match 'async function initDatabase\(\)') {
+        $loadingBlock = @'
+        async function initDatabase() {
+            if (isEmbeddedApp()) {
+                showLoadingOverlay(
+                    'Đang mở Dược Thư...',
+                    'Đang kiểm tra dữ liệu cục bộ và chuẩn bị dữ liệu nhúng. Vui lòng đợi vài giây.'
+                );
+            }
+            const cached = await safeIdbGet();
+'@
+        $text = [regex]::Replace(
+            $text,
+            "        async function initDatabase\(\) \{\s*const cached = await safeIdbGet\(\);",
+            $loadingBlock,
+            1
+        )
+    }
+
+    if ($text -ne $orig) {
+        [System.IO.File]::WriteAllText($path, $text)
+    }
+}
+
+foreach ($html in @('index.html', $extraHtml)) {
+    $path = Join-Path $dst $html
+    Patch-ThuVienIframeIntegration $path
 }
 
 Write-Host "Da dong bo thu vien tu Desktop -> $dst"

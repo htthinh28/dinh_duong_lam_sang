@@ -5901,14 +5901,23 @@ const THU_VIEN_DEFAULT_URLS = [
   'https://cdn.statically.io/gh/htthinh28/dinh_duong_lam_sang@gh-pages/index.html',
   'https://htthinh28.github.io/dinh_duong_lam_sang/'
 ];
-const THU_VIEN_LOAD_TIMEOUT_MS = 120000;
-const THU_VIEN_READY_TIMEOUT_MS = 120000;
+const THU_VIEN_LOAD_TIMEOUT_MS = 300000;
+const THU_VIEN_READY_TIMEOUT_MS = 300000;
 let thuVienPendingReady = null;
 
 window.addEventListener('message', (ev) => {
-  if (!ev.data || ev.data.type !== 'thuVienAppReady') return;
+  if (!ev.data || !ev.data.type) return;
   const frame = document.getElementById('thuVienFrame');
   if (!frame || !frame.contentWindow || ev.source !== frame.contentWindow) return;
+  if (ev.data.type === 'thuVienAppLoading') {
+    const msg = String(ev.data.message || 'Đang tải thư viện...');
+    setThuVienStatus(
+      '<i class="fas fa-spinner fa-spin me-1 text-primary"></i> ' +
+      escapeThuVienStatusText(msg)
+    );
+    return;
+  }
+  if (ev.data.type !== 'thuVienAppReady') return;
   frame.dataset.appReady = '1';
   if (thuVienPendingReady) {
     clearTimeout(thuVienPendingReady.timer);
@@ -5916,6 +5925,16 @@ window.addEventListener('message', (ev) => {
     thuVienPendingReady = null;
   }
 });
+
+function escapeThuVienStatusText(text) {
+  return String(text || '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[ch]));
+}
 
 function mergeThuVienUrlList(serverUrls) {
   const out = [];
@@ -6057,7 +6076,7 @@ function loadThuVienFrame(forceReload) {
       if (settled) return;
       setThuVienStatus(
         '<i class="fas fa-spinner fa-spin me-1 text-primary"></i> ' +
-        'Đang mở dữ liệu (~30MB, có thể mất 1–2 phút)…'
+        'Đang khởi tạo thư viện và dữ liệu nhúng (~30MB, có thể mất vài phút trên WebView)…'
       );
       waitThuVienAppReady().then(() => {
         if (settled) return;
