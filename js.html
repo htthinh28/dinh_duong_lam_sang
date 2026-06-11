@@ -5976,10 +5976,62 @@ function hideThuVienOverlay() {
   overlay?.classList.add('d-none');
 }
 
+function buildThuVienShellMarkup() {
+  return `
+    <div class="cdss-glass rounded-4 p-2 p-md-3 border border-white border-opacity-25 shadow-lg mb-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div>
+        <h5 class="text-primary fw-bold mb-0"><i class="fas fa-book-medical me-2"></i>THƯ VIỆN</h5>
+        <small class="text-muted">Dược thư · ICD-10 · JCI · Nghị định 90/2026 · Kháng sinh</small>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-sm btn-outline-primary" onclick="reloadThuVienFrame(true)" title="Tải lại thư viện">
+          <i class="fas fa-rotate-right"></i> Tải lại
+        </button>
+        <button type="button" class="btn btn-sm btn-primary" onclick="openThuVienInNewTab()" title="Mở thư viện trong tab mới">
+          <i class="fas fa-up-right-from-square"></i> Mở tab mới
+        </button>
+      </div>
+    </div>
+    <div id="thuVienFrameWrap" class="thu-vien-frame-wrap position-relative">
+      <iframe id="thuVienFrame" class="d-none" title="Thư viện tra cứu TĐYT Phương Châu"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals allow-popups-to-escape-sandbox"></iframe>
+      <div id="thuVienFrameLoading" class="thu-vien-overlay">
+        <div id="thuVienStaticShell" class="thu-vien-static-shell">
+          <i class="fas fa-book-medical fa-2x mb-3 d-block text-primary"></i>
+          <p class="fw-bold text-dark mb-2">Thư viện tra cứu</p>
+          <p class="small text-secondary mb-2">Dược thư · ICD-10 · JCI · Kháng sinh · NĐ 90</p>
+          <div id="thuVienStatusBox" class="small text-dark">
+            <i class="fas fa-spinner fa-spin me-1 text-primary"></i> Đang tải thư viện…
+          </div>
+          <p class="small text-muted mt-2 mb-0">Lần đầu có thể mất vài phút (dữ liệu ~30MB).</p>
+          <div class="d-flex flex-wrap gap-2 justify-content-center mt-3">
+            <button type="button" class="btn btn-sm btn-primary" onclick="reloadThuVienFrame(true)"><i class="fas fa-rotate-right"></i> Thử lại</button>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="openThuVienInNewTab()"><i class="fas fa-up-right-from-square"></i> Mở tab mới</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function ensureThuVienPackExists() {
+  let tv = document.getElementById('section-thu-vien-pack');
+  const main = document.querySelector('.main-content') || document.body;
+  if (!tv) {
+    tv = document.createElement('div');
+    tv.id = 'section-thu-vien-pack';
+    tv.className = 'd-print-none';
+    main.appendChild(tv);
+  }
+  if (!document.getElementById('thuVienFrame') || !document.getElementById('thuVienFrameLoading')) {
+    tv.innerHTML = buildThuVienShellMarkup();
+  }
+  return tv;
+}
+
 function ensureThuVienShellVisible() {
   const main = document.querySelector('.main-content');
   const dd = document.getElementById('section-dd-pack');
-  const tv = document.getElementById('section-thu-vien-pack');
+  const tv = ensureThuVienPackExists();
   const wrap = document.getElementById('thuVienFrameWrap');
   const overlay = document.getElementById('thuVienFrameLoading');
   const frame = document.getElementById('thuVienFrame');
@@ -6027,7 +6079,7 @@ function setStaffRootNav(root) {
   const hasCurrentUser = typeof CURRENT_USER !== 'undefined' && CURRENT_USER && CURRENT_USER.email;
   if (!hasStoredSession && !hasCurrentUser) return;
   const dd = document.getElementById('section-dd-pack');
-  const tv = document.getElementById('section-thu-vien-pack');
+  const tv = root === 'tv' ? ensureThuVienPackExists() : document.getElementById('section-thu-vien-pack');
   ['sidebarNavDd', 'sidebarNavQt', 'sidebarNavTv'].forEach((id) => document.getElementById(id)?.classList.remove('active'));
 
   dd?.classList.remove('d-none');
@@ -6057,7 +6109,7 @@ function setStaffRootNav(root) {
 }
 
 function loadThuVienFrame(forceReload) {
-  const pack = document.getElementById('section-thu-vien-pack');
+  const pack = ensureThuVienPackExists();
   const frame = document.getElementById('thuVienFrame');
   const loading = document.getElementById('thuVienFrameLoading');
   if (!pack) {
