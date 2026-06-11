@@ -5893,6 +5893,7 @@ function initApp() {
         updateIycfReferencePanel();
         updateMicroNutrientsFootnote();
     }, 0);
+    scheduleThuVienPreload();
 }
 
 let THU_VIEN_EMBED_URL = '';
@@ -5903,7 +5904,13 @@ const THU_VIEN_DEFAULT_URLS = [
 ];
 const THU_VIEN_LOAD_TIMEOUT_MS = 300000;
 const THU_VIEN_READY_TIMEOUT_MS = 300000;
+const THU_VIEN_PRELOAD_DELAY_MS = 1200;
+const THU_VIEN_HTML_CACHE_NAME = 'thu-vien-html-v2';
 let thuVienPendingReady = null;
+let thuVienPreloadScheduled = false;
+let thuVienPreloadStarted = false;
+let thuVienPreloadPromise = null;
+const thuVienHtmlPromiseCache = {};
 
 window.addEventListener('message', (ev) => {
   if (!ev.data || !ev.data.type) return;
@@ -5962,24 +5969,142 @@ function injectThuVienBaseHref(html, url) {
   return tag + '\n' + html;
 }
 
+function isThuVienHtml(text) {
+  return /<html[\s>]/i.test(text || '') || /<!doctype\s+html/i.test(text || '');
+}
+
+async function readThuVienCachedHtml(url) {
+  if (!window.caches) return '';
+  try {
+    const cache = await caches.open(THU_VIEN_HTML_CACHE_NAME);
+    const hit = await cache.match(url);
+    if (!hit) return '';
+    const text = await hit.text();
+    return isThuVienHtml(text) ? text : '';
+  } catch (e) {
+    console.warn('ThuVien cache read', e);
+    return '';
+  }
+}
+
+async function writeThuVienCachedHtml(url, html) {
+  if (!window.caches || !isThuVienHtml(html)) return;
+  try {
+    const cache = await caches.open(THU_VIEN_HTML_CACHE_NAME);
+    await cache.put(url, new Response(html, {
+      headers: { 'Content-Type': 'text/html;charset=utf-8' }
+    }));
+  } catch (e) {
+    console.warn('ThuVien cache write', e);
+  }
+}
+
+function fetchThuVienHtmlText(url, bust) {
+  if (!bust && thuVienHtmlPromiseCache[url]) return thuVienHtmlPromiseCache[url];
+  if (bust) delete thuVienHtmlPromiseCache[url];
+  const promise = (async () => {
+    if (!bust) {
+      const cached = await readThuVienCachedHtml(url);
+      if (cached) return cached;
+    }
+    const target = url + (bust || '');
+    const res = await fetch(target, { cache: bust ? 'no-store' : 'force-cache' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const html = await res.text();
+    if (!isThuVienHtml(html)) throw new Error('Không phải HTML');
+    await writeThuVienCachedHtml(url, html);
+    return html;
+  })();
+  if (!bust) thuVienHtmlPromiseCache[url] = promise;
+  return promise;
+}
+
 async function loadThuVienHtmlIntoFrame(frame, url, bust) {
   const target = url + (bust || '');
   if (!window.fetch || !window.Blob || !window.URL || !URL.createObjectURL) {
     frame.src = target;
     return 'direct';
   }
-  const res = await fetch(target, { cache: bust ? 'no-store' : 'default' });
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  const html = await res.text();
-  if (!/<html[\s>]/i.test(html) && !/<!doctype\s+html/i.test(html)) {
-    throw new Error('Không phải HTML');
-  }
+  const html = await fetchThuVienHtmlText(url, bust);
   revokeThuVienBlobUrl(frame);
   const blob = new Blob([injectThuVienBaseHref(html, url)], { type: 'text/html;charset=utf-8' });
   const blobUrl = URL.createObjectURL(blob);
   frame.dataset.thuVienBlobUrl = blobUrl;
   frame.src = blobUrl;
   return 'blob';
+}
+
+function loadThuVienDocumentOnce(frame, url, bust) {
+  return new Promise((resolve, reject) => {
+    if (!frame) {
+      reject(new Error('Thiếu iframe Thư viện'));
+      return;
+    }
+    let done = false;
+    const timer = setTimeout(() => {
+      if (done) return;
+      done = true;
+      reject(new Error('preload-timeout'));
+    }, THU_VIEN_LOAD_TIMEOUT_MS);
+    frame.onload = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      resolve();
+    };
+    frame.onerror = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      reject(new Error('preload-error'));
+    };
+    loadThuVienHtmlIntoFrame(frame, url, bust).catch((e) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      reject(e);
+    });
+  });
+}
+
+function scheduleThuVienPreload() {
+  if (thuVienPreloadScheduled) return;
+  thuVienPreloadScheduled = true;
+  const start = () => preloadThuVienLibrary().catch(e => console.warn('ThuVien preload', e));
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(start, { timeout: THU_VIEN_PRELOAD_DELAY_MS + 2500 });
+  } else {
+    setTimeout(start, THU_VIEN_PRELOAD_DELAY_MS);
+  }
+}
+
+function preloadThuVienLibrary() {
+  if (thuVienPreloadStarted) return thuVienPreloadPromise || Promise.resolve();
+  thuVienPreloadStarted = true;
+  thuVienPreloadPromise = fetchThuVienUrlsFromServer().then(async (urls) => {
+    const list = (Array.isArray(urls) ? urls : [urls]).filter(Boolean);
+    const url = list[0] || THU_VIEN_DEFAULT_URLS[0];
+    if (!url) return;
+    THU_VIEN_EMBED_URL = THU_VIEN_EMBED_URL || url;
+
+    const tasks = [];
+    const tv = ensureThuVienPackExists();
+    if (document.body.getAttribute('data-staff-root') !== 'tv') tv?.classList.add('d-none');
+    const frame = document.getElementById('thuVienFrame');
+    if (frame && frame.dataset.loaded !== '1') {
+      frame.dataset.preloadStarted = '1';
+      frame.classList.add('d-none');
+      tasks.push(loadThuVienDocumentOnce(frame, url, '').then(() => {
+        frame.dataset.loaded = '1';
+        frame.dataset.appReady = '1';
+        frame.dataset.preloaded = '1';
+      }));
+    }
+
+    tasks.push(showThuVienMobileRescue(false, true));
+    await Promise.all(tasks);
+  });
+  return thuVienPreloadPromise;
 }
 
 function getThuVienSidebarRightPx() {
@@ -5994,9 +6119,10 @@ function hideThuVienMobileRescue() {
   if (rescue) rescue.style.display = 'none';
 }
 
-function showThuVienMobileRescue(forceReload) {
+function showThuVienMobileRescue(forceReload, preloadOnly) {
   const left = getThuVienSidebarRightPx();
   let rescue = document.getElementById('thuVienMobileRescue');
+  let loadPromise = Promise.resolve();
   if (!rescue) {
     rescue = document.createElement('div');
     rescue.id = 'thuVienMobileRescue';
@@ -6018,21 +6144,36 @@ function showThuVienMobileRescue(forceReload) {
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals allow-popups-to-escape-sandbox"></iframe>
     `;
     document.body.appendChild(rescue);
-    document.getElementById('thuVienMobileRescueReload')?.addEventListener('click', () => showThuVienMobileRescue(true));
+    document.getElementById('thuVienMobileRescueReload')?.addEventListener('click', () => showThuVienMobileRescue(true, false));
     document.getElementById('thuVienMobileRescueOpen')?.addEventListener('click', openThuVienInNewTab);
   }
-  rescue.style.cssText = [
-    'position:fixed',
-    'top:0',
-    'right:0',
-    'bottom:0',
-    'left:' + left + 'px',
-    'z-index:1200',
-    'display:flex',
-    'flex-direction:column',
-    'background:#fff',
-    'box-shadow:-8px 0 24px rgba(31,38,135,.12)'
-  ].join(';');
+  if (preloadOnly) {
+    rescue.style.cssText = [
+      'position:fixed',
+      'top:0',
+      'left:-9999px',
+      'width:1px',
+      'height:1px',
+      'opacity:0',
+      'pointer-events:none',
+      'display:flex',
+      'flex-direction:column',
+      'background:#fff'
+    ].join(';');
+  } else {
+    rescue.style.cssText = [
+      'position:fixed',
+      'top:0',
+      'right:0',
+      'bottom:0',
+      'left:' + left + 'px',
+      'z-index:1200',
+      'display:flex',
+      'flex-direction:column',
+      'background:#fff',
+      'box-shadow:-8px 0 24px rgba(31,38,135,.12)'
+    ].join(';');
+  }
   const head = rescue.querySelector('.thu-vien-mobile-rescue-head');
   if (head) {
     head.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.75rem;border-bottom:1px solid rgba(216,27,96,.12);background:#fff';
@@ -6052,13 +6193,14 @@ function showThuVienMobileRescue(forceReload) {
       const bust = forceReload ? ((url.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now()) : '';
       if (status) status.innerHTML = '<i class="fas fa-spinner fa-spin me-1 text-primary"></i> Đang tải Thư viện từ CDN...';
       THU_VIEN_EMBED_URL = url;
-      loadThuVienHtmlIntoFrame(frame, url, bust).catch((e) => {
+      loadPromise = loadThuVienHtmlIntoFrame(frame, url, bust).catch((e) => {
         console.error('ThuVien rescue load', e);
         if (status) status.innerHTML = '<i class="fas fa-triangle-exclamation text-danger me-1"></i> Không đọc được HTML Thư viện. Bấm <strong>Mở tab mới</strong>.';
         frame.src = url + bust;
       });
     }
   }
+  return loadPromise;
 }
 
 function mergeThuVienUrlList(serverUrls) {
@@ -6356,6 +6498,18 @@ function loadThuVienFrame(forceReload) {
     if (frame.dataset.loaded === '1' && frame.dataset.appReady === '1' && THU_VIEN_EMBED_URL && !forceReload) {
       frame.classList.remove('d-none');
       hideThuVienOverlay();
+      return;
+    }
+    if (!forceReload && frame.dataset.preloadStarted === '1' && thuVienPreloadPromise) {
+      setThuVienStatus('<i class="fas fa-spinner fa-spin me-1 text-primary"></i> Đang hoàn tất dữ liệu Thư viện đã tải nền…');
+      thuVienPreloadPromise.then(() => {
+        if (frame.dataset.loaded === '1') {
+          frame.classList.remove('d-none');
+          hideThuVienOverlay();
+        } else {
+          tryUrlAt(list, 0, '');
+        }
+      }).catch(() => tryUrlAt(list, 0, ''));
       return;
     }
     const bust = forceReload ? ((list[0].indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now()) : '';
