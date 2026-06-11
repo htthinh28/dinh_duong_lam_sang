@@ -5901,9 +5901,8 @@ const THU_VIEN_DEFAULT_URLS = [
   'https://cdn.statically.io/gh/htthinh28/dinh_duong_lam_sang@gh-pages/index.html',
   'https://htthinh28.github.io/dinh_duong_lam_sang/'
 ];
-const THU_VIEN_LOAD_TIMEOUT_MS = 90000;
-const THU_VIEN_PROBE_TIMEOUT_MS = 12000;
-const THU_VIEN_READY_TIMEOUT_MS = 60000;
+const THU_VIEN_LOAD_TIMEOUT_MS = 120000;
+const THU_VIEN_READY_TIMEOUT_MS = 120000;
 let thuVienPendingReady = null;
 
 window.addEventListener('message', (ev) => {
@@ -5940,27 +5939,18 @@ function fetchThuVienUrlsFromServer() {
   });
 }
 
-async function probeThuVienUrl(url) {
-  const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-  const timer = ctrl ? setTimeout(() => ctrl.abort(), THU_VIEN_PROBE_TIMEOUT_MS) : null;
-  try {
-    const res = await fetch(url, { method: 'HEAD', cache: 'no-store', signal: ctrl ? ctrl.signal : undefined });
-    if (!res.ok) return false;
-    const ct = (res.headers.get('content-type') || '').toLowerCase();
-    return !ct || ct.indexOf('text/html') >= 0 || ct.indexOf('text/plain') >= 0 || ct.indexOf('application/octet-stream') >= 0;
-  } catch (e) {
-    return false;
-  } finally {
-    if (timer) clearTimeout(timer);
-  }
+function setThuVienStatus(html) {
+  const box = document.getElementById('thuVienStatusBox');
+  if (box) box.innerHTML = html;
 }
 
-async function filterReachableThuVienUrls(urls) {
-  const reachable = [];
-  for (let i = 0; i < urls.length; i++) {
-    if (await probeThuVienUrl(urls[i])) reachable.push(urls[i]);
-  }
-  return reachable;
+function showThuVienOverlay() {
+  document.getElementById('thuVienFrameLoading')?.classList.remove('d-none');
+  document.getElementById('thuVienFrame')?.classList.add('d-none');
+}
+
+function hideThuVienOverlay() {
+  document.getElementById('thuVienFrameLoading')?.classList.add('d-none');
 }
 
 /** Sidebar: Dinh dưỡng / Quản trị / Thư viện */
@@ -6013,22 +6003,14 @@ function loadThuVienFrame(forceReload) {
     THU_VIEN_EMBED_URL = '';
     frame.removeAttribute('data-loaded');
     frame.removeAttribute('data-app-ready');
-    frame.src = 'about:blank';
-    if (!loading) return;
-    loading.classList.remove('d-none');
-    loading.innerHTML =
-      '<div class="thu-vien-error-panel p-3 p-md-4">' +
-      '<i class="fas fa-triangle-exclamation fa-2x mb-3 d-block text-danger"></i>' +
-      '<p class="mb-2 fw-semibold text-dark">Chưa tải được Thư viện tra cứu</p>' +
-      '<p class="small text-secondary mb-2">Máy chủ thư viện chưa sẵn sàng (GitHub Pages trả 404). File ~31MB cần host riêng — không dùng được jsDelivr.</p>' +
-      '<p class="small text-secondary mb-3">Quản trị viên: GitHub → <strong>Settings → Pages</strong> → nhánh <strong>gh-pages</strong> / thư mục <strong>/ (root)</strong>. Hoặc đặt <code>THU_VIEN_URL</code> trong Sheet SYS_CONFIG.</p>' +
-      ((tried && tried.length) ? '<p class="small text-muted mb-3">Đã thử: ' + tried.map((u) => '<code class="d-block text-break">' + u + '</code>').join('') + '</p>' : '') +
-      '<div class="d-flex flex-wrap gap-2 justify-content-center">' +
-      '<button type="button" class="btn btn-sm btn-primary" onclick="reloadThuVienFrame(true)"><i class="fas fa-rotate-right"></i> Thử lại</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-primary" onclick="openThuVienInNewTab()"><i class="fas fa-up-right-from-square"></i> Mở tab mới</button>' +
-      '</div></div>';
+    try { frame.removeAttribute('src'); } catch (e) { frame.src = 'about:blank'; }
     frame.classList.add('d-none');
-    document.getElementById('thuVienStaticShell')?.classList.add('d-none');
+    showThuVienOverlay();
+    setThuVienStatus(
+      '<i class="fas fa-triangle-exclamation text-danger me-1"></i> ' +
+      '<strong>Chưa tải được thư viện.</strong> Bấm <strong>Mở tab mới</strong> bên dưới để tra cứu trực tiếp.' +
+      ((tried && tried.length) ? '<br><span class="text-muted">Đã thử ' + tried.length + ' URL.</span>' : '')
+    );
   };
 
   const waitThuVienAppReady = () => new Promise((resolve, reject) => {
@@ -6057,13 +6039,13 @@ function loadThuVienFrame(forceReload) {
     }
     const url = urls[index];
     let settled = false;
-    if (loading) {
-      loading.classList.remove('d-none');
-      loading.innerHTML =
-        '<i class="fas fa-spinner fa-spin fa-2x mb-3 d-block text-primary"></i>' +
-        'Đang tải thư viện (' + (index + 1) + '/' + urls.length + ')...';
-    }
+    showThuVienOverlay();
+    setThuVienStatus(
+      '<i class="fas fa-spinner fa-spin me-1 text-primary"></i> ' +
+      'Đang tải thư viện (' + (index + 1) + '/' + urls.length + ')…'
+    );
     frame.classList.add('d-none');
+    frame.removeAttribute('data-app-ready');
     const timer = setTimeout(() => {
       if (settled) return;
       settled = true;
@@ -6073,12 +6055,10 @@ function loadThuVienFrame(forceReload) {
 
     frame.onload = () => {
       if (settled) return;
-      if (loading) {
-        loading.classList.remove('d-none');
-        loading.innerHTML =
-          '<i class="fas fa-spinner fa-spin fa-2x mb-3 d-block text-primary"></i>' +
-          'Đang mở thư viện (~30MB, có thể mất 1–2 phút)...';
-      }
+      setThuVienStatus(
+        '<i class="fas fa-spinner fa-spin me-1 text-primary"></i> ' +
+        'Đang mở dữ liệu (~30MB, có thể mất 1–2 phút)…'
+      );
       waitThuVienAppReady().then(() => {
         if (settled) return;
         settled = true;
@@ -6086,8 +6066,7 @@ function loadThuVienFrame(forceReload) {
         THU_VIEN_EMBED_URL = url;
         frame.dataset.loaded = '1';
         frame.classList.remove('d-none');
-        loading?.classList.add('d-none');
-        document.getElementById('thuVienStaticShell')?.classList.add('d-none');
+        hideThuVienOverlay();
       }).catch(() => {
         if (settled) return;
         settled = true;
@@ -6119,27 +6098,18 @@ function loadThuVienFrame(forceReload) {
     }
     if (frame.dataset.loaded === '1' && frame.dataset.appReady === '1' && THU_VIEN_EMBED_URL && !forceReload) {
       frame.classList.remove('d-none');
-      loading?.classList.add('d-none');
+      hideThuVienOverlay();
       return;
     }
     const bust = forceReload ? ((list[0].indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now()) : '';
     tryUrlAt(list, 0, bust);
   };
 
-  if (loading) {
-    loading.classList.remove('d-none');
-    loading.innerHTML =
-      '<i class="fas fa-spinner fa-spin fa-2x mb-3 d-block text-primary"></i>' +
-      'Đang kiểm tra máy chủ thư viện...';
-  }
+  showThuVienOverlay();
+  setThuVienStatus('<i class="fas fa-spinner fa-spin me-1 text-primary"></i> Đang kết nối máy chủ thư viện…');
 
-  fetchThuVienUrlsFromServer().then(async (urls) => {
-    const reachable = await filterReachableThuVienUrls(urls);
-    if (reachable.length) {
-      start(reachable);
-      return;
-    }
-    showLoadError(urls);
+  fetchThuVienUrlsFromServer().then((urls) => {
+    start(urls);
   });
 }
 

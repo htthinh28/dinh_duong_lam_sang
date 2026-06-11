@@ -38,8 +38,26 @@ function getPublicWebAppUrl() {
   }
 }
 
+/** Tự thêm THU_VIEN_URL vào SYS_CONFIG nếu sheet cũ chưa có dòng này. */
+function ensureThuVienUrlInSheet_() {
+  try {
+    var ss = getDatabase();
+    var sheet = ss.getSheetByName("SYS_CONFIG");
+    if (!sheet) return;
+    var data = sheet.getDataRange().getValues();
+    var i;
+    for (i = 1; i < data.length; i++) {
+      if (String(data[i][0]).trim() === "THU_VIEN_URL") return;
+    }
+    sheet.appendRow(["THU_VIEN_URL", getThuVienCdnUrl_(), "URL nhúng thư viện tra cứu", "TEXT"]);
+  } catch (e) {
+    Logger.log("ensureThuVienUrlInSheet_: " + e);
+  }
+}
+
 /** Danh sách URL host thư viện (thử lần lượt nếu iframe lỗi). */
 function getThuVienEmbedUrls() {
+  ensureThuVienUrlInSheet_();
   var defaults = [
     getThuVienCdnUrl_(),
     "https://htthinh28.github.io/dinh_duong_lam_sang/"
@@ -77,7 +95,7 @@ function getThuVienEmbedUrls() {
 /** URL trang thư viện (tương thích cũ). */
 function getThuVienEmbedUrl() {
   var list = getThuVienEmbedUrls();
-  return list.length ? list[0] : "https://htthinh28.github.io/dinh_duong_lam_sang/";
+  return list.length ? list[0] : getThuVienCdnUrl_();
 }
 
 /**
