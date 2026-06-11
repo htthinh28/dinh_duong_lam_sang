@@ -5969,6 +5969,37 @@ function injectThuVienBaseHref(html, url) {
   return tag + '\n' + html;
 }
 
+function staticallyUrlToRawGithub(url) {
+  try {
+    const u = new URL(url);
+    if (u.hostname !== 'cdn.statically.io') return '';
+    const parts = u.pathname.split('/').filter(Boolean);
+    if (parts[0] !== 'gh' || parts.length < 4) return '';
+    const owner = parts[1];
+    const repoRef = parts[2];
+    const at = repoRef.indexOf('@');
+    if (!owner || at < 1) return '';
+    const repo = repoRef.slice(0, at);
+    const ref = repoRef.slice(at + 1);
+    const filePath = parts.slice(3).join('/');
+    return 'https://raw.githubusercontent.com/' + owner + '/' + repo + '/' + ref + '/' + filePath;
+  } catch (e) {
+    return '';
+  }
+}
+
+function getThuVienHtmlSourceCandidates(url) {
+  const out = [];
+  const add = (u) => {
+    u = String(u || '').trim();
+    if (u && out.indexOf(u) < 0) out.push(u);
+  };
+  add(url);
+  add(staticallyUrlToRawGithub(url));
+  add('https://raw.githubusercontent.com/htthinh28/dinh_duong_lam_sang/gh-pages/index.html');
+  return out;
+}
+
 function isThuVienHtml(text) {
   return /<html[\s>]/i.test(text || '') || /<!doctype\s+html/i.test(text || '');
 }
@@ -6007,13 +6038,22 @@ function fetchThuVienHtmlText(url, bust) {
       const cached = await readThuVienCachedHtml(url);
       if (cached) return cached;
     }
-    const target = url + (bust || '');
-    const res = await fetch(target, { cache: bust ? 'no-store' : 'force-cache' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const html = await res.text();
-    if (!isThuVienHtml(html)) throw new Error('Không phải HTML');
-    await writeThuVienCachedHtml(url, html);
-    return html;
+    let lastErr = null;
+    for (const sourceUrl of getThuVienHtmlSourceCandidates(url)) {
+      try {
+        const target = sourceUrl + (bust || '');
+        const res = await fetch(target, { cache: bust ? 'no-store' : 'force-cache' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const html = await res.text();
+        if (!isThuVienHtml(html)) throw new Error('Không phải HTML');
+        await writeThuVienCachedHtml(url, html);
+        return html;
+      } catch (e) {
+        lastErr = e;
+        console.warn('ThuVien HTML source failed:', sourceUrl, e);
+      }
+    }
+    throw lastErr || new Error('Không tải được HTML Thư viện');
   })();
   if (!bust) thuVienHtmlPromiseCache[url] = promise;
   return promise;
