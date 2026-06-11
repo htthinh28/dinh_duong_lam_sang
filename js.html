@@ -5964,12 +5964,61 @@ function setThuVienStatus(html) {
 }
 
 function showThuVienOverlay() {
-  document.getElementById('thuVienFrameLoading')?.classList.remove('d-none');
+  const overlay = document.getElementById('thuVienFrameLoading');
+  overlay?.classList.remove('d-none');
+  overlay?.style.setProperty('display', 'flex', 'important');
   document.getElementById('thuVienFrame')?.classList.add('d-none');
 }
 
 function hideThuVienOverlay() {
-  document.getElementById('thuVienFrameLoading')?.classList.add('d-none');
+  const overlay = document.getElementById('thuVienFrameLoading');
+  overlay?.style.removeProperty('display');
+  overlay?.classList.add('d-none');
+}
+
+function ensureThuVienShellVisible() {
+  const main = document.querySelector('.main-content');
+  const dd = document.getElementById('section-dd-pack');
+  const tv = document.getElementById('section-thu-vien-pack');
+  const wrap = document.getElementById('thuVienFrameWrap');
+  const overlay = document.getElementById('thuVienFrameLoading');
+  const frame = document.getElementById('thuVienFrame');
+
+  document.body.setAttribute('data-staff-root', 'tv');
+  dd?.classList.add('d-none');
+  tv?.classList.remove('d-none');
+  if (main) {
+    main.style.setProperty('display', 'block', 'important');
+    main.style.setProperty('min-height', '100dvh', 'important');
+  }
+  if (tv) {
+    tv.style.setProperty('display', 'flex', 'important');
+    tv.style.setProperty('visibility', 'visible', 'important');
+    tv.style.setProperty('opacity', '1', 'important');
+    tv.style.setProperty('flex-direction', 'column', 'important');
+    tv.style.setProperty('min-height', 'calc(100dvh - 0.5rem)', 'important');
+  }
+  if (wrap) {
+    wrap.style.setProperty('display', 'flex', 'important');
+    wrap.style.setProperty('flex', '1 1 auto', 'important');
+    wrap.style.setProperty('min-height', '320px', 'important');
+  }
+  if (overlay && frame?.classList.contains('d-none')) {
+    overlay.classList.remove('d-none');
+    overlay.style.setProperty('display', 'flex', 'important');
+  }
+}
+
+function scheduleThuVienShellRescue() {
+  setTimeout(() => {
+    if (document.body.getAttribute('data-staff-root') !== 'tv') return;
+    ensureThuVienShellVisible();
+    const tv = document.getElementById('section-thu-vien-pack');
+    if (tv && tv.getBoundingClientRect().height < 80) {
+      tv.style.setProperty('min-height', 'calc(100dvh - 0.5rem)', 'important');
+      setThuVienStatus('<i class="fas fa-spinner fa-spin me-1 text-primary"></i> Đang mở khung Thư viện…');
+    }
+  }, 150);
 }
 
 /** Sidebar: Dinh dưỡng / Quản trị / Thư viện */
@@ -6000,10 +6049,9 @@ function setStaffRootNav(root) {
   }
 
   if (root === 'tv') {
-    document.body.setAttribute('data-staff-root', 'tv');
     document.getElementById('sidebarNavTv')?.classList.add('active');
-    dd?.classList.add('d-none');
-    tv?.classList.remove('d-none');
+    ensureThuVienShellVisible();
+    scheduleThuVienShellRescue();
     loadThuVienFrame();
   }
 }
@@ -6125,6 +6173,7 @@ function loadThuVienFrame(forceReload) {
   };
 
   showThuVienOverlay();
+  ensureThuVienShellVisible();
   setThuVienStatus('<i class="fas fa-spinner fa-spin me-1 text-primary"></i> Đang kết nối máy chủ thư viện…');
 
   fetchThuVienUrlsFromServer().then((urls) => {
