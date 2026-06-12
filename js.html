@@ -6000,6 +6000,17 @@ function getThuVienHtmlSourceCandidates(url) {
   return out;
 }
 
+function isThuVienLocalAppsScriptUrl(url) {
+  try {
+    const u = new URL(url, location.href);
+    return u.hostname === 'script.google.com'
+      && u.pathname.indexOf('/macros/s/') >= 0
+      && u.searchParams.get('view') === 'thu-vien';
+  } catch (e) {
+    return false;
+  }
+}
+
 function isThuVienHtml(text) {
   return /<html[\s>]/i.test(text || '') || /<!doctype\s+html/i.test(text || '');
 }
@@ -6061,6 +6072,10 @@ function fetchThuVienHtmlText(url, bust) {
 
 async function loadThuVienHtmlIntoFrame(frame, url, bust) {
   const target = url + (bust || '');
+  if (isThuVienLocalAppsScriptUrl(url)) {
+    frame.src = target;
+    return 'direct-local';
+  }
   if (!window.fetch || !window.Blob || !window.URL || !URL.createObjectURL) {
     frame.src = target;
     return 'direct';
