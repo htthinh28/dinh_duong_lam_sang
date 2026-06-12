@@ -3210,9 +3210,13 @@
   <?!= include('js'); ?>
   <script>
   (function () {
+    var local = '<?= THU_VIEN_LOCAL_URL ?>';
     var cdn = '<?= THU_VIEN_CDN_URL ?>';
     if (typeof THU_VIEN_DEFAULT_URLS !== 'undefined' && THU_VIEN_DEFAULT_URLS.indexOf(cdn) < 0) {
       THU_VIEN_DEFAULT_URLS.unshift(cdn);
+    }
+    if (local && typeof THU_VIEN_DEFAULT_URLS !== 'undefined' && THU_VIEN_DEFAULT_URLS.indexOf(local) < 0) {
+      THU_VIEN_DEFAULT_URLS.unshift(local);
     }
   })();
   </script>
