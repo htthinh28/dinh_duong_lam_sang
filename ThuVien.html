@@ -97,6 +97,12 @@
     function openTopic(section) {
       const st = document.getElementById('status');
       if (st) st.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang mở chủ đề ' + (section || 'home') + '...';
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'thuVienOpenTopic', section: section || 'home', v: 1 }, '*');
+          return;
+        }
+      } catch (_) {}
       location.href = appBaseUrl() + '?view=thu-vien-full' + topicQuery(section) + '#' + encodeURIComponent(topicHash(section));
     }
     try { window.parent.postMessage({ type: 'thuVienAppReady', v: 1, section: 'index' }, '*'); } catch (_) {}

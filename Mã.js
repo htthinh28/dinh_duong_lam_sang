@@ -51,6 +51,35 @@ function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
+var THU_VIEN_FULL_CHUNK_COUNT = 34;
+var THU_VIEN_FULL_CHUNK_PREFIX = "ThuVienFullChunk";
+
+function getThuVienAttachedManifest(name) {
+  name = String(name || "");
+  if (name === "ThuVien") {
+    return { name: name, chunks: 1 };
+  }
+  if (name === "ThuVienFull") {
+    return { name: name, chunks: THU_VIEN_FULL_CHUNK_COUNT };
+  }
+  throw new Error("File Thư viện không hợp lệ");
+}
+
+function getThuVienAttachedChunk(name, index) {
+  name = String(name || "");
+  index = Number(index || 0);
+  if (name === "ThuVien") {
+    if (index !== 0) return "";
+    return HtmlService.createHtmlOutputFromFile("ThuVien").getContent();
+  }
+  if (name === "ThuVienFull") {
+    if (index < 0 || index >= THU_VIEN_FULL_CHUNK_COUNT) return "";
+    var fileName = THU_VIEN_FULL_CHUNK_PREFIX + ("000" + index).slice(-3);
+    return HtmlService.createHtmlOutputFromFile(fileName).getContent();
+  }
+  throw new Error("File Thư viện không hợp lệ");
+}
+
 /** URL web app công khai (để hiển thị link đăng nhập). */
 function getPublicWebAppUrl() {
   try {

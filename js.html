@@ -5915,7 +5915,14 @@ const thuVienHtmlPromiseCache = {};
 window.addEventListener('message', (ev) => {
   if (!ev.data || !ev.data.type) return;
   const frame = document.getElementById('thuVienFrame');
-  if (!frame || !frame.contentWindow || ev.source !== frame.contentWindow) return;
+  const rescueFrame = document.getElementById('thuVienMobileRescueFrame');
+  if (!frame?.contentWindow && !rescueFrame?.contentWindow) return;
+  if (ev.data.type === 'thuVienOpenTopic') {
+    if (ev.source !== frame.contentWindow && ev.source !== rescueFrame?.contentWindow) return;
+    openThuVienAttachedTopic(ev.data.section || 'home');
+    return;
+  }
+  if (ev.source !== frame.contentWindow && ev.source !== rescueFrame?.contentWindow) return;
   if (ev.data.type === 'thuVienAppLoading') {
     const msg = String(ev.data.message || 'Đang tải thư viện...');
     setThuVienStatus(
@@ -6005,10 +6012,88 @@ function isThuVienLocalAppsScriptUrl(url) {
     const u = new URL(url, location.href);
     return u.hostname === 'script.google.com'
       && u.pathname.indexOf('/macros/s/') >= 0
-      && u.searchParams.get('view') === 'thu-vien';
+      && (u.searchParams.get('view') === 'thu-vien' || u.searchParams.get('view') === 'thu-vien-full');
   } catch (e) {
     return false;
   }
+}
+
+function gasThuVienRun(method, args) {
+  return new Promise((resolve, reject) => {
+    if (typeof google === 'undefined' || !google.script || !google.script.run) {
+      reject(new Error('Không có google.script.run'));
+      return;
+    }
+    const runner = google.script.run
+      .withSuccessHandler(resolve)
+      .withFailureHandler(reject);
+    runner[method].apply(runner, args || []);
+  });
+}
+
+function thuVienTopicHash(section) {
+  if (section === 'icd-guide' || section === 'icd-policy') return 'icd';
+  return section || 'home';
+}
+
+function injectThuVienTopicBoot(html, section) {
+  section = String(section || 'home');
+  if (!section || section === 'home') return html;
+  const script = `<script>
+    (function(){
+      var section = ${JSON.stringify(section)};
+      function go(){
+        try {
+          if (section === 'icd-guide') navigateToBytTab('icd-guide');
+          else if (section === 'icd-policy') navigateToBytTab('icd-policy');
+          else if (section === 'qtkt') navigateToBytTab('qtkt');
+          else if (section === 'nd90') navigateToBytTab('nd90');
+          else navigateToSection(section);
+        } catch (e) { console.warn('open topic', e); }
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(go, 0); });
+      else setTimeout(go, 0);
+    })();
+  <\\/script>`;
+  return html.replace(/<\/body>/i, script + '\\n</body>');
+}
+
+async function fetchThuVienAttachedHtml(name, statusEl) {
+  const manifest = await gasThuVienRun('getThuVienAttachedManifest', [name]);
+  const chunks = Math.max(1, Number(manifest && manifest.chunks) || 1);
+  const parts = [];
+  for (let i = 0; i < chunks; i++) {
+    if (statusEl) {
+      const pct = Math.round(((i + 1) / chunks) * 100);
+      statusEl.innerHTML = '<i class="fas fa-spinner fa-spin me-1 text-primary"></i> Đang tải dữ liệu nội bộ ' + pct + '%...';
+    }
+    parts.push(await gasThuVienRun('getThuVienAttachedChunk', [name, i]));
+  }
+  return parts.join('');
+}
+
+async function loadThuVienAttachedIntoFrame(frame, name, section, statusEl) {
+  const html = await fetchThuVienAttachedHtml(name, statusEl);
+  if (!isThuVienHtml(html)) throw new Error('HTML nội bộ không hợp lệ');
+  revokeThuVienBlobUrl(frame);
+  const finalHtml = injectThuVienTopicBoot(html, section);
+  const blob = new Blob([finalHtml], { type: 'text/html;charset=utf-8' });
+  const blobUrl = URL.createObjectURL(blob);
+  frame.dataset.thuVienBlobUrl = blobUrl;
+  frame.src = blobUrl;
+  return 'attached';
+}
+
+function openThuVienAttachedTopic(section) {
+  const frame = document.getElementById('thuVienFrame') || document.getElementById('thuVienMobileRescueFrame');
+  const rescueFrame = document.getElementById('thuVienMobileRescueFrame');
+  const target = rescueFrame && rescueFrame.offsetParent !== null ? rescueFrame : frame;
+  const status = document.getElementById('thuVienMobileRescueStatus') || document.getElementById('thuVienStatusBox');
+  if (status) status.innerHTML = '<i class="fas fa-spinner fa-spin me-1 text-primary"></i> Đang mở chủ đề...';
+  loadThuVienAttachedIntoFrame(target, 'ThuVienFull', section, status).catch((e) => {
+    console.error('ThuVien attached topic', e);
+    if (status) status.innerHTML = '<i class="fas fa-triangle-exclamation text-danger me-1"></i> Không mở được chủ đề nội bộ.';
+  });
 }
 
 function isThuVienHtml(text) {
@@ -6073,8 +6158,8 @@ function fetchThuVienHtmlText(url, bust) {
 async function loadThuVienHtmlIntoFrame(frame, url, bust) {
   const target = url + (bust || '');
   if (isThuVienLocalAppsScriptUrl(url)) {
-    frame.src = target;
-    return 'direct-local';
+    const view = new URL(url, location.href).searchParams.get('view');
+    return loadThuVienAttachedIntoFrame(frame, view === 'thu-vien-full' ? 'ThuVienFull' : 'ThuVien', thuVienTopicHash(location.hash || 'home'));
   }
   if (!window.fetch || !window.Blob || !window.URL || !URL.createObjectURL) {
     frame.src = target;
