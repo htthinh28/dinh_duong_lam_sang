@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="vi" data-embedded="true">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>THƯ VIỆN TRA CỨU — TĐYT Phương Châu</title>
+  <meta name="theme-color" content="#db2777">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root { --pink:#db2777; --pink-dark:#be185d; --blue:#2563eb; --text:#1f2937; --muted:#667085; }
+    * { box-sizing: border-box; }
+    body { margin:0; min-height:100dvh; font-family:'Be Vietnam Pro',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color:var(--text); background:linear-gradient(180deg,#fff7fb 0%,#f8fafc 100%); }
+    .topbar { position:sticky; top:0; z-index:10; display:flex; align-items:center; justify-content:space-between; gap:1rem; min-height:3.25rem; padding:.65rem 1rem; background:linear-gradient(90deg,#db2777,#ec4899); color:#fff; box-shadow:0 4px 18px rgba(219,39,119,.18); }
+    .brand { display:flex; align-items:center; gap:.65rem; font-weight:800; letter-spacing:.02em; }
+    .brand img { width:30px; height:30px; border-radius:8px; background:#fff; padding:2px; }
+    .actions { display:flex; gap:.5rem; flex-wrap:wrap; justify-content:flex-end; }
+    .pill { border:1px solid rgba(255,255,255,.55); background:rgba(255,255,255,.16); color:#fff; border-radius:999px; padding:.45rem .75rem; font-weight:700; font-size:.78rem; cursor:pointer; }
+    .pill:hover { background:#fff; color:var(--pink); }
+    main { width:min(980px,100%); margin:0 auto; padding:2.2rem 1rem 3rem; }
+    .hero { text-align:center; margin-bottom:2rem; }
+    .hero img { width:56px; height:56px; border-radius:14px; object-fit:contain; margin-bottom:.75rem; }
+    h1 { margin:.25rem 0 .5rem; color:#9d174d; font-size:clamp(1.45rem,4vw,2rem); line-height:1.15; font-weight:800; }
+    .hero p { max-width:38rem; margin:0 auto; color:var(--muted); line-height:1.55; }
+    .section-title { margin:2rem 0 .75rem; color:#1d4ed8; font-size:.88rem; font-weight:800; text-transform:uppercase; border-bottom:1px solid #bfdbfe; padding-bottom:.45rem; }
+    .grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1rem; }
+    .grid-byt { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .card { min-height:150px; text-align:left; border:1.5px solid #f9a8d4; background:rgba(255,255,255,.92); border-radius:1.05rem; padding:1.25rem; box-shadow:0 12px 28px rgba(219,39,119,.08); cursor:pointer; transition:.18s ease; color:inherit; }
+    .card:hover,.card:focus { outline:none; transform:translateY(-2px); border-color:#ec4899; box-shadow:0 16px 34px rgba(219,39,119,.16); }
+    .card-blue { border-color:#bfdbfe; box-shadow:0 12px 28px rgba(37,99,235,.08); }
+    .card-blue:hover,.card-blue:focus { border-color:#60a5fa; box-shadow:0 16px 34px rgba(37,99,235,.15); }
+    .icon { width:3.25rem; height:3.25rem; border-radius:.8rem; display:grid; place-items:center; margin-bottom:1rem; font-size:1.25rem; }
+    .pink { background:#fce7f3; color:#be185d; } .orange{background:#ffedd5;color:#c2410c;} .amber{background:#fef3c7;color:#92400e;} .teal{background:#ccfbf1;color:#0f766e;} .blue{background:#dbeafe;color:#1d4ed8;} .indigo{background:#e0e7ff;color:#4338ca;} .rose{background:#ffe4e6;color:#be123c;}
+    .card h2 { margin:0 0 .55rem; font-size:1.12rem; line-height:1.3; }
+    .card p { margin:0; color:var(--muted); line-height:1.45; font-size:.92rem; }
+    .chips { display:flex; flex-wrap:wrap; gap:.5rem; margin:.25rem 0 1.25rem; }
+    .chip { border:1px solid #bfdbfe; background:#fff; color:#1d4ed8; border-radius:999px; padding:.55rem 1rem; font-weight:800; font-size:.82rem; cursor:pointer; min-width:6.5rem; }
+    .status { margin-top:1.25rem; min-height:1.75rem; color:#64748b; font-size:.88rem; }
+    @media (max-width:800px){ .grid,.grid-byt{grid-template-columns:repeat(2,minmax(0,1fr));} .actions{display:none;} }
+    @media (max-width:520px){ main{padding:1.25rem .85rem 2rem;} .grid,.grid-byt{grid-template-columns:1fr;} .card{min-height:unset;} .topbar{padding:.6rem .75rem;} }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><img src="https://i.ibb.co/PvxK81Px/logo-pc.png" alt="Phương Châu"><span>THƯ VIỆN TRA CỨU</span></div>
+    <div class="actions">
+      <button class="pill" onclick="openTopic('home')">Trang chủ</button>
+      <button class="pill" onclick="openTopic('duocthu')">Dược thư</button>
+      <button class="pill" onclick="openTopic('khangsinh')">Kháng sinh</button>
+      <button class="pill" onclick="openTopic('jci')">JCI v8</button>
+      <button class="pill" onclick="openTopic('promt')">PROMT Y TẾ</button>
+      <button class="pill" onclick="openTopic('icd')">Hướng dẫn BYT</button>
+    </div>
+  </header>
+  <main>
+    <section class="hero">
+      <img src="https://i.ibb.co/PvxK81Px/logo-pc.png" alt="Phương Châu">
+      <h1>THƯ VIỆN TRA CỨU</h1>
+      <p>Trang chủ đã được tách nhẹ. Chọn chủ đề để tải đúng module cần dùng, tránh tải toàn bộ dữ liệu nặng ngay từ đầu.</p>
+      <div id="status" class="status"></div>
+    </section>
+    <section class="grid" aria-label="Chủ đề chính">
+      <button class="card" onclick="openTopic('duocthu')"><span class="icon pink"><i class="fa-solid fa-pills"></i></span><h2>Dược thư</h2><p>Monograph thuốc, danh mục BYT & BV, gợi ý ICD-10 theo chỉ định.</p></button>
+      <button class="card" onclick="openTopic('khangsinh')"><span class="icon orange"><i class="fa-solid fa-syringe"></i></span><h2>Kháng sinh</h2><p>Kháng sinh BYT 2015 & Vi sinh lâm sàng 2025 — phác đồ, xét nghiệm, liên kết ICD & Dược thư.</p></button>
+      <button class="card" onclick="openTopic('jci')"><span class="icon amber"><i class="fa-solid fa-shield-halved"></i></span><h2>JCI v8</h2><p>Tiêu chuẩn JCI phiên bản 8 — tra cứu yêu cầu chất lượng.</p></button>
+      <button class="card" onclick="openTopic('promt')"><span class="icon teal"><i class="fa-solid fa-wand-magic-sparkles"></i></span><h2>PROMT Y TẾ</h2><p>Thư viện prompt lâm sàng, dược, ICD, vi sinh — sao chép nhanh cho AI.</p></button>
+    </section>
+    <h3 class="section-title">Hướng dẫn Bộ Y tế</h3>
+    <div class="chips">
+      <button class="chip" onclick="openTopic('icd')">ICD-10</button>
+      <button class="chip" onclick="openTopic('qtkt')">Quy trình Kỹ thuật</button>
+      <button class="chip" onclick="openTopic('nd90')">NĐ 90/2026</button>
+      <button class="chip" onclick="openTopic('icd-guide')">Mã hóa PL2</button>
+      <button class="chip" onclick="openTopic('icd-policy')">TT26 · TT01</button>
+    </div>
+    <section class="grid grid-byt" aria-label="Hướng dẫn Bộ Y tế">
+      <button class="card card-blue" onclick="openTopic('icd')"><span class="icon blue"><i class="fa-solid fa-book-open"></i></span><h2>ICD-10</h2><p>14.925 mã + định nghĩa Tập 1, hướng dẫn mã hóa PL2.</p></button>
+      <button class="card card-blue" onclick="openTopic('qtkt')"><span class="icon indigo"><i class="fa-solid fa-diagram-project"></i></span><h2>Quy trình Kỹ thuật</h2><p>Quy trình thủ thuật, kỹ thuật chuyên môn BYT.</p></button>
+      <button class="card card-blue" onclick="openTopic('nd90')"><span class="icon rose"><i class="fa-solid fa-scale-balanced"></i></span><h2>NĐ 90/2026</h2><p>Nghị định 90/2026/NĐ-CP — xử phạt VPHC ngành Y tế.</p></button>
+    </section>
+  </main>
+  <script>
+    function appBaseUrl() {
+      try { return location.origin + location.pathname; } catch (_) { return location.href.split('?')[0].split('#')[0]; }
+    }
+    function topicHash(section) {
+      if (section === 'icd-guide' || section === 'icd-policy') return 'icd';
+      return section || 'home';
+    }
+    function topicQuery(section) {
+      if (section === 'icd-guide') return '&byt=icd-guide';
+      if (section === 'icd-policy') return '&byt=icd-policy';
+      return '';
+    }
+    function openTopic(section) {
+      const st = document.getElementById('status');
+      if (st) st.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang mở chủ đề ' + (section || 'home') + '...';
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'thuVienOpenTopic', section: section || 'home', v: 1 }, '*');
+          return;
+        }
+      } catch (_) {}
+      location.href = appBaseUrl() + '?view=thu-vien-full' + topicQuery(section) + '#' + encodeURIComponent(topicHash(section));
+    }
+    try { window.parent.postMessage({ type: 'thuVienAppReady', v: 1, section: 'index' }, '*'); } catch (_) {}
+  </script>
+</body>
+</html>
