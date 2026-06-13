@@ -17,6 +17,12 @@ function doGet(e) {
       .addMetaTag("viewport", "width=device-width, initial-scale=1")
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
+  if (e && e.parameter && e.parameter.view === "thu-vien-full") {
+    return HtmlService.createHtmlOutputFromFile("ThuVienFull")
+      .setTitle("Thư viện tra cứu")
+      .addMetaTag("viewport", "width=device-width, initial-scale=1")
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
   var tpl = HtmlService.createTemplateFromFile('index');
   tpl.THU_VIEN_LOCAL_URL = getThuVienLocalUrl_();
   tpl.THU_VIEN_CDN_URL = getThuVienCdnUrl_();
