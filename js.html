@@ -5906,14 +5906,26 @@ const THU_VIEN_READY_TIMEOUT_MS = 120000;
 let thuVienPendingReady = null;
 
 window.addEventListener('message', (ev) => {
-  if (!ev.data || ev.data.type !== 'thuVienAppReady') return;
+  if (!ev.data) return;
   const frame = document.getElementById('thuVienFrame');
   if (!frame || !frame.contentWindow || ev.source !== frame.contentWindow) return;
-  frame.dataset.appReady = '1';
-  if (thuVienPendingReady) {
-    clearTimeout(thuVienPendingReady.timer);
-    thuVienPendingReady.resolve();
-    thuVienPendingReady = null;
+  if (ev.data.type === 'thuVienAppReady') {
+    frame.dataset.appReady = '1';
+    if (thuVienPendingReady) {
+      clearTimeout(thuVienPendingReady.timer);
+      thuVienPendingReady.resolve();
+      thuVienPendingReady = null;
+    }
+    return;
+  }
+  if (ev.data.type === 'thuVienDataReady') {
+    frame.dataset.dataReady = '1';
+    if (ev.data.inlineKs && ev.data.inlineVs) {
+      setThuVienStatus(
+        '<i class="fas fa-check-circle text-success me-1"></i> ' +
+        'Thư viện sẵn sàng — Kháng sinh & Vi sinh nhúng theo thẻ, không cần tải thêm file.'
+      );
+    }
   }
 });
 
@@ -6057,7 +6069,7 @@ function loadThuVienFrame(forceReload) {
       if (settled) return;
       setThuVienStatus(
         '<i class="fas fa-spinner fa-spin me-1 text-primary"></i> ' +
-        'Đang mở dữ liệu (~30MB, có thể mất 1–2 phút)…'
+        'Đang mở giao diện thư viện…'
       );
       waitThuVienAppReady().then(() => {
         if (settled) return;

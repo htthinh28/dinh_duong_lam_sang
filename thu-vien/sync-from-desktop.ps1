@@ -63,4 +63,16 @@ foreach ($html in @('index.html', $extraHtml)) {
     [System.IO.File]::WriteAllText($path, $text)
 }
 
+# Nhúng fulltext Kháng sinh/Vi sinh theo thẻ (block) — không phụ thuộc chandoan-html/*.mjs khi host CDN
+$node = Get-Command node -ErrorAction SilentlyContinue
+if ($node) {
+    Push-Location $dst
+    try {
+        node (Join-Path $dst 'embed-chandoan-inline.mjs')
+        python (Join-Path $dst 'patch-inline-loader.py')
+    } finally { Pop-Location }
+} else {
+    Write-Warning 'Chua cai Node.js — bo qua embed-chandoan-inline.mjs'
+}
+
 Write-Host "Da dong bo thu vien tu Desktop -> $dst"
