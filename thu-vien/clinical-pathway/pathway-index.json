@@ -985,5 +985,7 @@
       ],
       "template": "jci-7-part-v1"
     }
-  ]
+  ],
+  "promptTemplate": "pathway-prompt-jci.txt",
+  "scope": "ICD-10 đủ điều kiện làm bệnh chính (không cờ c); ưu tiên 36 mã liên kết Kháng sinh/Vi sinh"
 }

@@ -2,7 +2,8 @@
   "private": true,
   "scripts": {
     "push:script": "bash scripts/push-apps-script.sh",
-    "push:vercel": "bash scripts/push-vercel.sh"
+    "push:vercel": "bash scripts/push-vercel.sh",
+    "setup:clasp-ci": "bash scripts/setup-clasp-ci.sh"
   },
   "devDependencies": {
     "@google/clasp": "^3.3.0"
