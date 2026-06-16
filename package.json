@@ -1,7 +1,8 @@
 {
   "private": true,
   "scripts": {
-    "push:script": "bash scripts/push-apps-script.sh"
+    "push:script": "bash scripts/push-apps-script.sh",
+    "setup:clasp-ci": "bash scripts/setup-clasp-ci.sh"
   },
   "devDependencies": {
     "@google/clasp": "^3.3.0"
