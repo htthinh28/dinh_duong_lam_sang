@@ -1,0 +1,989 @@
+{
+  "version": 1,
+  "templateId": "jci-clinical-pathway-7-part",
+  "title": "Phác đồ điều trị (Clinical Pathway) — mã ICD-10 bệnh chính",
+  "source": "Ban soạn thảo phác đồ JCI — TĐYT Phương Châu",
+  "updated": "2026-06-16",
+  "promptId": "phacdo-11-clinical-pathway-jci",
+  "catalog": [
+    {
+      "id": "cp-a04-7",
+      "icd": "A04.7",
+      "title": "Viêm ruột do vi khuẩn Clostridium difficile",
+      "pathwayId": "PC-CP-A04-7",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Truyền nhiễm",
+      "chandoanRefs": [
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "6-nhiem-trung-uong-tieu-hoa",
+          "blockTitle": "6. Nhiễm trùng đường tiêu hoá"
+        },
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "14-nhiem-khuan-benh-vien",
+          "blockTitle": "14. Nhiễm khuẩn Bệnh viện"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-a09",
+      "icd": "A09",
+      "title": "Viêm dạ dày - ruột và/hoặc đại tràng do nhiễm trùng và/hoặc không xác định căn nguyên",
+      "pathwayId": "PC-CP-A09",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Truyền nhiễm",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "tieu-chay-do-vi-khuan",
+          "blockTitle": "Tiêu chảy do vi khuẩn"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-mang-nao-mu",
+          "blockTitle": "Viêm màng não mủ"
+        },
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "2-sinh-benh-hoc-nhiem-khuan",
+          "blockTitle": "2. Sinh bệnh học nhiễm khuẩn"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-a41-9",
+      "icd": "A41.9",
+      "title": "Nhiễm trùng hệ thống, không xác định",
+      "pathwayId": "PC-CP-A41-9",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Truyền nhiễm",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "nhiem-khuan-huyet-va-soc-nhiem-khuan",
+          "blockTitle": "Nhiễm khuẩn huyết và sốc nhiễm khuẩn"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-noi-tam-mac-nhiem-khuan",
+          "blockTitle": "Viêm nội tâm mạc nhiễm khuẩn"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "nhot",
+          "blockTitle": "Nhọt"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-a49-9",
+      "icd": "A49.9",
+      "title": "Nhiễm khuẩn, không xác định",
+      "pathwayId": "PC-CP-A49-9",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Truyền nhiễm",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "overview",
+          "blockTitle": "Tổng quan"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "cac-nhom-khang-sinh-va-tac-dung",
+          "blockTitle": "Các nhóm kháng sinh và tác dụng"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "co-che-tac-dung-cua-khang-sinh-va-phoi-hop-khang-sinh",
+          "blockTitle": "Cơ chế tác dụng của kháng sinh và phối hợp kháng sinh"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-a53-9",
+      "icd": "A53.9",
+      "title": "Bệnh giang mai, không xác định",
+      "pathwayId": "PC-CP-A53-9",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Truyền nhiễm",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "ai-cuong-ve-vi-khuan-hoc",
+          "blockTitle": "Đại cương về vi khuẩn học"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "benh-giang-mai",
+          "blockTitle": "Bệnh giang mai"
+        },
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "3-vai-tro-cua-vi-sinh-lam-sang",
+          "blockTitle": "3. Vai trò của vi sinh lâm sàng"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-a54-9",
+      "icd": "A54.9",
+      "title": "Bệnh lậu, không xác định",
+      "pathwayId": "PC-CP-A54-9",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Truyền nhiễm",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "ai-cuong-ve-vi-khuan-hoc",
+          "blockTitle": "Đại cương về vi khuẩn học"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-noi-tam-mac-nhiem-khuan",
+          "blockTitle": "Viêm nội tâm mạc nhiễm khuẩn"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-nang-long",
+          "blockTitle": "Viêm nang lông"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-a56-9",
+      "icd": "A56.9",
+      "title": "A56.9",
+      "pathwayId": "PC-CP-A56-9",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Truyền nhiễm",
+      "chandoanRefs": [
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "tu-viet-tat",
+          "blockTitle": "Danh mục các từ viết tắt"
+        },
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "5-nhiem-trung-uong-ho-hap",
+          "blockTitle": "5. Nhiễm trùng đường hô hấp"
+        },
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "10-nhiem-trung-lay-truyen-qua-uong-tinh-duc",
+          "blockTitle": "10. Nhiễm trùng lây truyền qua đường tình dục"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-b00-9",
+      "icd": "B00.9",
+      "title": "Bệnh do nhiễm virus herpes [herpes simplex], không xác định",
+      "pathwayId": "PC-CP-B00-9",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Truyền nhiễm",
+      "chandoanRefs": [
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "tu-viet-tat",
+          "blockTitle": "Danh mục các từ viết tắt"
+        },
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "2-nhiem-trung-he-than-kinh-trung-uong",
+          "blockTitle": "2. Nhiễm trùng hệ thần kinh trung ương"
+        },
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "5-nhiem-trung-uong-ho-hap",
+          "blockTitle": "5. Nhiễm trùng đường hô hấp"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-b20",
+      "icd": "B20",
+      "title": "Bệnh do virus gây suy giảm miễn dịch ở người [HIV] gây ra bệnh nhiễm trùng và/hoặc ký sinh trùng",
+      "pathwayId": "PC-CP-B20",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Truyền nhiễm",
+      "chandoanRefs": [
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "tu-viet-tat",
+          "blockTitle": "Danh mục các từ viết tắt"
+        },
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "2-nhiem-trung-he-than-kinh-trung-uong",
+          "blockTitle": "2. Nhiễm trùng hệ thần kinh trung ương"
+        },
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "5-nhiem-trung-uong-ho-hap",
+          "blockTitle": "5. Nhiễm trùng đường hô hấp"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-b25-9",
+      "icd": "B25.9",
+      "title": "Bệnh do nhiễm virus đại bào [cytomegalovirus-CMV], không xác định",
+      "pathwayId": "PC-CP-B25-9",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Truyền nhiễm",
+      "chandoanRefs": [
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "tu-viet-tat",
+          "blockTitle": "Danh mục các từ viết tắt"
+        },
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "2-nhiem-trung-he-than-kinh-trung-uong",
+          "blockTitle": "2. Nhiễm trùng hệ thần kinh trung ương"
+        },
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "7-nhiem-trung-o-bung",
+          "blockTitle": "7. Nhiễm trùng ổ bụng"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-b54",
+      "icd": "B54",
+      "title": "Bệnh sốt rét không xác định",
+      "pathwayId": "PC-CP-B54",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Truyền nhiễm",
+      "chandoanRefs": [
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "quyet-dinh-3612",
+          "blockTitle": "Quyết định 3612/QĐ-BYT"
+        },
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "13-benh-lay-truyen-qua-con-trung-tiet-tuc-nhiem-ky-sinh",
+          "blockTitle": "13. Bệnh lây truyền qua côn trùng, tiết túc, nhiễm ký sinh trùng trong máu, mô"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-b96-81",
+      "icd": "B96.81",
+      "title": "B96.81",
+      "pathwayId": "PC-CP-B96-81",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Truyền nhiễm",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "ai-cuong-ve-vi-khuan-hoc",
+          "blockTitle": "Đại cương về vi khuẩn học"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "diet-helicobacter-pylori-trong-benh-ly-da-day-ta-trang",
+          "blockTitle": "Diệt Helicobacter pylori trong bệnh lý dạ dày tá tràng"
+        },
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "6-nhiem-trung-uong-tieu-hoa",
+          "blockTitle": "6. Nhiễm trùng đường tiêu hoá"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-d84-9",
+      "icd": "D84.9",
+      "title": "Suy giảm miễn dịch, không xác định",
+      "pathwayId": "PC-CP-D84-9",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Miễn dịch",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "khai-niem-duoc-ong-hoc-duoc-luc-hoc-pk-pd-va-ung-dung",
+          "blockTitle": "Khái niệm Dược động học/Dược lực học (PK/PD) và ứng dụng"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "cac-nguyen-tac-su-dung-khang-sinh",
+          "blockTitle": "Các nguyên tắc sử dụng kháng sinh"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-phe-quan-cap-o-nguoi-lon",
+          "blockTitle": "Viêm phế quản cấp ở người lớn"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-g03-9",
+      "icd": "G03.9",
+      "title": "Bệnh viêm màng não, không xác định",
+      "pathwayId": "PC-CP-G03-9",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Thần kinh",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-ket-mac-do-lau-cau",
+          "blockTitle": "Viêm kết mạc do lậu cầu"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-mang-nao-mu",
+          "blockTitle": "Viêm màng não mủ"
+        },
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "2-sinh-benh-hoc-nhiem-khuan",
+          "blockTitle": "2. Sinh bệnh học nhiễm khuẩn"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-g06-0",
+      "icd": "G06.0",
+      "title": "Áp xe và/hoặc u hạt nội sọ",
+      "pathwayId": "PC-CP-G06-0",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Thần kinh",
+      "chandoanRefs": [
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "2-nhiem-trung-he-than-kinh-trung-uong",
+          "blockTitle": "2. Nhiễm trùng hệ thần kinh trung ương"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-h01-0",
+      "icd": "H01.0",
+      "title": "Viêm bờ mi",
+      "pathwayId": "PC-CP-H01-0",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Mắt/TMH",
+      "chandoanRefs": [
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "3-nhiem-trung-mat",
+          "blockTitle": "3. Nhiễm trùng mắt"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-h10-9",
+      "icd": "H10.9",
+      "title": "Viêm kết mạc, không xác định",
+      "pathwayId": "PC-CP-H10-9",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Mắt/TMH",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "benh-lau",
+          "blockTitle": "Bệnh lậu"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-ket-mac-cap",
+          "blockTitle": "Viêm kết mạc cấp"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-ket-mac-do-lau-cau",
+          "blockTitle": "Viêm kết mạc do lậu cầu"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-h16-9",
+      "icd": "H16.9",
+      "title": "Viêm giác mạc, không xác định",
+      "pathwayId": "PC-CP-H16-9",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Mắt/TMH",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-ket-mac-cap",
+          "blockTitle": "Viêm kết mạc cấp"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-giac-mac-do-vi-khuan",
+          "blockTitle": "Viêm giác mạc do vi khuẩn"
+        },
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "3-nhiem-trung-mat",
+          "blockTitle": "3. Nhiễm trùng mắt"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-h66-9",
+      "icd": "H66.9",
+      "title": "Viêm tai giữa, không xác định",
+      "pathwayId": "PC-CP-H66-9",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Mắt/TMH",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-mo-bao",
+          "blockTitle": "Viêm mô bào"
+        },
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "2-nhiem-trung-he-than-kinh-trung-uong",
+          "blockTitle": "2. Nhiễm trùng hệ thần kinh trung ương"
+        },
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "5-nhiem-trung-uong-ho-hap",
+          "blockTitle": "5. Nhiễm trùng đường hô hấp"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-i00",
+      "icd": "I00",
+      "title": "Bệnh sốt thấp không đề cập tác động đến tim",
+      "pathwayId": "PC-CP-I00",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Tim mạch",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "thap-tim",
+          "blockTitle": "Thấp tim"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-i33-0",
+      "icd": "I33.0",
+      "title": "Viêm nội tâm mạc do nhiễm trùng cấp tính và/hoặc bán cấp tính",
+      "pathwayId": "PC-CP-I33-0",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Tim mạch",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-noi-tam-mac-nhiem-khuan",
+          "blockTitle": "Viêm nội tâm mạc nhiễm khuẩn"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "ap-xe-gan-do-vi-khuan",
+          "blockTitle": "Áp xe gan do vi khuẩn"
+        },
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "2-sinh-benh-hoc-nhiem-khuan",
+          "blockTitle": "2. Sinh bệnh học nhiễm khuẩn"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-j02-9",
+      "icd": "J02.9",
+      "title": "Viêm họng cấp tính, không xác định",
+      "pathwayId": "PC-CP-J02-9",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Hô hấp",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "thap-tim",
+          "blockTitle": "Thấp tim"
+        },
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "4-nhiem-trung-vi-tri-au-co",
+          "blockTitle": "4. Nhiễm trùng vị trí đầu, cổ"
+        },
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "5-nhiem-trung-uong-ho-hap",
+          "blockTitle": "5. Nhiễm trùng đường hô hấp"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-j18-9",
+      "icd": "J18.9",
+      "title": "Viêm phổi, không xác định",
+      "pathwayId": "PC-CP-J18-9",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Hô hấp",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "gian-phe-quan",
+          "blockTitle": "Giãn phế quản"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-phoi-mac-phai-o-cong-ong",
+          "blockTitle": "Viêm phổi mắc phải ở cộng đồng"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "su-dung-khang-sinh-ieu-tri-viem-phoi-cong-ong-o-tre-em",
+          "blockTitle": "Sử dụng kháng sinh điều trị viêm phổi cộng đồng ở trẻ em"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-j20-9",
+      "icd": "J20.9",
+      "title": "Viêm phế quản cấp tính, không xác định",
+      "pathwayId": "PC-CP-J20-9",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Hô hấp",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-phe-quan-cap-o-nguoi-lon",
+          "blockTitle": "Viêm phế quản cấp ở người lớn"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-j32-9",
+      "icd": "J32.9",
+      "title": "Viêm xoang mạn tính, không xác định",
+      "pathwayId": "PC-CP-J32-9",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Hô hấp",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "gian-phe-quan",
+          "blockTitle": "Giãn phế quản"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-phoi-lien-quan-en-tho-may",
+          "blockTitle": "Viêm phổi liên quan đến thở máy"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-mo-bao",
+          "blockTitle": "Viêm mô bào"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-j44-9",
+      "icd": "J44.9",
+      "title": "Bệnh phổi tắc nghẽn mạn tính, không xác định",
+      "pathwayId": "PC-CP-J44-9",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Hô hấp",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "gian-phe-quan",
+          "blockTitle": "Giãn phế quản"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-j85-1",
+      "icd": "J85.1",
+      "title": "Áp xe phổi kèm viêm phổi",
+      "pathwayId": "PC-CP-J85-1",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Hô hấp",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "ap-xe-phoi",
+          "blockTitle": "Áp xe phổi"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "tran-mu-mang-phoi",
+          "blockTitle": "Tràn mủ màng phổi"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "nhiem-khuan-huyet-va-soc-nhiem-khuan",
+          "blockTitle": "Nhiễm khuẩn huyết và sốc nhiễm khuẩn"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-k65-9",
+      "icd": "K65.9",
+      "title": "Viêm phúc mạc, không xác định",
+      "pathwayId": "PC-CP-K65-9",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Tiêu hóa",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "tran-mu-mang-phoi",
+          "blockTitle": "Tràn mủ màng phổi"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "nhiem-khuan-huyet-va-soc-nhiem-khuan",
+          "blockTitle": "Nhiễm khuẩn huyết và sốc nhiễm khuẩn"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-phuc-mac",
+          "blockTitle": "Viêm phúc mạc"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-k85-9",
+      "icd": "K85.9",
+      "title": "Viêm tụy cấp tính, không xác định",
+      "pathwayId": "PC-CP-K85-9",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Tiêu hóa",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "nhot",
+          "blockTitle": "Nhọt"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-tuy-cap-co-nhiem-khuan",
+          "blockTitle": "Viêm tụy cấp có nhiễm khuẩn"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-xuong-tuy-nhiem-khuan",
+          "blockTitle": "Viêm xương tủy nhiễm khuẩn"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-l02-91",
+      "icd": "L02.91",
+      "title": "L02.91",
+      "pathwayId": "PC-CP-L02-91",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Da liễu",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "nhot",
+          "blockTitle": "Nhọt"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-nang-long",
+          "blockTitle": "Viêm nang lông"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-l03-9",
+      "icd": "L03.9",
+      "title": "Viêm mô bào, không xác định",
+      "pathwayId": "PC-CP-L03-9",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Da liễu",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "nhiem-khuan-huyet-va-soc-nhiem-khuan",
+          "blockTitle": "Nhiễm khuẩn huyết và sốc nhiễm khuẩn"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "thap-tim",
+          "blockTitle": "Thấp tim"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "benh-ha-cam",
+          "blockTitle": "Bệnh hạ cam"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-m00-9",
+      "icd": "M00.9",
+      "title": "Viêm khớp nhiễm khuẩn sinh mủ, không xác định",
+      "pathwayId": "PC-CP-M00-9",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Cơ xương khớp",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "thap-tim",
+          "blockTitle": "Thấp tim"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-khop-nhiem-khuan",
+          "blockTitle": "Viêm khớp nhiễm khuẩn"
+        },
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "2-sinh-benh-hoc-nhiem-khuan",
+          "blockTitle": "2. Sinh bệnh học nhiễm khuẩn"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-m86-9",
+      "icd": "M86.9",
+      "title": "Viêm xương tủy, không xác định",
+      "pathwayId": "PC-CP-M86-9",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Cơ xương khớp",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-xuong-tuy-nhiem-khuan",
+          "blockTitle": "Viêm xương tủy nhiễm khuẩn"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-co-ap-xe-co-nhiem-khuan",
+          "blockTitle": "Viêm cơ, áp xe cơ nhiễm khuẩn"
+        },
+        {
+          "docId": "vi-sinh-lam-sang-2025",
+          "blockId": "1-nhiem-trung-huyet-va-nhiem-trung-tim-mach",
+          "blockTitle": "1. Nhiễm trùng huyết và nhiễm trùng tim mạch"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-n10",
+      "icd": "N10",
+      "title": "Viêm ống thận mô kẽ cấp tính",
+      "pathwayId": "PC-CP-N10",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Tiết niệu",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-than-be-than-cap",
+          "blockTitle": "Viêm thận bể thận cấp"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "soi-than-tiet-nieu-nhiem-khuan",
+          "blockTitle": "Sỏi thận tiết niệu nhiễm khuẩn"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-nieu-ao-cap-khong-do-lau",
+          "blockTitle": "Viêm niệu đạo cấp không do lậu"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-n30-0",
+      "icd": "N30.0",
+      "title": "Viêm bàng quang cấp tính",
+      "pathwayId": "PC-CP-N30-0",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Tiết niệu",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-than-be-than-cap",
+          "blockTitle": "Viêm thận bể thận cấp"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-nieu-ao-cap-khong-do-lau",
+          "blockTitle": "Viêm niệu đạo cấp không do lậu"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-bang-quang-cap",
+          "blockTitle": "Viêm bàng quang cấp"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    },
+    {
+      "id": "cp-r57-2",
+      "icd": "R57.2",
+      "title": "Sốc nhiễm trùng",
+      "pathwayId": "PC-CP-R57-2",
+      "version": "1.0-draft",
+      "status": "template",
+      "primaryEligible": true,
+      "discouragedPrimary": false,
+      "specialty": "Triệu chứng",
+      "chandoanRefs": [
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "nhiem-khuan-huyet-va-soc-nhiem-khuan",
+          "blockTitle": "Nhiễm khuẩn huyết và sốc nhiễm khuẩn"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-co-ap-xe-co-nhiem-khuan",
+          "blockTitle": "Viêm cơ, áp xe cơ nhiễm khuẩn"
+        },
+        {
+          "docId": "khang-sinh-2015",
+          "blockId": "viem-than-be-than-cap",
+          "blockTitle": "Viêm thận bể thận cấp"
+        }
+      ],
+      "template": "jci-7-part-v1"
+    }
+  ]
+}
