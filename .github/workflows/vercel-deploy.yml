@@ -1,0 +1,45 @@
+name: Deploy thu-vien to Vercel
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'thu-vien/**'
+      - '.github/workflows/vercel-deploy.yml'
+      - 'scripts/push-vercel.sh'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vercel-thu-vien
+  cancel-in-progress: true
+
+jobs:
+  vercel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Vercel secrets
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "::error::Thiếu GitHub Secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID."
+            echo "1) Tạo project Vercel (Root Directory = thu-vien, Framework = Other)"
+            echo "2) vercel link --cwd thu-vien (lấy org/project id)"
+            echo "3) Thêm secrets vào repo GitHub → Settings → Secrets → Actions"
+            exit 1
+          fi
+
+      - uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./thu-vien
+          vercel-args: '--prod'
