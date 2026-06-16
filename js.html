@@ -6001,6 +6001,15 @@ function setStaffRootNav(root) {
   }
 }
 
+function clearThuVienFrameSrc() {
+  const frame = document.getElementById('thuVienFrame');
+  if (!frame) return;
+  try {
+    frame.removeAttribute('src');
+    frame.srcdoc = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body></body></html>';
+  } catch (e) { /* ignore */ }
+}
+
 function loadThuVienFrame(forceReload) {
   const pack = document.getElementById('section-thu-vien-pack');
   const frame = document.getElementById('thuVienFrame');
@@ -6015,7 +6024,7 @@ function loadThuVienFrame(forceReload) {
     THU_VIEN_EMBED_URL = '';
     frame.removeAttribute('data-loaded');
     frame.removeAttribute('data-app-ready');
-    try { frame.removeAttribute('src'); } catch (e) { frame.src = 'about:blank'; }
+    try { frame.removeAttribute('src'); frame.removeAttribute('srcdoc'); } catch (e) { clearThuVienFrameSrc(); }
     frame.classList.add('d-none');
     showThuVienOverlay();
     setThuVienStatus(
@@ -6058,6 +6067,7 @@ function loadThuVienFrame(forceReload) {
     );
     frame.classList.add('d-none');
     frame.removeAttribute('data-app-ready');
+    clearThuVienFrameSrc();
     const timer = setTimeout(() => {
       if (settled) return;
       settled = true;
@@ -6094,6 +6104,7 @@ function loadThuVienFrame(forceReload) {
       clearTimeout(timer);
       tryUrlAt(urls, index + 1, bust);
     };
+    frame.removeAttribute('srcdoc');
     frame.src = url + bust;
   };
 
