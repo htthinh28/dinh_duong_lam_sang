@@ -3,7 +3,7 @@
 // Đơn vị: BVQT Phương Châu Sóc Trăng
 // Quản lý: BS. Hồ Tấn Thịnh
 // Tiêu chuẩn: JCI (MCI.19, COP.3, SQE.8 - Phân quyền & Bảo mật)
-// Phiên bản: 5.4 (Module Thư viện — iframe + GitHub Pages)
+// Phiên bản: 5.5 (Thư viện — nhúng thẻ Kháng sinh/Vi sinh, iframe shell sẵn sàng sớm)
 // ============================================================================
 
 // ============================================================================

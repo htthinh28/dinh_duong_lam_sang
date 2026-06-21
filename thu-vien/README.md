@@ -37,7 +37,25 @@ Có thể đổi trong Google Sheet → sheet **SYS_CONFIG** → key `THU_VIEN_U
 
 **Cách 2:** GitHub Actions artifact — workflow `deploy-thu-vien-pages.yml` (cần bật Pages → Source: GitHub Actions).
 
-**Lưu ý:** File `index.html` ~30MB; lần tải đầu có thể chậm. Thư mục này **không** được `clasp push` (xem `.claspignore`). Dữ liệu `chandoan-html/*.mjs` dùng đuôi `.mjs` (không phải `.js`) để tránh clasp đẩy nhầm lên Apps Script — gây lỗi `window is not defined`.
+**Lưu ý:** File `index.html` ~27–32MB; lần tải đầu có thể chậm. Thư mục này **không** được `clasp push` (xem `.claspignore`).
+
+## Nhúng Kháng sinh / Vi sinh theo thẻ (không tải file ngoài)
+
+Sau khi đồng bộ từ Desktop hoặc cập nhật `chandoan-html/`:
+
+```bash
+cd thu-vien
+node embed-chandoan-inline.mjs
+python3 patch-inline-loader.py
+```
+
+Script sẽ:
+
+- Nhúng meta Vi sinh (`vs-chandoan-meta-json`) và **86 thẻ fulltext** (`chandoan-html-block-chunk`) vào `index.html`
+- Gộp catalog/infographic Vi sinh vào JSON nhúng sẵn
+- Bỏ phụ thuộc `<script src="chandoan-html/*.mjs">` — tra cứu hoạt động khi host chỉ có `index.html` (CDN, iframe CDSS)
+
+Tra cứu lazy: mỗi mục mục lục chỉ parse JSON của **một thẻ** khi người dùng mở — không fetch mạng.
 
 ## Khắc phục "Thư viện không hiển thị nội dung"
 
