@@ -110,10 +110,14 @@
   body[data-staff-root="tv"] #section-dd-pack {
     display: none !important;
   }
+  body[data-staff-root="tv"] #section-thu-vien-pack,
+  body[data-staff-root="tv"] #section-thu-vien-pack.d-none,
   body[data-staff-root="tv"] #section-thu-vien-pack:not(.d-none) {
     display: flex !important;
     flex-direction: column;
     width: 100%;
+    opacity: 1 !important;
+    visibility: visible !important;
   }
   body[data-staff-root="tv"] #section-thu-vien-pack > .cdss-glass:first-child {
     background: #fff !important;
@@ -123,8 +127,14 @@
     min-height: calc(100vh - 2.5rem);
     flex-direction: column;
   }
+  body[data-staff-root="tv"] .main-content {
+    min-height: 100dvh;
+    display: block !important;
+  }
   .thu-vien-frame-wrap {
     flex: 1;
+    display: flex;
+    flex-direction: column;
     min-height: calc(100vh - 11rem);
     background: #fff;
     border-radius: 1rem;
@@ -134,6 +144,7 @@
   }
   #thuVienFrame {
     width: 100%;
+    flex: 1;
     height: calc(100vh - 11rem);
     min-height: 420px;
     border: 0;
@@ -170,6 +181,9 @@
     display: flex !important;
     flex-direction: column;
     min-height: calc(100dvh - 0.5rem);
+  }
+  body[data-staff-root="tv"] #thuVienFrameWrap {
+    display: flex !important;
   }
 
   /* Utility classes */

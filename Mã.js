@@ -10,13 +10,36 @@
 // --- 1. CORE: KHỞI TẠO ỨNG DỤNG WEB ---
 // ============================================================================
 
-function doGet() {
+function doGet(e) {
+  if (e && e.parameter && e.parameter.view === "thu-vien") {
+    return HtmlService.createHtmlOutputFromFile("ThuVien")
+      .setTitle("Thư viện tra cứu")
+      .addMetaTag("viewport", "width=device-width, initial-scale=1")
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+  if (e && e.parameter && e.parameter.view === "thu-vien-full") {
+    return HtmlService.createHtmlOutputFromFile("ThuVienFull")
+      .setTitle("Thư viện tra cứu")
+      .addMetaTag("viewport", "width=device-width, initial-scale=1")
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
   var tpl = HtmlService.createTemplateFromFile('index');
+  tpl.THU_VIEN_LOCAL_URL = getThuVienLocalUrl_();
   tpl.THU_VIEN_CDN_URL = getThuVienCdnUrl_();
   return tpl.evaluate()
     .setTitle('CDSS — Hỗ trợ ra quyết định lâm sàng')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/** URL nội bộ Apps Script để nhúng Thư viện đã attach vào project. */
+function getThuVienLocalUrl_() {
+  try {
+    var u = ScriptApp.getService().getUrl();
+    return u ? String(u) + "?view=thu-vien" : "";
+  } catch (e) {
+    return "";
+  }
 }
 
 /** URL CDN thư viện (nhánh gh-pages — không cần bật GitHub Pages). */
@@ -26,6 +49,35 @@ function getThuVienCdnUrl_() {
 
 function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
+}
+
+var THU_VIEN_FULL_CHUNK_COUNT = 34;
+var THU_VIEN_FULL_CHUNK_PREFIX = "ThuVienFullChunk";
+
+function getThuVienAttachedManifest(name) {
+  name = String(name || "");
+  if (name === "ThuVien") {
+    return { name: name, chunks: 1 };
+  }
+  if (name === "ThuVienFull") {
+    return { name: name, chunks: THU_VIEN_FULL_CHUNK_COUNT };
+  }
+  throw new Error("File Thư viện không hợp lệ");
+}
+
+function getThuVienAttachedChunk(name, index) {
+  name = String(name || "");
+  index = Number(index || 0);
+  if (name === "ThuVien") {
+    if (index !== 0) return "";
+    return HtmlService.createHtmlOutputFromFile("ThuVien").getContent();
+  }
+  if (name === "ThuVienFull") {
+    if (index < 0 || index >= THU_VIEN_FULL_CHUNK_COUNT) return "";
+    var fileName = THU_VIEN_FULL_CHUNK_PREFIX + ("000" + index).slice(-3);
+    return HtmlService.createHtmlOutputFromFile(fileName).getContent();
+  }
+  throw new Error("File Thư viện không hợp lệ");
 }
 
 /** URL web app công khai (để hiển thị link đăng nhập). */
@@ -59,6 +111,7 @@ function ensureThuVienUrlInSheet_() {
 function getThuVienEmbedUrls() {
   ensureThuVienUrlInSheet_();
   var defaults = [
+    getThuVienLocalUrl_(),
     getThuVienCdnUrl_(),
     "https://htthinh28.github.io/dinh_duong_lam_sang/"
   ];
@@ -80,15 +133,15 @@ function getThuVienEmbedUrls() {
   } catch (e) {
     Logger.log("getThuVienEmbedUrls: " + e);
   }
+  defaults.forEach(function (u) {
+    if (u && urls.indexOf(u) < 0) urls.push(u);
+  });
   if (custom) {
     if (custom.indexOf("github.io") >= 0) {
       custom = custom.replace(/\/thu-vien\/?$/i, "/");
     }
-    urls.push(custom);
+    if (urls.indexOf(custom) < 0) urls.push(custom);
   }
-  defaults.forEach(function (u) {
-    if (urls.indexOf(u) < 0) urls.push(u);
-  });
   return urls;
 }
 
