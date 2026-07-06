@@ -197,6 +197,9 @@
       <button type="button" class="nav-link" id="sidebarNavTv" onclick="setStaffRootNav('tv')" title="Thư viện tra cứu — Dược thư, ICD-10, JCI, NĐ 90">
         <i class="fas fa-book-medical"></i> <span class="nav-text">Thư viện</span>
       </button>
+      <button type="button" class="nav-link" id="sidebarNavTt" onclick="setStaffRootNav('tt')" title="Thu thập &amp; thống kê hồ sơ dinh dưỡng">
+        <i class="fas fa-flask"></i> <span class="nav-text">Thu thập số liệu</span>
+      </button>
     </div>
   </div>
 
@@ -2988,7 +2991,7 @@
       </div>
       <div id="thuVienFrameWrap" class="thu-vien-frame-wrap position-relative">
         <iframe id="thuVienFrame" class="d-none" title="Thư viện tra cứu TĐYT Phương Châu"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals allow-popups-to-escape-sandbox"></iframe>
+          allow="fullscreen" referrerpolicy="no-referrer-when-downgrade"></iframe>
         <div id="thuVienFrameLoading" class="thu-vien-overlay">
           <div id="thuVienStaticShell" class="thu-vien-static-shell">
             <i class="fas fa-book-medical fa-2x mb-3 d-block text-primary"></i>
@@ -3005,6 +3008,65 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <div id="section-thu-thap-pack" class="d-none d-print-none">
+      <div class="cdss-glass rounded-4 p-2 p-md-3 border border-white border-opacity-25 shadow-lg mb-2">
+        <h5 class="text-primary fw-bold mb-0"><i class="fas fa-flask me-2"></i>THU THẬP SỐ LIỆU</h5>
+        <small class="text-muted">Hồ sơ dinh dưỡng lâm sàng · Thống kê &amp; xuất dữ liệu từ Google Sheet</small>
+      </div>
+      <div id="thuThapStatusBox" class="small text-muted mb-2">
+        <i class="fas fa-spinner fa-spin me-1 text-primary"></i> Đang tải dữ liệu…
+      </div>
+      <div class="row g-3 mb-3" id="thuThapStatsRow">
+        <div class="col-6 col-md-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-3">
+              <div class="text-muted small">Tổng hồ sơ</div>
+              <div class="fs-3 fw-bold text-primary" id="thuThapStatTotal">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-3">
+              <div class="text-muted small">Tháng này</div>
+              <div class="fs-3 fw-bold text-success" id="thuThapStatMonth">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <span class="fw-bold text-primary"><i class="fas fa-table me-1"></i> Hồ sơ gần đây</span>
+          <button type="button" class="btn btn-sm btn-outline-primary" onclick="loadThuThapPanel(true)">
+            <i class="fas fa-rotate-right"></i> Tải lại
+          </button>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0 align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Thời gian</th>
+                  <th>ID/CCCD</th>
+                  <th>Họ tên</th>
+                  <th class="d-none d-md-table-cell">BMI</th>
+                  <th class="d-none d-lg-table-cell">Chẩn đoán</th>
+                  <th class="d-none d-md-table-cell">Bác sĩ</th>
+                </tr>
+              </thead>
+              <tbody id="thuThapTableBody">
+                <tr><td colspan="6" class="text-center text-muted py-4">Đang tải…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <p class="small text-muted mt-2 mb-0">
+        <i class="fas fa-circle-info me-1"></i>
+        Dữ liệu lấy từ sheet <strong>RECORDS</strong>. Nhập hồ sơ mới tại tab <strong>Dinh dưỡng</strong>.
+      </p>
     </div>
 
   </div><!-- main-content -->

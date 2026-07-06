@@ -5872,6 +5872,12 @@ function formatAIMarkdown(text) {
 // 13. KHỞI TẠO ỨNG DỤNG (INITIALIZATION)
 // Hàm này được gọi sau khi Login thành công
 function initApp() {
+    const pendingRoot = sessionStorage.getItem('CDSS_STAFF_ROOT');
+    if (pendingRoot === 'tv' || pendingRoot === 'tt') {
+        sessionStorage.removeItem('CDSS_STAFF_ROOT');
+        setStaffRootNav(pendingRoot);
+        return;
+    }
     // Tự động load cấu hình hệ thống
     if(typeof google !== 'undefined' && google.script) {
         google.script.run.withSuccessHandler(config => {
@@ -5903,7 +5909,44 @@ const THU_VIEN_DEFAULT_URLS = [
 ];
 const THU_VIEN_LOAD_TIMEOUT_MS = 120000;
 const THU_VIEN_READY_TIMEOUT_MS = 120000;
+const THU_VIEN_MOBILE_READY_TIMEOUT_MS = 45000;
 let thuVienPendingReady = null;
+
+/** Desktop: iframe; mobile/WebView: mở toàn màn hình (iframe thường trắng trên Android). */
+function isThuVienEmbeddedMode_() {
+    if (window.matchMedia('(max-width: 991px)').matches) return false;
+    const ua = String(navigator.userAgent || '');
+    if (/Android|iPhone|iPad|iPod|Mobile|wv\)/i.test(ua)) return false;
+    return true;
+}
+
+function openThuVienFullPage(url) {
+    const target = String(url || THU_VIEN_EMBED_URL || THU_VIEN_DEFAULT_URLS[0] || '').trim();
+    if (!target) return;
+    try {
+        sessionStorage.setItem('CDSS_RETURN_URL', window.location.href);
+        sessionStorage.setItem('CDSS_STAFF_ROOT', 'tv');
+    } catch (e) { /* ignore */ }
+    window.location.assign(target);
+}
+
+function showThuVienMobileLauncher(urls) {
+    const list = (Array.isArray(urls) ? urls : []).filter(Boolean);
+    const url = list[0] || THU_VIEN_DEFAULT_URLS[0];
+    THU_VIEN_EMBED_URL = url;
+    showThuVienOverlay();
+    setThuVienStatus(
+        '<p class="fw-bold text-dark mb-2"><i class="fas fa-book-medical text-primary me-1"></i> Thư viện tra cứu</p>' +
+        '<p class="small text-secondary mb-3">Trên điện thoại, mở <strong>toàn màn hình</strong> để tải dữ liệu (~30MB) ổn định.</p>' +
+        '<div class="d-grid gap-2">' +
+        '<button type="button" class="btn btn-primary btn-lg" id="btnThuVienOpenFull">' +
+        '<i class="fas fa-up-right-from-square me-1"></i> Mở Thư viện ngay</button>' +
+        '<button type="button" class="btn btn-outline-secondary btn-sm" onclick="setStaffRootNav(\'dd\')">' +
+        '<i class="fas fa-arrow-left me-1"></i> Quay lại Dinh dưỡng</button></div>'
+    );
+    document.getElementById('btnThuVienOpenFull')?.addEventListener('click', () => openThuVienFullPage(url));
+    setTimeout(() => openThuVienFullPage(url), 1200);
+}
 
 window.addEventListener('message', (ev) => {
   if (!ev.data || ev.data.type !== 'thuVienAppReady') return;
@@ -5953,17 +5996,19 @@ function hideThuVienOverlay() {
   document.getElementById('thuVienFrameLoading')?.classList.add('d-none');
 }
 
-/** Sidebar: Dinh dưỡng / Quản trị / Thư viện */
+/** Sidebar: Dinh dưỡng / Quản trị / Thư viện / Thu thập số liệu */
 function setStaffRootNav(root) {
   const hasStoredSession = !!sessionStorage.getItem('PC_USER_SESSION');
   const hasCurrentUser = typeof CURRENT_USER !== 'undefined' && CURRENT_USER && CURRENT_USER.email;
   if (!hasStoredSession && !hasCurrentUser) return;
   const dd = document.getElementById('section-dd-pack');
   const tv = document.getElementById('section-thu-vien-pack');
-  ['sidebarNavDd', 'sidebarNavQt', 'sidebarNavTv'].forEach((id) => document.getElementById(id)?.classList.remove('active'));
+  const tt = document.getElementById('section-thu-thap-pack');
+  ['sidebarNavDd', 'sidebarNavQt', 'sidebarNavTv', 'sidebarNavTt'].forEach((id) => document.getElementById(id)?.classList.remove('active'));
 
   dd?.classList.remove('d-none');
   tv?.classList.add('d-none');
+  tt?.classList.add('d-none');
 
   if (root === 'dd') {
     document.body.setAttribute('data-staff-root', 'dd');
@@ -5986,6 +6031,15 @@ function setStaffRootNav(root) {
     dd?.classList.add('d-none');
     tv?.classList.remove('d-none');
     loadThuVienFrame();
+    return;
+  }
+
+  if (root === 'tt') {
+    document.body.setAttribute('data-staff-root', 'tt');
+    document.getElementById('sidebarNavTt')?.classList.add('active');
+    dd?.classList.add('d-none');
+    tt?.classList.remove('d-none');
+    loadThuThapPanel();
   }
 }
 
@@ -6008,8 +6062,14 @@ function loadThuVienFrame(forceReload) {
     showThuVienOverlay();
     setThuVienStatus(
       '<i class="fas fa-triangle-exclamation text-danger me-1"></i> ' +
-      '<strong>Chưa tải được thư viện.</strong> Bấm <strong>Mở tab mới</strong> bên dưới để tra cứu trực tiếp.' +
-      ((tried && tried.length) ? '<br><span class="text-muted">Đã thử ' + tried.length + ' URL.</span>' : '')
+      '<strong>Chưa tải được thư viện.</strong> ' +
+      (isThuVienEmbeddedMode_()
+        ? 'Bấm <strong>Mở tab mới</strong> bên dưới để tra cứu trực tiếp.'
+        : 'Bấm <strong>Mở Thư viện ngay</strong> để mở toàn màn hình.') +
+      ((tried && tried.length) ? '<br><span class="text-muted">Đã thử ' + tried.length + ' URL.</span>' : '') +
+      '<div class="d-grid gap-2 mt-3">' +
+      '<button type="button" class="btn btn-primary" onclick="openThuVienInNewTab()"><i class="fas fa-up-right-from-square me-1"></i> Mở Thư viện ngay</button>' +
+      '<button type="button" class="btn btn-outline-secondary btn-sm" onclick="setStaffRootNav(\'dd\')"><i class="fas fa-arrow-left me-1"></i> Quay lại Dinh dưỡng</button></div>'
     );
   };
 
@@ -6018,10 +6078,11 @@ function loadThuVienFrame(forceReload) {
       resolve();
       return;
     }
+    const readyMs = isThuVienEmbeddedMode_() ? THU_VIEN_READY_TIMEOUT_MS : THU_VIEN_MOBILE_READY_TIMEOUT_MS;
     const timer = setTimeout(() => {
       thuVienPendingReady = null;
       reject(new Error('ready-timeout'));
-    }, THU_VIEN_READY_TIMEOUT_MS);
+    }, readyMs);
     thuVienPendingReady = {
       timer,
       resolve: () => {
@@ -6109,17 +6170,79 @@ function loadThuVienFrame(forceReload) {
   setThuVienStatus('<i class="fas fa-spinner fa-spin me-1 text-primary"></i> Đang kết nối máy chủ thư viện…');
 
   fetchThuVienUrlsFromServer().then((urls) => {
+    if (!isThuVienEmbeddedMode_()) {
+      showThuVienMobileLauncher(urls);
+      return;
+    }
     start(urls);
   });
 }
 
 function reloadThuVienFrame(force) {
+  if (!isThuVienEmbeddedMode_()) {
+    fetchThuVienUrlsFromServer().then((urls) => showThuVienMobileLauncher(urls));
+    return;
+  }
   loadThuVienFrame(!!force);
 }
 
 function openThuVienInNewTab() {
   const url = THU_VIEN_EMBED_URL || THU_VIEN_DEFAULT_URLS[0];
-  if (url) window.open(url, '_blank', 'noopener,noreferrer');
+  if (!url) return;
+  if (!isThuVienEmbeddedMode_()) {
+    openThuVienFullPage(url);
+    return;
+  }
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+function loadThuThapPanel(forceReload) {
+  const status = document.getElementById('thuThapStatusBox');
+  const tbody = document.getElementById('thuThapTableBody');
+  if (!tbody) return;
+  if (status) {
+    status.innerHTML = '<i class="fas fa-spinner fa-spin me-1 text-primary"></i> Đang tải dữ liệu từ Google Sheet…';
+  }
+  if (!forceReload && tbody.dataset.loaded === '1') return;
+
+  const render = (data) => {
+    data = normalizeServerResult(data);
+    if (data.error) {
+      if (status) status.innerHTML = '<span class="text-danger"><i class="fas fa-triangle-exclamation me-1"></i>' + data.error + '</span>';
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Không tải được dữ liệu.</td></tr>';
+      return;
+    }
+    document.getElementById('thuThapStatTotal')?.replaceChildren(document.createTextNode(String(data.total || 0)));
+    document.getElementById('thuThapStatMonth')?.replaceChildren(document.createTextNode(String(data.thisMonth || 0)));
+    const rows = Array.isArray(data.recent) ? data.recent : [];
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Chưa có hồ sơ nào. Nhập tại tab Dinh dưỡng.</td></tr>';
+    } else {
+      tbody.innerHTML = rows.map((r) => (
+        '<tr>' +
+        '<td class="text-nowrap">' + (r.date || '') + '</td>' +
+        '<td>' + (r.patientId || '') + '</td>' +
+        '<td>' + (r.name || '') + '</td>' +
+        '<td class="d-none d-md-table-cell">' + (r.bmi || '') + '</td>' +
+        '<td class="d-none d-lg-table-cell">' + (r.diagnosis || '') + '</td>' +
+        '<td class="d-none d-md-table-cell">' + (r.doctor || '') + '</td>' +
+        '</tr>'
+      )).join('');
+    }
+    tbody.dataset.loaded = '1';
+    if (status) {
+      status.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>Đã cập nhật ' + new Date().toLocaleTimeString('vi-VN') + '</span>';
+    }
+  };
+
+  if (typeof google === 'undefined' || !google.script || !google.script.run) {
+    render({ error: 'Không kết nối được máy chủ Apps Script.' });
+    return;
+  }
+  google.script.run
+    .withSuccessHandler(render)
+    .withFailureHandler((err) => render({ error: err && err.message ? err.message : String(err) }))
+    .getRecordsDataSummary();
 }
 
 function handleRegisterStaffPending() {
@@ -6195,9 +6318,11 @@ function showClinicalWorkflowStep(index) {
   document.body.setAttribute('data-staff-root', 'dd');
   document.getElementById('section-dd-pack')?.classList.remove('d-none');
   document.getElementById('section-thu-vien-pack')?.classList.add('d-none');
+  document.getElementById('section-thu-thap-pack')?.classList.add('d-none');
   document.getElementById('sidebarNavDd')?.classList.add('active');
   document.getElementById('sidebarNavQt')?.classList.remove('active');
   document.getElementById('sidebarNavTv')?.classList.remove('active');
+  document.getElementById('sidebarNavTt')?.classList.remove('active');
 
   const btn = document.getElementById(WORKFLOW_TAB_IDS[index]);
   if (!btn || btn.classList.contains('d-none')) return;
@@ -6219,9 +6344,11 @@ function showAppModule(moduleNumber) {
     document.body.setAttribute('data-staff-root', 'qt');
     document.getElementById('section-dd-pack')?.classList.remove('d-none');
     document.getElementById('section-thu-vien-pack')?.classList.add('d-none');
+    document.getElementById('section-thu-thap-pack')?.classList.add('d-none');
     document.getElementById('sidebarNavDd')?.classList.remove('active');
     document.getElementById('sidebarNavQt')?.classList.add('active');
     document.getElementById('sidebarNavTv')?.classList.remove('active');
+    document.getElementById('sidebarNavTt')?.classList.remove('active');
   }
 
   if (moduleNumber >= 1 && moduleNumber <= WORKFLOW_TAB_IDS.length) {

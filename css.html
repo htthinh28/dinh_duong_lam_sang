@@ -103,6 +103,9 @@
   body[data-staff-root="qt"] #clinicalModuleViewport {
     display: none !important;
   }
+  body[data-staff-root="qt"] #section-thu-thap-pack {
+    display: none !important;
+  }
   body[data-staff-root="qt"] #v-pills-tabContent > .tab-pane:not(#mod7) {
     display: none !important;
   }
@@ -114,6 +117,20 @@
     display: flex !important;
     flex-direction: column;
     width: 100%;
+  }
+  body[data-staff-root="tt"] #section-dd-pack {
+    display: none !important;
+  }
+  body[data-staff-root="tt"] #section-thu-vien-pack {
+    display: none !important;
+  }
+  body[data-staff-root="tt"] #section-thu-thap-pack:not(.d-none) {
+    display: block !important;
+    width: 100%;
+    min-height: calc(100dvh - 1rem);
+  }
+  #section-thu-thap-pack {
+    min-height: calc(100vh - 2.5rem);
   }
   body[data-staff-root="tv"] #section-thu-vien-pack > .cdss-glass:first-child {
     background: #fff !important;
@@ -286,6 +303,12 @@
 
   .sidebar-container:hover .nav-text {
     opacity: 1;
+  }
+
+  @media (max-width: 992px) {
+    .sidebar-container .nav-text {
+      opacity: 1;
+    }
   }
 
   /* =========================================================
@@ -927,6 +950,12 @@
     #thuVienFrame {
       height: calc(100dvh - 7.5rem);
       min-height: 320px;
+    }
+    body[data-staff-root="tt"] .main-content {
+      padding: 8px 8px 8px 6px;
+    }
+    #section-thu-thap-pack .table {
+      font-size: 0.82rem;
     }
     .sidebar-container {
       width: 62px !important;

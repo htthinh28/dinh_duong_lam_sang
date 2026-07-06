@@ -972,6 +972,48 @@ function getLatestPatientIntakeById(patientId) {
 }
 
 /**
+ * Tổng hợp số liệu hồ sơ dinh dưỡng (module Thu thập số liệu).
+ */
+function getRecordsDataSummary() {
+  try {
+    var ss = getDatabase();
+    var sheet = ss.getSheetByName("RECORDS");
+    if (!sheet) return { error: "Không có sheet RECORDS.", total: 0, thisMonth: 0, recent: [] };
+    var data = sheet.getDataRange().getValues();
+    if (!data || data.length < 2) {
+      return { success: true, total: 0, thisMonth: 0, recent: [] };
+    }
+    var headers = data[0].map(function (h) { return String(h).trim(); });
+    var idx = {};
+    headers.forEach(function (h, i) { idx[h] = i; });
+    var rows = data.slice(1);
+    var now = new Date();
+    var monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    var tsIdx = idx.Timestamp != null ? idx.Timestamp : 0;
+    var thisMonth = 0;
+    rows.forEach(function (row) {
+      var ts = row[tsIdx];
+      if (ts && new Date(ts) >= monthStart) thisMonth++;
+    });
+    var recent = rows.slice().sort(function (a, b) {
+      return new Date(b[tsIdx]) - new Date(a[tsIdx]);
+    }).slice(0, 25).map(function (row) {
+      return {
+        date: new Date(row[tsIdx]).toLocaleString("vi-VN"),
+        patientId: String(row[idx.PatientID != null ? idx.PatientID : 1] || "").replace(/'/g, ""),
+        name: row[idx.Name != null ? idx.Name : 2] || "",
+        bmi: row[idx.BMI != null ? idx.BMI : 7] || "",
+        diagnosis: row[idx.Diagnosis != null ? idx.Diagnosis : 8] || "",
+        doctor: row[idx.Doctor != null ? idx.Doctor : 13] || ""
+      };
+    });
+    return { success: true, total: rows.length, thisMonth: thisMonth, recent: recent };
+  } catch (e) {
+    return { error: "Lỗi đọc RECORDS: " + (e && e.message ? e.message : e), total: 0, thisMonth: 0, recent: [] };
+  }
+}
+
+/**
  * Lấy dữ liệu khởi tạo (Load Data Cache cho App)
  */
 function getInitialData() {
