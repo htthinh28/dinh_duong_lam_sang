@@ -1,0 +1,47 @@
+name: Pull from Apps Script
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  clasp-pull:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install clasp
+        run: npm install -g @google/clasp
+
+      - name: Configure clasp credentials
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          if [ -z "$CLASPRC_JSON" ]; then
+            echo "::error::Thiếu secret CLASPRC_JSON. Chạy clasp login trên máy local, copy nội dung ~/.clasprc.json vào GitHub Secrets."
+            exit 1
+          fi
+          echo "$CLASPRC_JSON" > ~/.clasprc.json
+
+      - name: Pull from Apps Script
+        run: clasp pull
+
+      - name: Commit pulled changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "Không có thay đổi sau clasp pull."
+            exit 0
+          fi
+          git add index.html js.html css.html Mã.js logoB64.html appsscript.json
+          git commit -m "Đồng bộ mã từ Apps Script (clasp pull)"
+          git push

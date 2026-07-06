@@ -14,8 +14,8 @@
 // 1. CƠ SỞ DỮ LIỆU & CẤU HÌNH (DATA MODELS)
 // ============================================
 
-// A. DANH MỤC BỆNH MẪU (ICD-10 & QĐ 2879)
-const DISEASE_DB = [
+// A. DANH MỤC BỆNH MẪU (ICD-10 & QĐ 2879) — fallback nếu Sheet trống
+let DISEASE_DB = [
     { code: 'E10', name: 'ĐTĐ type 1 (Insulin dependent)', group: 'DM' },
     { code: 'E11', name: 'ĐTĐ type 2 (Non-insulin dependent)', group: 'DM' },
     { code: 'E14', name: 'Đái tháo đường không xác định', group: 'DM' },
@@ -540,8 +540,8 @@ const WHO_LMS_DATA = {
     }
 };
 
-// D. CƠ SỞ DỮ LIỆU THỰC PHẨM VIỆT NAM (RÚT GỌN)
-const VIET_FOOD_DB = [
+// D. CƠ SỞ DỮ LIỆU THỰC PHẨM VIỆT NAM (RÚT GỌN) — fallback nếu Sheet trống
+let VIET_FOOD_DB = [
     { id: 'S01', name: 'Gạo tẻ (Cơm trắng)', unit: 'g', kcal: 344, p: 7.9, l: 1.0, g: 76, cat: 'STARCH', tag: 'NORMAL' },
     { id: 'S02', name: 'Gạo lứt (Cơm lứt)', unit: 'g', kcal: 345, p: 7.5, l: 2.7, g: 72, cat: 'STARCH', tag: 'DIABETES' },
     { id: 'S03', name: 'Cháo trắng (Nấu chín)', unit: 'bat_nho', kcal: 150, p: 3, l: 0.5, g: 30, cat: 'STARCH', tag: 'SOFT' },
@@ -5872,6 +5872,7 @@ function formatAIMarkdown(text) {
 // 13. KHỞI TẠO ỨNG DỤNG (INITIALIZATION)
 // Hàm này được gọi sau khi Login thành công
 function initApp() {
+    loadCatalogFromServer();
     // Tự động load cấu hình hệ thống
     if(typeof google !== 'undefined' && google.script) {
         google.script.run.withSuccessHandler(config => {
@@ -5893,6 +5894,26 @@ function initApp() {
         updateIycfReferencePanel();
         updateMicroNutrientsFootnote();
     }, 0);
+}
+
+/** Đồng bộ danh mục thực phẩm & bệnh từ Google Sheet (qua Apps Script) xuống client. */
+function loadCatalogFromServer() {
+    if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+    google.script.run
+        .withSuccessHandler((data) => {
+            if (!data) return;
+            if (Array.isArray(data.foods) && data.foods.length) {
+                VIET_FOOD_DB = data.foods;
+                if (typeof renderFoodList === 'function') renderFoodList();
+            }
+            if (Array.isArray(data.diseases) && data.diseases.length) {
+                DISEASE_DB = data.diseases;
+            }
+        })
+        .withFailureHandler((err) => {
+            console.warn('Không tải được danh mục từ Sheet, dùng dữ liệu nhúng:', err);
+        })
+        .getInitialData();
 }
 
 let THU_VIEN_EMBED_URL = '';

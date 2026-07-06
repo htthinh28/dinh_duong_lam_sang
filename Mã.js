@@ -972,26 +972,56 @@ function getLatestPatientIntakeById(patientId) {
 }
 
 /**
- * Lấy dữ liệu khởi tạo (Load Data Cache cho App)
+ * Lấy dữ liệu khởi tạo (đồng bộ danh mục từ Google Sheet xuống client)
  */
 function getInitialData() {
   const ss = getDatabase();
-  
+
   const readSheetToJSON = (sheetName) => {
     const s = ss.getSheetByName(sheetName);
     if (!s) return [];
     const d = s.getDataRange().getValues();
-    const h = d[0]; 
-    return d.slice(1).map(r => {
-      let obj = {};
-      h.forEach((k, i) => obj[k.toLowerCase()] = r[i]);
+    if (!d.length) return [];
+    const h = d[0];
+    return d.slice(1).map((r) => {
+      const obj = {};
+      h.forEach((k, i) => {
+        obj[String(k || "").toLowerCase()] = r[i];
+      });
       return obj;
     });
   };
 
+  const foods = readSheetToJSON("FOOD_DB")
+    .map(normalizeFoodRow_)
+    .filter((row) => row.id && row.name);
+
+  const diseases = readSheetToJSON("DISEASE_DB")
+    .map(normalizeDiseaseRow_)
+    .filter((row) => row.code && row.name);
+
+  return { foods: foods, diseases: diseases };
+}
+
+function normalizeFoodRow_(row) {
   return {
-    foods: readSheetToJSON("FOOD_DB"),
-    diseases: readSheetToJSON("DISEASE_DB")
+    id: String(row.id || row.ID || "").trim(),
+    name: String(row.name || row.Name || "").trim(),
+    unit: String(row.unit || row.Unit || "g").trim(),
+    kcal: Number(row.kcal || row.Kcal) || 0,
+    p: Number(row.protein || row.Protein) || 0,
+    l: Number(row.lipid || row.Lipid) || 0,
+    g: Number(row.glucid || row.Glucid) || 0,
+    cat: String(row.category || row.Category || "").trim(),
+    tag: String(row.tag || row.Tag || "NORMAL").trim()
+  };
+}
+
+function normalizeDiseaseRow_(row) {
+  return {
+    code: String(row.code || row.Code || "").trim(),
+    name: String(row.name || row.Name || "").trim(),
+    group: String(row.group_code || row.group || row.Group_Code || row.Group || "").trim()
   };
 }
 
