@@ -107,7 +107,7 @@ class MainActivity : AppCompatActivity() {
                 request: WebResourceRequest?
             ): WebResourceResponse? {
                 val url = request?.url?.toString() ?: return null
-                if (!request.isForMainFrame || request.method != "GET" || !needsHtmlMimeFix(url)) {
+                if (request.method != "GET" || !needsHtmlMimeFix(url)) {
                     return null
                 }
                 return runCatching {

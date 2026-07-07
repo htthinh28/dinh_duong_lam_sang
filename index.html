@@ -2975,38 +2975,13 @@
   </div><!-- #section-dd-pack -->
 
     <div id="section-thu-vien-pack" class="d-none d-print-none">
-      <div class="cdss-glass rounded-4 p-2 p-md-3 border border-white border-opacity-25 shadow-lg mb-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <div>
-          <h5 class="text-primary fw-bold mb-0"><i class="fas fa-book-medical me-2"></i>THƯ VIỆN</h5>
-          <small class="text-muted">Dược thư · ICD-10 · JCI · Nghị định 90/2026 · Kháng sinh</small>
-        </div>
-        <div class="d-flex flex-wrap gap-2">
-          <button type="button" class="btn btn-sm btn-outline-primary" onclick="reloadThuVienFrame(true)" title="Tải lại thư viện">
-            <i class="fas fa-rotate-right"></i> Tải lại
-          </button>
-          <button type="button" class="btn btn-sm btn-primary" onclick="openThuVienInNewTab()" title="Mở thư viện trong tab mới">
-            <i class="fas fa-up-right-from-square"></i> Mở tab mới
-          </button>
-        </div>
-      </div>
-      <div id="thuVienFrameWrap" class="thu-vien-frame-wrap position-relative">
-        <iframe id="thuVienFrame" class="d-none" title="Thư viện tra cứu TĐYT Phương Châu"
-          allow="fullscreen" referrerpolicy="no-referrer-when-downgrade"></iframe>
-        <div id="thuVienFrameLoading" class="thu-vien-overlay">
-          <div id="thuVienStaticShell" class="thu-vien-static-shell">
-            <i class="fas fa-book-medical fa-2x mb-3 d-block text-primary"></i>
-            <p class="fw-bold text-dark mb-2">Thư viện tra cứu</p>
-            <p class="small text-secondary mb-2">Dược thư · ICD-10 · JCI · Kháng sinh · NĐ 90</p>
-            <div id="thuVienStatusBox" class="small text-dark">
-              <i class="fas fa-spinner fa-spin me-1 text-primary"></i> Đang tải thư viện…
-            </div>
-            <p class="small text-muted mt-2 mb-0">Lần đầu có thể mất 1–2 phút (dữ liệu ~30MB).</p>
-            <div class="d-flex flex-wrap gap-2 justify-content-center mt-3">
-              <button type="button" class="btn btn-sm btn-primary" onclick="reloadThuVienFrame(true)"><i class="fas fa-rotate-right"></i> Thử lại</button>
-              <button type="button" class="btn btn-sm btn-outline-primary" onclick="openThuVienInNewTab()"><i class="fas fa-up-right-from-square"></i> Mở tab mới</button>
-            </div>
-          </div>
-        </div>
+      <div class="cdss-glass rounded-4 p-4 text-center">
+        <i class="fas fa-book-medical fa-2x text-primary mb-3 d-block"></i>
+        <p class="fw-bold mb-2">Đang mở Thư viện…</p>
+        <p class="small text-muted mb-3">Chuyển sang trang tra cứu toàn màn hình (không nhúng iframe trong CDSS).</p>
+        <button type="button" class="btn btn-primary btn-sm" onclick="navigateToThuVienPage_()">
+          <i class="fas fa-book-medical me-1"></i> Mở Thư viện ngay
+        </button>
       </div>
     </div>
 
@@ -3273,9 +3248,11 @@
   <script>
   (function () {
     var cdn = '<?= THU_VIEN_CDN_URL ?>';
-    if (typeof THU_VIEN_DEFAULT_URLS !== 'undefined' && THU_VIEN_DEFAULT_URLS.indexOf(cdn) < 0) {
+    var shell = '<?= THU_VIEN_SHELL_URL ?>';
+    if (typeof THU_VIEN_DEFAULT_URLS !== 'undefined' && cdn && THU_VIEN_DEFAULT_URLS.indexOf(cdn) < 0) {
       THU_VIEN_DEFAULT_URLS.unshift(cdn);
     }
+    if (shell) window.THU_VIEN_SHELL_URL = shell;
   })();
   </script>
 

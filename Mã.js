@@ -17,13 +17,14 @@ function doGet(e) {
   }
   var tpl = HtmlService.createTemplateFromFile('index');
   tpl.THU_VIEN_CDN_URL = getThuVienCdnUrl_();
+  tpl.THU_VIEN_SHELL_URL = getThuVienShellUrl_();
   return tpl.evaluate()
     .setTitle('CDSS — Hỗ trợ ra quyết định lâm sàng')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
-/** Trang proxy text/html: fetch CDN rồi render (tránh WebView hiện mã nguồn khi CDN trả text/plain). */
+/** Trang shell text/html: toolbar + iframe CDN (tránh fetch 30MB bằng JS và text/plain trên WebView). */
 function renderThuVienShellPage_() {
   var tpl = HtmlService.createTemplateFromFile('thuVienShell');
   tpl.SOURCE_URLS_JSON = JSON.stringify(getThuVienEmbedUrls());
@@ -33,9 +34,23 @@ function renderThuVienShellPage_() {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
-/** URL CDN thư viện (nhánh gh-pages). Lưu ý: statically.io trả text/plain — chỉ dùng qua thuVienShell hoặc iframe desktop. */
+/** URL CDN thư viện (nhánh gh-pages). Lưu ý: statically.io trả text/plain — chỉ dùng qua thuVienShell. */
 function getThuVienCdnUrl_() {
   return "https://cdn.statically.io/gh/htthinh28/dinh_duong_lam_sang@gh-pages/index.html";
+}
+
+/** URL shell Apps Script (?page=thuVien) — inject vào index, không cần google.script.run khi mở tab Thư viện. */
+function getThuVienShellUrl_() {
+  try {
+    var u = ScriptApp.getService().getUrl();
+    if (!u) return "";
+    var base = String(u).split("#")[0];
+    var q = base.indexOf("?");
+    if (q >= 0) base = base.substring(0, q);
+    return base + "?page=thuVien";
+  } catch (e) {
+    return "";
+  }
 }
 
 function include(filename) {

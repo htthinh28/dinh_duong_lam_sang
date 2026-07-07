@@ -5873,9 +5873,14 @@ function formatAIMarkdown(text) {
 // Hàm này được gọi sau khi Login thành công
 function initApp() {
     const pendingRoot = sessionStorage.getItem('CDSS_STAFF_ROOT');
-    if (pendingRoot === 'tv' || pendingRoot === 'tt') {
+    if (pendingRoot === 'tv') {
         sessionStorage.removeItem('CDSS_STAFF_ROOT');
-        setStaffRootNav(pendingRoot);
+        navigateToThuVienPage_();
+        return;
+    }
+    if (pendingRoot === 'tt') {
+        sessionStorage.removeItem('CDSS_STAFF_ROOT');
+        setStaffRootNav('tt');
         return;
     }
     // Tự động load cấu hình hệ thống
@@ -5901,173 +5906,47 @@ function initApp() {
     }, 0);
 }
 
-let THU_VIEN_EMBED_URL = '';
-/** URL host thư viện — CDN gh-pages (không cần bật GitHub Pages) rồi github.io. */
+/** URL shell Thư viện — inject từ server (Mã.js doGet), tránh google.script.run khi mở tab. */
+let THU_VIEN_SHELL_URL = '';
+/** URL host thư viện — CDN gh-pages rồi github.io (dùng trong shell iframe). */
 const THU_VIEN_DEFAULT_URLS = [
   'https://cdn.statically.io/gh/htthinh28/dinh_duong_lam_sang@gh-pages/index.html',
   'https://htthinh28.github.io/dinh_duong_lam_sang/'
 ];
-const THU_VIEN_LOAD_TIMEOUT_MS = 120000;
-const THU_VIEN_READY_TIMEOUT_MS = 120000;
-const THU_VIEN_MOBILE_READY_TIMEOUT_MS = 45000;
-let thuVienPendingReady = null;
 
-/** Desktop: iframe; mobile/WebView: mở toàn màn hình (iframe thường trắng trên Android). */
-function isThuVienEmbeddedMode_() {
-    if (window.matchMedia('(max-width: 991px)').matches) return false;
-    const ua = String(navigator.userAgent || '');
-    if (/Android|iPhone|iPad|iPod|Mobile|wv\)/i.test(ua)) return false;
-    return true;
+function buildThuVienShellUrl_() {
+  const baked = String(THU_VIEN_SHELL_URL || window.THU_VIEN_SHELL_URL || '').trim();
+  if (baked) return baked;
+  const href = String(window.location.href || '');
+  const base = href.split('#')[0].split('?')[0];
+  if (!base || base === 'about:blank') return '';
+  return base + '?page=thuVien';
 }
 
-/** CDN trả text/plain cho .html — không mở trực tiếp trên mobile/WebView. */
-function isThuVienMimeUnsafeUrl_(url) {
-  const u = String(url || '').toLowerCase();
-  if (u.indexOf('cdn.statically.io/gh/') >= 0 && (u.indexOf('.html') >= 0 || u.indexOf('/index.html') >= 0)) return true;
-  if (u.indexOf('raw.githubusercontent.com') >= 0 && u.indexOf('.html') >= 0) return true;
-  return false;
-}
-
-function openThuVienFullPage(url) {
-    try {
-        sessionStorage.setItem('CDSS_RETURN_URL', window.location.href);
-        sessionStorage.setItem('CDSS_STAFF_ROOT', 'tv');
-    } catch (e) { /* ignore */ }
-
-    if (!isThuVienEmbeddedMode_()) {
-        if (typeof google !== 'undefined' && google.script && google.script.run) {
-            google.script.run
-                .withSuccessHandler((webUrl) => {
-                    const base = String(webUrl || window.location.href).split('?')[0].split('#')[0];
-                    const sep = base.indexOf('?') >= 0 ? '&' : '?';
-                    window.location.assign(base + sep + 'page=thuVien');
-                })
-                .withFailureHandler(() => openThuVienViaClientRewrite_(url))
-                .getPublicWebAppUrl();
-            return;
-        }
-        openThuVienViaClientRewrite_(url);
-        return;
-    }
-
-    const target = String(url || THU_VIEN_EMBED_URL || THU_VIEN_DEFAULT_URLS[0] || '').trim();
-    if (isThuVienMimeUnsafeUrl_(target)) {
-        openThuVienViaClientRewrite_(target);
-        return;
-    }
-    if (target) window.location.assign(target);
-}
-
-/** Fallback: fetch HTML client-side rồi document.write (khi không có shell Apps Script). */
-function openThuVienViaClientRewrite_(preferredUrl) {
-    const urls = [];
-    if (preferredUrl) urls.push(preferredUrl);
-    THU_VIEN_DEFAULT_URLS.forEach((u) => { if (urls.indexOf(u) < 0) urls.push(u); });
-    document.open('text/html', 'replace');
-    document.write('<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Đang tải Thư viện…</title></head><body style="font-family:sans-serif;padding:2rem;text-align:center"><p id="st">Đang tải Thư viện (~30MB)…</p></body></html>');
-    document.close();
-    const tryAt = (i) => {
-        if (i >= urls.length) {
-            const st = document.getElementById('st');
-            if (st) st.textContent = 'Không tải được Thư viện. Kiểm tra mạng.';
-            return;
-        }
-        fetch(urls[i], { cache: 'no-store' })
-            .then((r) => { if (!r.ok) throw new Error('http'); return r.text(); })
-            .then((html) => {
-                if (!html || html.toLowerCase().indexOf('<html') < 0) throw new Error('not-html');
-                document.open('text/html', 'replace');
-                document.write(html);
-                document.close();
-            })
-            .catch(() => tryAt(i + 1));
-    };
-    tryAt(0);
-}
-
-function showThuVienMobileLauncher(urls) {
-    const list = (Array.isArray(urls) ? urls : []).filter(Boolean);
-    const url = list[0] || THU_VIEN_DEFAULT_URLS[0];
-    THU_VIEN_EMBED_URL = url;
-    showThuVienOverlay();
-    setThuVienStatus(
-        '<p class="fw-bold text-dark mb-2"><i class="fas fa-book-medical text-primary me-1"></i> Thư viện tra cứu</p>' +
-        '<p class="small text-secondary mb-3">Trên điện thoại, mở <strong>toàn màn hình</strong> để tải dữ liệu (~30MB) ổn định.</p>' +
-        '<div class="d-grid gap-2">' +
-        '<button type="button" class="btn btn-primary btn-lg" id="btnThuVienOpenFull">' +
-        '<i class="fas fa-up-right-from-square me-1"></i> Mở Thư viện ngay</button>' +
-        '<button type="button" class="btn btn-outline-secondary btn-sm" onclick="setStaffRootNav(\'dd\')">' +
-        '<i class="fas fa-arrow-left me-1"></i> Quay lại Dinh dưỡng</button></div>'
-    );
-    document.getElementById('btnThuVienOpenFull')?.addEventListener('click', () => openThuVienFullPage(url));
-    setTimeout(() => openThuVienFullPage(url), 1200);
-}
-
-window.addEventListener('message', (ev) => {
-  if (!ev.data || ev.data.type !== 'thuVienAppReady') return;
-  const frame = document.getElementById('thuVienFrame');
-  if (!frame || !frame.contentWindow || ev.source !== frame.contentWindow) return;
-  frame.dataset.appReady = '1';
-  if (thuVienPendingReady) {
-    clearTimeout(thuVienPendingReady.timer);
-    thuVienPendingReady.resolve();
-    thuVienPendingReady = null;
+/** Chuyển ngay sang trang shell Thư viện — không iframe, không gọi máy chủ. */
+function navigateToThuVienPage_() {
+  try {
+    const ret = window.location.href.split('#')[0].split('?')[0];
+    if (ret && ret !== 'about:blank') sessionStorage.setItem('CDSS_RETURN_URL', ret);
+    sessionStorage.setItem('CDSS_STAFF_ROOT', 'tv');
+  } catch (e) { /* ignore */ }
+  const shell = buildThuVienShellUrl_();
+  if (shell) {
+    window.location.replace(shell);
+    return;
   }
-});
-
-function mergeThuVienUrlList(serverUrls) {
-  const out = [];
-  (Array.isArray(serverUrls) ? serverUrls : []).concat(THU_VIEN_DEFAULT_URLS).forEach((u) => {
-    const url = String(u || '').trim();
-    if (url && out.indexOf(url) < 0) out.push(url);
-  });
-  return out;
+  const cdn = THU_VIEN_DEFAULT_URLS[0];
+  if (cdn) window.location.replace(cdn);
 }
 
-function fetchThuVienUrlsFromServer() {
-  return new Promise((resolve) => {
-    if (typeof google === 'undefined' || !google.script || !google.script.run) {
-      resolve(THU_VIEN_DEFAULT_URLS);
-      return;
-    }
-    google.script.run
-      .withSuccessHandler((urls) => resolve(mergeThuVienUrlList(urls)))
-      .withFailureHandler(() => resolve(THU_VIEN_DEFAULT_URLS))
-      .getThuVienEmbedUrls();
-  });
+function reloadThuVienFrame() {
+  navigateToThuVienPage_();
 }
 
-/** URL shell Apps Script (text/html) — proxy tải Thư viện từ CDN. */
-function getThuVienShellUrl_() {
-  return new Promise((resolve) => {
-    if (typeof google === 'undefined' || !google.script || !google.script.run) {
-      resolve('');
-      return;
-    }
-    google.script.run
-      .withSuccessHandler((webUrl) => {
-        const base = String(webUrl || window.location.href).split('?')[0].split('#')[0];
-        if (!base) { resolve(''); return; }
-        const sep = base.indexOf('?') >= 0 ? '&' : '?';
-        resolve(base + sep + 'page=thuVien');
-      })
-      .withFailureHandler(() => resolve(''))
-      .getPublicWebAppUrl();
-  });
-}
-
-function setThuVienStatus(html) {
-  const box = document.getElementById('thuVienStatusBox');
-  if (box) box.innerHTML = html;
-}
-
-function showThuVienOverlay() {
-  document.getElementById('thuVienFrameLoading')?.classList.remove('d-none');
-  document.getElementById('thuVienFrame')?.classList.add('d-none');
-}
-
-function hideThuVienOverlay() {
-  document.getElementById('thuVienFrameLoading')?.classList.add('d-none');
+function openThuVienInNewTab() {
+  const shell = buildThuVienShellUrl_();
+  const url = shell || THU_VIEN_DEFAULT_URLS[0];
+  if (url) window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 /** Sidebar: Dinh dưỡng / Quản trị / Thư viện / Thu thập số liệu */
@@ -6100,11 +5979,8 @@ function setStaffRootNav(root) {
   }
 
   if (root === 'tv') {
-    document.body.setAttribute('data-staff-root', 'tv');
     document.getElementById('sidebarNavTv')?.classList.add('active');
-    dd?.classList.add('d-none');
-    tv?.classList.remove('d-none');
-    loadThuVienFrame();
+    navigateToThuVienPage_();
     return;
   }
 
@@ -6115,165 +5991,6 @@ function setStaffRootNav(root) {
     tt?.classList.remove('d-none');
     loadThuThapPanel();
   }
-}
-
-function loadThuVienFrame(forceReload) {
-  const pack = document.getElementById('section-thu-vien-pack');
-  const frame = document.getElementById('thuVienFrame');
-  const loading = document.getElementById('thuVienFrameLoading');
-  if (!pack) {
-    alert('Module Thư viện chưa được triển khai trên phiên bản web này. Vui lòng cập nhật triển khai Apps Script (phiên bản mới).');
-    return;
-  }
-  if (!frame) return;
-
-  const showLoadError = (tried) => {
-    THU_VIEN_EMBED_URL = '';
-    frame.removeAttribute('data-loaded');
-    frame.removeAttribute('data-app-ready');
-    try { frame.removeAttribute('src'); } catch (e) { frame.src = 'about:blank'; }
-    frame.classList.add('d-none');
-    showThuVienOverlay();
-    setThuVienStatus(
-      '<i class="fas fa-triangle-exclamation text-danger me-1"></i> ' +
-      '<strong>Chưa tải được thư viện.</strong> ' +
-      (isThuVienEmbeddedMode_()
-        ? 'Bấm <strong>Mở tab mới</strong> bên dưới để tra cứu trực tiếp.'
-        : 'Bấm <strong>Mở Thư viện ngay</strong> để mở toàn màn hình.') +
-      ((tried && tried.length) ? '<br><span class="text-muted">Đã thử ' + tried.length + ' URL.</span>' : '') +
-      '<div class="d-grid gap-2 mt-3">' +
-      '<button type="button" class="btn btn-primary" onclick="openThuVienInNewTab()"><i class="fas fa-up-right-from-square me-1"></i> Mở Thư viện ngay</button>' +
-      '<button type="button" class="btn btn-outline-secondary btn-sm" onclick="setStaffRootNav(\'dd\')"><i class="fas fa-arrow-left me-1"></i> Quay lại Dinh dưỡng</button></div>'
-    );
-  };
-
-  const waitThuVienAppReady = () => new Promise((resolve, reject) => {
-    if (frame.dataset.appReady === '1') {
-      resolve();
-      return;
-    }
-    const readyMs = isThuVienEmbeddedMode_() ? THU_VIEN_READY_TIMEOUT_MS : THU_VIEN_MOBILE_READY_TIMEOUT_MS;
-    const timer = setTimeout(() => {
-      thuVienPendingReady = null;
-      reject(new Error('ready-timeout'));
-    }, readyMs);
-    thuVienPendingReady = {
-      timer,
-      resolve: () => {
-        clearTimeout(timer);
-        thuVienPendingReady = null;
-        resolve();
-      }
-    };
-  });
-
-  const tryUrlAt = (urls, index, bust) => {
-    if (!urls || index >= urls.length) {
-      showLoadError(urls);
-      return;
-    }
-    const url = urls[index];
-    let settled = false;
-    showThuVienOverlay();
-    setThuVienStatus(
-      '<i class="fas fa-spinner fa-spin me-1 text-primary"></i> ' +
-      'Đang tải thư viện (' + (index + 1) + '/' + urls.length + ')…'
-    );
-    frame.classList.add('d-none');
-    frame.removeAttribute('data-app-ready');
-    const timer = setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      frame.onload = null;
-      tryUrlAt(urls, index + 1, bust);
-    }, THU_VIEN_LOAD_TIMEOUT_MS);
-
-    frame.onload = () => {
-      if (settled) return;
-      setThuVienStatus(
-        '<i class="fas fa-spinner fa-spin me-1 text-primary"></i> ' +
-        'Đang mở dữ liệu (~30MB, có thể mất 1–2 phút)…'
-      );
-      waitThuVienAppReady().then(() => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        THU_VIEN_EMBED_URL = url;
-        frame.dataset.loaded = '1';
-        frame.classList.remove('d-none');
-        hideThuVienOverlay();
-      }).catch(() => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        frame.removeAttribute('data-app-ready');
-        frame.onload = null;
-        tryUrlAt(urls, index + 1, bust);
-      });
-    };
-    frame.onerror = () => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      tryUrlAt(urls, index + 1, bust);
-    };
-    frame.src = url + bust;
-  };
-
-  const start = (urls) => {
-    const list = (Array.isArray(urls) ? urls : [urls]).filter(Boolean);
-    if (!list.length) {
-      showLoadError([]);
-      return;
-    }
-    if (forceReload) {
-      frame.removeAttribute('data-loaded');
-      frame.removeAttribute('data-app-ready');
-      THU_VIEN_EMBED_URL = '';
-    }
-    if (frame.dataset.loaded === '1' && frame.dataset.appReady === '1' && THU_VIEN_EMBED_URL && !forceReload) {
-      frame.classList.remove('d-none');
-      hideThuVienOverlay();
-      return;
-    }
-    const bust = forceReload ? ((list[0].indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now()) : '';
-    tryUrlAt(list, 0, bust);
-  };
-
-  showThuVienOverlay();
-  setThuVienStatus('<i class="fas fa-spinner fa-spin me-1 text-primary"></i> Đang kết nối máy chủ thư viện…');
-
-  fetchThuVienUrlsFromServer().then((urls) => {
-    if (!isThuVienEmbeddedMode_()) {
-      showThuVienMobileLauncher(urls);
-      return;
-    }
-    getThuVienShellUrl_().then((shellUrl) => {
-      if (shellUrl) {
-        start([shellUrl]);
-        return;
-      }
-      start(urls);
-    });
-  });
-}
-
-function reloadThuVienFrame(force) {
-  if (!isThuVienEmbeddedMode_()) {
-    fetchThuVienUrlsFromServer().then((urls) => showThuVienMobileLauncher(urls));
-    return;
-  }
-  loadThuVienFrame(!!force);
-}
-
-function openThuVienInNewTab() {
-  const url = THU_VIEN_EMBED_URL || THU_VIEN_DEFAULT_URLS[0];
-  if (!url) return;
-  if (!isThuVienEmbeddedMode_()) {
-    openThuVienFullPage(url);
-    return;
-  }
-  window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 function loadThuThapPanel(forceReload) {
