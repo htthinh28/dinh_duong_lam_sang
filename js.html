@@ -5920,14 +5920,69 @@ function isThuVienEmbeddedMode_() {
     return true;
 }
 
+/** CDN trả text/plain cho .html — không mở trực tiếp trên mobile/WebView. */
+function isThuVienMimeUnsafeUrl_(url) {
+  const u = String(url || '').toLowerCase();
+  if (u.indexOf('cdn.statically.io/gh/') >= 0 && (u.indexOf('.html') >= 0 || u.indexOf('/index.html') >= 0)) return true;
+  if (u.indexOf('raw.githubusercontent.com') >= 0 && u.indexOf('.html') >= 0) return true;
+  return false;
+}
+
 function openThuVienFullPage(url) {
-    const target = String(url || THU_VIEN_EMBED_URL || THU_VIEN_DEFAULT_URLS[0] || '').trim();
-    if (!target) return;
     try {
         sessionStorage.setItem('CDSS_RETURN_URL', window.location.href);
         sessionStorage.setItem('CDSS_STAFF_ROOT', 'tv');
     } catch (e) { /* ignore */ }
-    window.location.assign(target);
+
+    if (!isThuVienEmbeddedMode_()) {
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+            google.script.run
+                .withSuccessHandler((webUrl) => {
+                    const base = String(webUrl || window.location.href).split('?')[0].split('#')[0];
+                    const sep = base.indexOf('?') >= 0 ? '&' : '?';
+                    window.location.assign(base + sep + 'page=thuVien');
+                })
+                .withFailureHandler(() => openThuVienViaClientRewrite_(url))
+                .getPublicWebAppUrl();
+            return;
+        }
+        openThuVienViaClientRewrite_(url);
+        return;
+    }
+
+    const target = String(url || THU_VIEN_EMBED_URL || THU_VIEN_DEFAULT_URLS[0] || '').trim();
+    if (isThuVienMimeUnsafeUrl_(target)) {
+        openThuVienViaClientRewrite_(target);
+        return;
+    }
+    if (target) window.location.assign(target);
+}
+
+/** Fallback: fetch HTML client-side rồi document.write (khi không có shell Apps Script). */
+function openThuVienViaClientRewrite_(preferredUrl) {
+    const urls = [];
+    if (preferredUrl) urls.push(preferredUrl);
+    THU_VIEN_DEFAULT_URLS.forEach((u) => { if (urls.indexOf(u) < 0) urls.push(u); });
+    document.open('text/html', 'replace');
+    document.write('<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Đang tải Thư viện…</title></head><body style="font-family:sans-serif;padding:2rem;text-align:center"><p id="st">Đang tải Thư viện (~30MB)…</p></body></html>');
+    document.close();
+    const tryAt = (i) => {
+        if (i >= urls.length) {
+            const st = document.getElementById('st');
+            if (st) st.textContent = 'Không tải được Thư viện. Kiểm tra mạng.';
+            return;
+        }
+        fetch(urls[i], { cache: 'no-store' })
+            .then((r) => { if (!r.ok) throw new Error('http'); return r.text(); })
+            .then((html) => {
+                if (!html || html.toLowerCase().indexOf('<html') < 0) throw new Error('not-html');
+                document.open('text/html', 'replace');
+                document.write(html);
+                document.close();
+            })
+            .catch(() => tryAt(i + 1));
+    };
+    tryAt(0);
 }
 
 function showThuVienMobileLauncher(urls) {
@@ -5979,6 +6034,25 @@ function fetchThuVienUrlsFromServer() {
       .withSuccessHandler((urls) => resolve(mergeThuVienUrlList(urls)))
       .withFailureHandler(() => resolve(THU_VIEN_DEFAULT_URLS))
       .getThuVienEmbedUrls();
+  });
+}
+
+/** URL shell Apps Script (text/html) — proxy tải Thư viện từ CDN. */
+function getThuVienShellUrl_() {
+  return new Promise((resolve) => {
+    if (typeof google === 'undefined' || !google.script || !google.script.run) {
+      resolve('');
+      return;
+    }
+    google.script.run
+      .withSuccessHandler((webUrl) => {
+        const base = String(webUrl || window.location.href).split('?')[0].split('#')[0];
+        if (!base) { resolve(''); return; }
+        const sep = base.indexOf('?') >= 0 ? '&' : '?';
+        resolve(base + sep + 'page=thuVien');
+      })
+      .withFailureHandler(() => resolve(''))
+      .getPublicWebAppUrl();
   });
 }
 
@@ -6174,7 +6248,13 @@ function loadThuVienFrame(forceReload) {
       showThuVienMobileLauncher(urls);
       return;
     }
-    start(urls);
+    getThuVienShellUrl_().then((shellUrl) => {
+      if (shellUrl) {
+        start([shellUrl]);
+        return;
+      }
+      start(urls);
+    });
   });
 }
 

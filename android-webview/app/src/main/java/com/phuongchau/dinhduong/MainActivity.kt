@@ -10,6 +10,7 @@ import android.view.View
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -20,6 +21,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import java.net.HttpURLConnection
+import java.net.URL
 
 class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
@@ -63,6 +66,14 @@ class MainActivity : AppCompatActivity() {
         setupBackPressed()
     }
 
+    private fun needsHtmlMimeFix(url: String): Boolean {
+        val u = url.lowercase()
+        if (!u.startsWith("http")) return false
+        if (u.contains("cdn.statically.io/gh/") && u.contains(".html")) return true
+        if (u.contains("raw.githubusercontent.com") && u.contains(".html")) return true
+        return false
+    }
+
     private fun setupWebView() {
         webView.settings.apply {
             javaScriptEnabled = true
@@ -89,6 +100,30 @@ class MainActivity : AppCompatActivity() {
                     startActivity(Intent(Intent.ACTION_VIEW, uri))
                 }
                 return true
+            }
+
+            override fun shouldInterceptRequest(
+                view: WebView?,
+                request: WebResourceRequest?
+            ): WebResourceResponse? {
+                val url = request?.url?.toString() ?: return null
+                if (!request.isForMainFrame || request.method != "GET" || !needsHtmlMimeFix(url)) {
+                    return null
+                }
+                return runCatching {
+                    val conn = (URL(url).openConnection() as HttpURLConnection).apply {
+                        requestMethod = "GET"
+                        connectTimeout = 120_000
+                        readTimeout = 120_000
+                        connect()
+                    }
+                    if (conn.responseCode !in 200..299) {
+                        conn.disconnect()
+                        return null
+                    }
+                    val encoding = conn.contentEncoding ?: "utf-8"
+                    WebResourceResponse("text/html", encoding, conn.inputStream)
+                }.getOrNull()
             }
 
             override fun onPageFinished(view: WebView?, url: String?) {

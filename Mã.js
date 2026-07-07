@@ -10,7 +10,11 @@
 // --- 1. CORE: KHỞI TẠO ỨNG DỤNG WEB ---
 // ============================================================================
 
-function doGet() {
+function doGet(e) {
+  e = e || {};
+  if (String(e.parameter.page || "") === "thuVien") {
+    return renderThuVienShellPage_();
+  }
   var tpl = HtmlService.createTemplateFromFile('index');
   tpl.THU_VIEN_CDN_URL = getThuVienCdnUrl_();
   return tpl.evaluate()
@@ -19,7 +23,17 @@ function doGet() {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
-/** URL CDN thư viện (nhánh gh-pages — không cần bật GitHub Pages). */
+/** Trang proxy text/html: fetch CDN rồi render (tránh WebView hiện mã nguồn khi CDN trả text/plain). */
+function renderThuVienShellPage_() {
+  var tpl = HtmlService.createTemplateFromFile('thuVienShell');
+  tpl.SOURCE_URLS_JSON = JSON.stringify(getThuVienEmbedUrls());
+  return tpl.evaluate()
+    .setTitle('Thư viện tra cứu — TĐYT Phương Châu')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/** URL CDN thư viện (nhánh gh-pages). Lưu ý: statically.io trả text/plain — chỉ dùng qua thuVienShell hoặc iframe desktop. */
 function getThuVienCdnUrl_() {
   return "https://cdn.statically.io/gh/htthinh28/dinh_duong_lam_sang@gh-pages/index.html";
 }

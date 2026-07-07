@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Thư viện tra cứu — TĐYT Phương Châu</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 1.5rem; text-align: center; background: #fdf2f8; color: #333; }
+    .box { max-width: 28rem; margin: 2rem auto; background: #fff; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 8px 24px rgba(0,0,0,.08); }
+    .btn { display: inline-block; margin-top: 1rem; padding: .65rem 1.2rem; border: none; border-radius: .5rem; background: #d81b60; color: #fff; font-weight: 700; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <p id="status"><strong>Đang tải Thư viện</strong><br><span style="font-size:.9rem;color:#666">Dữ liệu ~30MB, có thể mất 1–2 phút…</span></p>
+    <button type="button" class="btn" id="btnBack" style="display:none">← Quay lại CDSS</button>
+  </div>
+  <script>
+    (function () {
+      var URLS = <?!= SOURCE_URLS_JSON ?>;
+      var back = '';
+      try { back = sessionStorage.getItem('CDSS_RETURN_URL') || ''; } catch (e) {}
+      var btn = document.getElementById('btnBack');
+      if (btn && back) {
+        btn.style.display = 'inline-block';
+        btn.addEventListener('click', function () {
+          try { sessionStorage.removeItem('CDSS_RETURN_URL'); } catch (e) {}
+          window.location.assign(back);
+        });
+      }
+      function setStatus(msg) {
+        var el = document.getElementById('status');
+        if (el) el.innerHTML = msg;
+      }
+      function looksLikeHtml(text) {
+        var t = String(text || '').trim().toLowerCase();
+        return t.indexOf('<!doctype') >= 0 || t.indexOf('<html') >= 0;
+      }
+      function tryLoad(i) {
+        if (!URLS || i >= URLS.length) {
+          setStatus('<strong style="color:#c62828">Không tải được Thư viện.</strong><br><span style="font-size:.9rem">Kiểm tra kết nối mạng và thử lại.</span>');
+          return;
+        }
+        var url = String(URLS[i] || '').trim();
+        if (!url) { tryLoad(i + 1); return; }
+        setStatus('<strong>Đang tải Thư viện</strong> (' + (i + 1) + '/' + URLS.length + ')…');
+        fetch(url, { cache: 'no-store' })
+          .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+          .then(function (html) {
+            if (!looksLikeHtml(html)) throw new Error('not-html');
+            document.open('text/html', 'replace');
+            document.write(html);
+            document.close();
+          })
+          .catch(function () { tryLoad(i + 1); });
+      }
+      tryLoad(0);
+    })();
+  </script>
+</body>
+</html>
