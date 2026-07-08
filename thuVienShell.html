@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Thư viện tra cứu — TĐYT Phương Châu</title>
+  <style>
+    :root {
+      --toolbar-h: 2.75rem;
+      --pc-primary: #d81b60;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #fdf2f8;
+    }
+    #toolbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      height: var(--toolbar-h);
+      padding: 0 .75rem;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      background: #fff;
+      border-bottom: 1px solid rgba(216, 27, 96, 0.15);
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    #btnBack {
+      border: none;
+      background: var(--pc-primary);
+      color: #fff;
+      font-weight: 600;
+      font-size: .85rem;
+      padding: .4rem .75rem;
+      border-radius: .4rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    #status {
+      flex: 1;
+      font-size: .8rem;
+      color: #666;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    #libFrame {
+      position: fixed;
+      top: var(--toolbar-h);
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      border: 0;
+      background: #fff;
+    }
+    #loading {
+      position: fixed;
+      top: var(--toolbar-h);
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fdf2f8;
+      z-index: 50;
+      padding: 1.5rem;
+      text-align: center;
+    }
+    #loading.hidden { display: none; }
+    .spinner {
+      width: 2rem;
+      height: 2rem;
+      border: 3px solid rgba(216,27,96,.2);
+      border-top-color: var(--pc-primary);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin: 0 auto .75rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div id="toolbar">
+    <button type="button" id="btnBack" style="display:none">← Quay lại CDSS</button>
+    <span id="status">Đang mở Thư viện…</span>
+  </div>
+  <div id="loading">
+    <div>
+      <div class="spinner"></div>
+      <strong>Thư viện tra cứu</strong><br>
+      <span style="font-size:.85rem;color:#666">Trình duyệt đang tải dữ liệu nền (~30MB)…</span>
+    </div>
+  </div>
+  <iframe id="libFrame" title="Thư viện tra cứu TĐYT Phương Châu"
+    allow="fullscreen" referrerpolicy="no-referrer-when-downgrade"></iframe>
+  <script>
+    (function () {
+      var URLS = <?!= SOURCE_URLS_JSON ?>;
+      var LOAD_TIMEOUT_MS = 180000;
+      var frame = document.getElementById('libFrame');
+      var loading = document.getElementById('loading');
+      var status = document.getElementById('status');
+      var idx = 0;
+      var timer = null;
+      var back = '';
+      try { back = sessionStorage.getItem('CDSS_RETURN_URL') || ''; } catch (e) {}
+      var btnBack = document.getElementById('btnBack');
+      if (btnBack && back) {
+        btnBack.style.display = 'inline-block';
+        btnBack.addEventListener('click', function () {
+          try { sessionStorage.removeItem('CDSS_RETURN_URL'); } catch (e) {}
+          window.location.assign(back);
+        });
+      }
+      function setStatus(msg) {
+        if (status) status.textContent = msg;
+      }
+      function hideLoading() {
+        if (loading) loading.classList.add('hidden');
+      }
+      function clearTimer() {
+        if (timer) { clearTimeout(timer); timer = null; }
+      }
+      function tryNext() {
+        clearTimer();
+        if (!URLS || idx >= URLS.length) {
+          hideLoading();
+          setStatus('Không tải được Thư viện — kiểm tra mạng');
+          return;
+        }
+        var url = String(URLS[idx] || '').trim();
+        var attempt = idx + 1;
+        idx++;
+        if (!url) { tryNext(); return; }
+        setStatus('Đang tải (' + attempt + '/' + URLS.length + ')…');
+        frame.onload = function () {
+          clearTimer();
+          hideLoading();
+          setStatus('Thư viện tra cứu');
+        };
+        timer = setTimeout(function () {
+          frame.onload = null;
+          tryNext();
+        }, LOAD_TIMEOUT_MS);
+        frame.src = url;
+      }
+      tryNext();
+    })();
+  </script>
+</body>
+</html>

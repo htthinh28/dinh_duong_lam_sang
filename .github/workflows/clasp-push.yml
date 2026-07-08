@@ -9,6 +9,7 @@ on:
       - 'js.html'
       - 'css.html'
       - 'Mã.js'
+      - 'thuVienShell.html'
       - 'logoB64.html'
       - 'appsscript.json'
       - '.claspignore'

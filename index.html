@@ -197,6 +197,9 @@
       <button type="button" class="nav-link" id="sidebarNavTv" onclick="setStaffRootNav('tv')" title="Thư viện tra cứu — Dược thư, ICD-10, JCI, NĐ 90">
         <i class="fas fa-book-medical"></i> <span class="nav-text">Thư viện</span>
       </button>
+      <button type="button" class="nav-link" id="sidebarNavTt" onclick="setStaffRootNav('tt')" title="Thu thập &amp; thống kê hồ sơ dinh dưỡng">
+        <i class="fas fa-flask"></i> <span class="nav-text">Thu thập số liệu</span>
+      </button>
     </div>
   </div>
 
@@ -2972,42 +2975,363 @@
   </div><!-- #section-dd-pack -->
 
     <div id="section-thu-vien-pack" class="d-none d-print-none">
-      <div class="cdss-glass rounded-4 p-2 p-md-3 border border-white border-opacity-25 shadow-lg mb-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <div>
-          <h5 class="text-primary fw-bold mb-0"><i class="fas fa-book-medical me-2"></i>THƯ VIỆN</h5>
-          <small class="text-muted">Dược thư · ICD-10 · JCI · Nghị định 90/2026 · Kháng sinh</small>
-        </div>
-        <div class="d-flex flex-wrap gap-2">
-          <button type="button" class="btn btn-sm btn-outline-primary" onclick="reloadThuVienFrame(true)" title="Tải lại thư viện">
-            <i class="fas fa-rotate-right"></i> Tải lại
-          </button>
-          <button type="button" class="btn btn-sm btn-primary" onclick="openThuVienInNewTab()" title="Mở thư viện trong tab mới">
-            <i class="fas fa-up-right-from-square"></i> Mở tab mới
-          </button>
-        </div>
+      <div class="cdss-glass rounded-4 p-4 text-center">
+        <i class="fas fa-book-medical fa-2x text-primary mb-3 d-block"></i>
+        <p class="fw-bold mb-2">Đang mở Thư viện…</p>
+        <p class="small text-muted mb-3">Chuyển sang trang tra cứu toàn màn hình (không nhúng iframe trong CDSS).</p>
+        <button type="button" class="btn btn-primary btn-sm" onclick="navigateToThuVienPage_()">
+          <i class="fas fa-book-medical me-1"></i> Mở Thư viện ngay
+        </button>
       </div>
-      <div id="thuVienFrameWrap" class="thu-vien-frame-wrap position-relative">
-        <iframe id="thuVienFrame" class="d-none" title="Thư viện tra cứu TĐYT Phương Châu"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals allow-popups-to-escape-sandbox"></iframe>
-        <div id="thuVienFrameLoading" class="thu-vien-overlay">
-          <div id="thuVienStaticShell" class="thu-vien-static-shell">
-            <i class="fas fa-book-medical fa-2x mb-3 d-block text-primary"></i>
-            <p class="fw-bold text-dark mb-2">Thư viện tra cứu</p>
-            <p class="small text-secondary mb-2">Dược thư · ICD-10 · JCI · Kháng sinh · NĐ 90</p>
-            <div id="thuVienStatusBox" class="small text-dark">
-              <i class="fas fa-spinner fa-spin me-1 text-primary"></i> Đang tải thư viện…
+    </div>
+
+    <div id="section-thu-thap-pack" class="d-none d-print-none">
+      <div class="cdss-glass rounded-4 p-2 p-md-3 border border-white border-opacity-25 shadow-lg mb-2">
+        <h5 class="text-primary fw-bold mb-0"><i class="fas fa-flask me-2"></i>THU THẬP SỐ LIỆU</h5>
+        <small class="text-muted">Phiếu CRF nghiên cứu · Đồng bộ từ tab Dinh dưỡng · Lưu Google Sheet</small>
+      </div>
+
+      <div class="card border-0 shadow-sm mb-3" id="thuThapFormCard">
+        <div class="card-header bg-light d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <span class="fw-bold text-primary"><i class="fas fa-clipboard-list me-1"></i> Phiếu nhập liệu nghiên cứu</span>
+          <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="syncThuThapFromClinical_()">
+              <i class="fas fa-link me-1"></i> Lấy từ Dinh dưỡng
+            </button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="saveThuThapForm()">
+              <i class="fas fa-save me-1"></i> Lưu phiếu
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="thuThapSaveStatus" class="small text-muted mb-3"></div>
+
+          <div class="row g-3 mb-3 pb-3 border-bottom">
+            <div class="col-md-6">
+              <label class="form-label fw-bold" for="tt_nguoiNhap">Người nhập liệu <span class="text-danger">*</span></label>
+              <select class="form-select" id="tt_nguoiNhap" required>
+                <option value="">— Chọn bác sĩ / cán bộ nhập —</option>
+                <option value="Bs Hồ Tấn Thịnh">Bs Hồ Tấn Thịnh</option>
+                <option value="Bs Bành Mỹ Hoa">Bs Bành Mỹ Hoa</option>
+                <option value="Bs Vương Ngọc Thắng">Bs Vương Ngọc Thắng</option>
+                <option value="Bs Lưu Minh Kiệt">Bs Lưu Minh Kiệt</option>
+              </select>
             </div>
-            <p class="small text-muted mt-2 mb-0">Lần đầu có thể mất 1–2 phút (dữ liệu ~30MB).</p>
-            <div class="d-flex flex-wrap gap-2 justify-content-center mt-3">
-              <button type="button" class="btn btn-sm btn-primary" onclick="reloadThuVienFrame(true)"><i class="fas fa-rotate-right"></i> Thử lại</button>
-              <button type="button" class="btn btn-sm btn-outline-primary" onclick="openThuVienInNewTab()"><i class="fas fa-up-right-from-square"></i> Mở tab mới</button>
+            <div class="col-md-3">
+              <label class="form-label small" for="tt_ngayNhap">Ngày nhập</label>
+              <input type="date" class="form-control form-control-sm" id="tt_ngayNhap">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small" for="tt_maBN">1. Mã BN / CCCD</label>
+              <input type="text" class="form-control form-control-sm" id="tt_maBN" placeholder="ID bệnh nhân">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small" for="tt_hoTen">2. Họ và tên</label>
+              <input type="text" class="form-control form-control-sm text-uppercase" id="tt_hoTen">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small" for="tt_tuoi">3. Tuổi</label>
+              <input type="text" class="form-control form-control-sm" id="tt_tuoi" readonly>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small" for="tt_gioiTinh">Giới</label>
+              <input type="text" class="form-control form-control-sm" id="tt_gioiTinh" readonly>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small" for="tt_bmi">7. BMI</label>
+              <input type="text" class="form-control form-control-sm" id="tt_bmi" readonly>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small" for="tt_chanDoan">4. Chẩn đoán chính</label>
+              <input type="text" class="form-control form-control-sm" id="tt_chanDoan" placeholder="ICD-10 / mô tả">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small" for="tt_hba1c">5. HbA1c (%)</label>
+              <input type="text" class="form-control form-control-sm" id="tt_hba1c" inputmode="decimal" placeholder="VD: 7.2">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small" for="tt_thoiGianDtd">6. Thời gian mắc ĐTĐ (năm)</label>
+              <input type="text" class="form-control form-control-sm" id="tt_thoiGianDtd" inputmode="decimal" placeholder="VD: 5">
+            </div>
+          </div>
+
+          <div class="tt-sticky-drugs-wrap mb-3" id="tt_item8_wrap">
+            <div class="tt-sticky-drugs-bar">
+              <div class="fw-bold small text-primary mb-2">
+                <i class="fas fa-pills me-1"></i> 8. Phác đồ điều trị hiện tại — nhóm thuốc hạ đường huyết
+              </div>
+              <div class="d-flex flex-wrap gap-2 gap-md-3">
+                <div class="form-check form-check-inline tt-drug-chip">
+                  <input class="form-check-input" type="checkbox" id="tt_rx_metformin" name="tt_rx_group" value="Metformin">
+                  <label class="form-check-label" for="tt_rx_metformin">Metformin</label>
+                </div>
+                <div class="form-check form-check-inline tt-drug-chip">
+                  <input class="form-check-input" type="checkbox" id="tt_rx_sulfonylure" name="tt_rx_group" value="Sulfonylure">
+                  <label class="form-check-label" for="tt_rx_sulfonylure">Sulfonylure</label>
+                </div>
+                <div class="form-check form-check-inline tt-drug-chip">
+                  <input class="form-check-input" type="checkbox" id="tt_rx_dpp4i" name="tt_rx_group" value="DPP4i">
+                  <label class="form-check-label" for="tt_rx_dpp4i">DPP4i</label>
+                </div>
+                <div class="form-check form-check-inline tt-drug-chip">
+                  <input class="form-check-input" type="checkbox" id="tt_rx_sglt2i" name="tt_rx_group" value="SGLT2i">
+                  <label class="form-check-label" for="tt_rx_sglt2i">SGLT2i</label>
+                </div>
+                <div class="form-check form-check-inline tt-drug-chip">
+                  <input class="form-check-input" type="checkbox" id="tt_rx_glp1" name="tt_rx_group" value="GLP1">
+                  <label class="form-check-label" for="tt_rx_glp1">GLP1</label>
+                </div>
+                <div class="form-check form-check-inline tt-drug-chip">
+                  <input class="form-check-input" type="checkbox" id="tt_rx_alpha_glucosidase" name="tt_rx_group" value="alpha-glucosidase">
+                  <label class="form-check-label" for="tt_rx_alpha_glucosidase">alpha-glucosidase</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label small" for="tt_bienChungMachNho">9. Biến chứng mạch máu nhỏ</label>
+              <select class="form-select form-select-sm" id="tt_bienChungMachNho">
+                <option value="">— Chọn —</option>
+                <option value="Không">Không</option>
+                <option value="Có">Có</option>
+                <option value="Không rõ">Không rõ</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small" for="tt_bienChungMachLon">10. Biến chứng mạch máu lớn</label>
+              <select class="form-select form-select-sm" id="tt_bienChungMachLon">
+                <option value="">— Chọn —</option>
+                <option value="Không">Không</option>
+                <option value="Có">Có</option>
+                <option value="Không rõ">Không rõ</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small" for="tt_benhThanDtd">11. Bệnh thận ĐTĐ</label>
+              <select class="form-select form-select-sm" id="tt_benhThanDtd">
+                <option value="">— Chọn —</option>
+                <option value="Không">Không</option>
+                <option value="Có">Có</option>
+                <option value="Không rõ">Không rõ</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small" for="tt_thaDongMac">12. Tăng huyết áp đồng mắc</label>
+              <select class="form-select form-select-sm" id="tt_thaDongMac">
+                <option value="">— Chọn —</option>
+                <option value="Không">Không</option>
+                <option value="Có">Có</option>
+                <option value="Không rõ">Không rõ</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small" for="tt_insulin">13. Đang dùng insulin</label>
+              <select class="form-select form-select-sm" id="tt_insulin">
+                <option value="">— Chọn —</option>
+                <option value="Không">Không</option>
+                <option value="Có">Có</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-3 align-items-end">
+            <div class="col-md-5">
+              <label class="form-label fw-bold" for="tt_stopbang_score">14. STOP-Bang <span class="text-muted fw-normal">(/8)</span></label>
+              <div class="input-group input-group-sm">
+                <input type="text" class="form-control fw-bold text-center" id="tt_stopbang_score" readonly placeholder="—">
+                <button type="button" class="btn btn-outline-primary" onclick="openStopBangModal()" title="Bảng điểm chi tiết">
+                  <i class="fas fa-table me-1"></i> Nhập điểm
+                </button>
+              </div>
+              <div class="small text-muted mt-1" id="tt_stopbang_risk">Chưa chấm điểm</div>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label fw-bold" for="tt_phq9_score">15. PHQ-9 <span class="text-muted fw-normal">(/27)</span></label>
+              <div class="input-group input-group-sm">
+                <input type="text" class="form-control fw-bold text-center" id="tt_phq9_score" readonly placeholder="—">
+                <button type="button" class="btn btn-outline-primary" onclick="openPhq9Modal()" title="Bảng điểm chi tiết">
+                  <i class="fas fa-table me-1"></i> Nhập điểm
+                </button>
+              </div>
+              <div class="small text-muted mt-1" id="tt_phq9_risk">Chưa chấm điểm</div>
             </div>
           </div>
         </div>
       </div>
+
+      <div id="thuThapStatusBox" class="small text-muted mb-2">
+        <i class="fas fa-spinner fa-spin me-1 text-primary"></i> Đang tải dữ liệu…
+      </div>
+      <div class="row g-3 mb-3" id="thuThapStatsRow">
+        <div class="col-6 col-md-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-3">
+              <div class="text-muted small">Tổng hồ sơ</div>
+              <div class="fs-3 fw-bold text-primary" id="thuThapStatTotal">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-3">
+              <div class="text-muted small">Tháng này</div>
+              <div class="fs-3 fw-bold text-success" id="thuThapStatMonth">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-3">
+              <div class="text-muted small">Phiếu nghiên cứu</div>
+              <div class="fs-3 fw-bold text-info" id="thuThapStatResearch">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <span class="fw-bold text-primary"><i class="fas fa-table me-1"></i> Hồ sơ gần đây</span>
+          <button type="button" class="btn btn-sm btn-outline-primary" onclick="loadThuThapPanel(true)">
+            <i class="fas fa-rotate-right"></i> Tải lại
+          </button>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0 align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Thời gian</th>
+                  <th>ID/CCCD</th>
+                  <th>Họ tên</th>
+                  <th class="d-none d-md-table-cell">BMI</th>
+                  <th class="d-none d-lg-table-cell">Chẩn đoán</th>
+                  <th class="d-none d-md-table-cell">Bác sĩ</th>
+                </tr>
+              </thead>
+              <tbody id="thuThapTableBody">
+                <tr><td colspan="6" class="text-center text-muted py-4">Đang tải…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <p class="small text-muted mt-2 mb-0">
+        <i class="fas fa-circle-info me-1"></i>
+        Hồ sơ dinh dưỡng: sheet <strong>RECORDS</strong>. Phiếu nghiên cứu: <strong>RESEARCH_COLLECT</strong>.
+        Xuất Excel tại tab <strong>In KQ</strong> hoặc bấm <strong>Lưu phiếu</strong> ở trên.
+      </p>
     </div>
 
   </div><!-- main-content -->
+
+  <div class="modal fade" id="stopBangModal" tabindex="-1" aria-labelledby="stopBangModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white py-2">
+          <h5 class="modal-title fw-bold" id="stopBangModalLabel"><i class="fas fa-bed me-2"></i>14. STOP-Bang — Bảng chấm điểm (/8)</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-muted">Mỗi tiêu chí <strong>Có</strong> = 1 điểm. Nguy cơ OSA cao thường khi tổng ≥ 3 (≥ 5: nguy cơ cao).</p>
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered align-middle mb-0">
+              <thead class="table-light">
+                <tr><th style="width:3rem">Có</th><th>Tiêu chí STOP-Bang</th><th style="width:4rem" class="text-center">Điểm</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="text-center"><input class="form-check-input stopbang-item" type="checkbox" id="sb_snore" data-score="1" onchange="calcStopBang_()"></td>
+                  <td><label class="form-check-label mb-0" for="sb_snore"><strong>S</strong> — Ngáy to (thường xuyên / ảnh hưởng người khác)</label></td>
+                  <td class="text-center fw-bold">1</td>
+                </tr>
+                <tr>
+                  <td class="text-center"><input class="form-check-input stopbang-item" type="checkbox" id="sb_tired" data-score="1" onchange="calcStopBang_()"></td>
+                  <td><label class="form-check-label mb-0" for="sb_tired"><strong>T</strong> — Mệt mỏi, buồn ngủ ban ngày</label></td>
+                  <td class="text-center fw-bold">1</td>
+                </tr>
+                <tr>
+                  <td class="text-center"><input class="form-check-input stopbang-item" type="checkbox" id="sb_observed" data-score="1" onchange="calcStopBang_()"></td>
+                  <td><label class="form-check-label mb-0" for="sb_observed"><strong>O</strong> — Người khác quan sát thấy ngừng thở / thở hổn hển khi ngủ</label></td>
+                  <td class="text-center fw-bold">1</td>
+                </tr>
+                <tr>
+                  <td class="text-center"><input class="form-check-input stopbang-item" type="checkbox" id="sb_pressure" data-score="1" onchange="calcStopBang_()"></td>
+                  <td><label class="form-check-label mb-0" for="sb_pressure"><strong>P</strong> — Tăng huyết áp (đang điều trị hoặc đo ≥ 140/90)</label></td>
+                  <td class="text-center fw-bold">1</td>
+                </tr>
+                <tr>
+                  <td class="text-center"><input class="form-check-input stopbang-item" type="checkbox" id="sb_bmi" data-score="1" onchange="calcStopBang_()"></td>
+                  <td><label class="form-check-label mb-0" for="sb_bmi"><strong>B</strong> — BMI &gt; 35 kg/m²</label></td>
+                  <td class="text-center fw-bold">1</td>
+                </tr>
+                <tr>
+                  <td class="text-center"><input class="form-check-input stopbang-item" type="checkbox" id="sb_age" data-score="1" onchange="calcStopBang_()"></td>
+                  <td><label class="form-check-label mb-0" for="sb_age"><strong>A</strong> — Tuổi &gt; 50</label></td>
+                  <td class="text-center fw-bold">1</td>
+                </tr>
+                <tr>
+                  <td class="text-center"><input class="form-check-input stopbang-item" type="checkbox" id="sb_neck" data-score="1" onchange="calcStopBang_()"></td>
+                  <td><label class="form-check-label mb-0" for="sb_neck"><strong>N</strong> — Vòng cổ &gt; 40 cm (nam) hoặc &gt; 35 cm (nữ)</label></td>
+                  <td class="text-center fw-bold">1</td>
+                </tr>
+                <tr>
+                  <td class="text-center"><input class="form-check-input stopbang-item" type="checkbox" id="sb_gender" data-score="1" onchange="calcStopBang_()"></td>
+                  <td><label class="form-check-label mb-0" for="sb_gender"><strong>G</strong> — Giới nam</label></td>
+                  <td class="text-center fw-bold">1</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3 p-2 bg-light rounded">
+            <span class="fw-bold">Tổng STOP-Bang: <span id="sb_total_display" class="badge bg-secondary fs-6">0</span> / 8</span>
+            <span id="sb_risk_display" class="small text-muted">Nguy cơ OSA: chưa xác định</span>
+          </div>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="applyStopBangScore_()">Áp dụng điểm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="phq9Modal" tabindex="-1" aria-labelledby="phq9ModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header bg-info text-white py-2">
+          <h5 class="modal-title fw-bold" id="phq9ModalLabel"><i class="fas fa-brain me-2"></i>15. PHQ-9 — Bảng chấm điểm (/27)</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-muted mb-2">Trong <strong>2 tuần qua</strong>, bệnh nhân bị làm phiền bởi các vấn đề sau ở mức độ nào? (0 = Không hề · 1 = Vài ngày · 2 = Hơn nửa số ngày · 3 = Gần như mỗi ngày)</p>
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="min-width:14rem">Câu hỏi PHQ-9</th>
+                  <th class="text-center" style="width:4.5rem">0</th>
+                  <th class="text-center" style="width:4.5rem">1</th>
+                  <th class="text-center" style="width:4.5rem">2</th>
+                  <th class="text-center" style="width:4.5rem">3</th>
+                </tr>
+              </thead>
+              <tbody id="phq9QuestionsBody"></tbody>
+            </table>
+          </div>
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3 p-2 bg-light rounded">
+            <span class="fw-bold">Tổng PHQ-9: <span id="phq9_total_display" class="badge bg-secondary fs-6">0</span> / 27</span>
+            <span id="phq9_risk_display" class="small text-muted">Mức độ: chưa xác định</span>
+          </div>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="applyPhq9Score_()">Áp dụng điểm</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div class="modal fade" id="addRefModal" tabindex="-1">
     <div class="modal-dialog">
@@ -3211,9 +3535,11 @@
   <script>
   (function () {
     var cdn = '<?= THU_VIEN_CDN_URL ?>';
-    if (typeof THU_VIEN_DEFAULT_URLS !== 'undefined' && THU_VIEN_DEFAULT_URLS.indexOf(cdn) < 0) {
+    var shell = '<?= THU_VIEN_SHELL_URL ?>';
+    if (typeof THU_VIEN_DEFAULT_URLS !== 'undefined' && cdn && THU_VIEN_DEFAULT_URLS.indexOf(cdn) < 0) {
       THU_VIEN_DEFAULT_URLS.unshift(cdn);
     }
+    if (shell) window.THU_VIEN_SHELL_URL = shell;
   })();
   </script>
 
