@@ -5993,7 +5993,319 @@ function setStaffRootNav(root) {
   }
 }
 
+const TT_NGUOI_NHAP_OPTIONS = [
+  'Bs Hồ Tấn Thịnh',
+  'Bs Bành Mỹ Hoa',
+  'Bs Vương Ngọc Thắng',
+  'Bs Lưu Minh Kiệt'
+];
+
+const PHQ9_QUESTIONS_ = [
+  'Ít hứng thú hoặc vui thích khi làm việc gì',
+  'Cảm thấy chán nản, trầm cảm hoặc tuyệt vọng',
+  'Khó ngủ, ngủ không yên hoặc ngủ quá nhiều',
+  'Mệt mỏi hoặc thiếu năng lượng',
+  'Chán ăn hoặc ăn quá nhiều',
+  'Cảm thấy tồi tệ về bản thân — thất bại, làm phiền gia đình',
+  'Khó tập trung (đọc báo, xem TV…)',
+  'Cử động/chậm nói đến mức người khác nhận ra; hoặc bồn chồn không yên',
+  'Nghĩ tốt hơn là chết hoặc tự làm hại bản thân'
+];
+
+function initThuThapForm_() {
+  const ngay = document.getElementById('tt_ngayNhap');
+  if (ngay && !ngay.value) {
+    const d = new Date();
+    ngay.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  initPhq9ModalTable_();
+  const saved = sessionStorage.getItem('TT_FORM_DRAFT');
+  if (saved) {
+    try { restoreThuThapFormDraft_(JSON.parse(saved)); } catch (e) { /* ignore */ }
+  }
+  const card = document.getElementById('thuThapFormCard');
+  if (card && !card.dataset.draftBound) {
+    card.dataset.draftBound = '1';
+    card.addEventListener('change', persistThuThapDraft_);
+    card.addEventListener('input', persistThuThapDraft_);
+  }
+}
+
+function initPhq9ModalTable_() {
+  const tbody = document.getElementById('phq9QuestionsBody');
+  if (!tbody || tbody.dataset.built === '1') return;
+  tbody.innerHTML = PHQ9_QUESTIONS_.map((q, i) => {
+    const n = i + 1;
+    const name = 'phq9_q' + n;
+    return '<tr>' +
+      '<td class="small"><span class="fw-bold me-1">' + n + '.</span>' + q + '</td>' +
+      [0, 1, 2, 3].map((v) => (
+        '<td class="text-center"><input class="form-check-input phq9-item" type="radio" name="' + name + '" value="' + v + '" onchange="calcPhq9_()"></td>'
+      )).join('') +
+      '</tr>';
+  }).join('');
+  tbody.dataset.built = '1';
+}
+
+function syncThuThapFromClinical_() {
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val != null ? String(val) : ''; };
+  set('tt_maBN', document.getElementById('cccd')?.value || '');
+  set('tt_hoTen', document.getElementById('hoTen')?.value || '');
+  set('tt_tuoi', document.getElementById('hienThiTuoi')?.value || '');
+  const gt = document.getElementById('gioiTinh')?.value || '';
+  set('tt_gioiTinh', gt === 'Nu' ? 'Nữ' : (gt === 'Nam' ? 'Nam' : gt));
+  set('tt_bmi', document.getElementById('m2_bmi')?.value || document.getElementById('bmi')?.value || '');
+  const icdJson = document.getElementById('icdDataJSON');
+  if (icdJson && icdJson.value) {
+    try {
+      const arr = JSON.parse(icdJson.value);
+      if (Array.isArray(arr) && arr.length) {
+        set('tt_chanDoan', arr.map((x) => x.code || x.m || x).filter(Boolean).join(', '));
+      }
+    } catch (e) { /* ignore */ }
+  }
+  const bs = document.getElementById('bsKham');
+  if (bs && bs.value) {
+    const opt = bs.options[bs.selectedIndex];
+    const name = opt ? (opt.text || opt.value) : '';
+    const sel = document.getElementById('tt_nguoiNhap');
+    if (sel && name) {
+      const match = TT_NGUOI_NHAP_OPTIONS.find((o) => name.indexOf(o.replace('Bs ', '')) >= 0 || o.indexOf(name) >= 0);
+      if (match) sel.value = match;
+    }
+  }
+  autoFillStopBangFromClinical_();
+  const msg = document.getElementById('thuThapSaveStatus');
+  if (msg) msg.innerHTML = '<span class="text-success"><i class="fas fa-check me-1"></i>Đã đồng bộ từ tab Dinh dưỡng.</span>';
+}
+
+function autoFillStopBangFromClinical_() {
+  const bmi = parseFloat(String(document.getElementById('tt_bmi')?.value || document.getElementById('m2_bmi')?.value || '').replace(',', '.'));
+  const age = parseInt(String(document.getElementById('tt_tuoi')?.value || document.getElementById('hienThiTuoi')?.value || ''), 10);
+  const gt = String(document.getElementById('tt_gioiTinh')?.value || document.getElementById('gioiTinh')?.value || '');
+  const sbBmi = document.getElementById('sb_bmi');
+  const sbAge = document.getElementById('sb_age');
+  const sbGender = document.getElementById('sb_gender');
+  if (sbBmi) sbBmi.checked = Number.isFinite(bmi) && bmi > 35;
+  if (sbAge) sbAge.checked = Number.isFinite(age) && age > 50;
+  if (sbGender) sbGender.checked = gt === 'Nam';
+  calcStopBang_();
+}
+
+function openStopBangModal() {
+  initPhq9ModalTable_();
+  const el = document.getElementById('stopBangModal');
+  if (!el || typeof bootstrap === 'undefined') return;
+  bootstrap.Modal.getOrCreateInstance(el).show();
+}
+
+function openPhq9Modal() {
+  initPhq9ModalTable_();
+  const el = document.getElementById('phq9Modal');
+  if (!el || typeof bootstrap === 'undefined') return;
+  bootstrap.Modal.getOrCreateInstance(el).show();
+}
+
+function calcStopBang_() {
+  let total = 0;
+  document.querySelectorAll('.stopbang-item:checked').forEach((el) => {
+    total += parseInt(el.dataset.score || '1', 10) || 1;
+  });
+  const disp = document.getElementById('sb_total_display');
+  const risk = document.getElementById('sb_risk_display');
+  if (disp) disp.textContent = String(total);
+  let riskTxt = 'Nguy cơ OSA thấp';
+  let riskCls = 'text-success';
+  if (total >= 5) { riskTxt = 'Nguy cơ OSA cao (≥5)'; riskCls = 'text-danger fw-bold'; }
+  else if (total >= 3) { riskTxt = 'Nguy cơ OSA trung bình (3–4)'; riskCls = 'text-warning fw-bold'; }
+  if (risk) {
+    risk.textContent = riskTxt;
+    risk.className = 'small ' + riskCls;
+  }
+  return total;
+}
+
+function applyStopBangScore_() {
+  const total = calcStopBang_();
+  const inp = document.getElementById('tt_stopbang_score');
+  const risk = document.getElementById('tt_stopbang_risk');
+  if (inp) inp.value = String(total);
+  if (risk) risk.textContent = document.getElementById('sb_risk_display')?.textContent || '';
+  const el = document.getElementById('stopBangModal');
+  if (el && typeof bootstrap !== 'undefined') bootstrap.Modal.getInstance(el)?.hide();
+  persistThuThapDraft_();
+}
+
+function calcPhq9_() {
+  let total = 0;
+  for (let i = 1; i <= 9; i++) {
+    const picked = document.querySelector('input[name="phq9_q' + i + '"]:checked');
+    if (picked) total += parseInt(picked.value, 10) || 0;
+  }
+  const disp = document.getElementById('phq9_total_display');
+  const risk = document.getElementById('phq9_risk_display');
+  if (disp) disp.textContent = String(total);
+  let riskTxt = 'Không / tối thiểu (0–4)';
+  let riskCls = 'text-success';
+  if (total >= 20) { riskTxt = 'Trầm cảm nặng (20–27)'; riskCls = 'text-danger fw-bold'; }
+  else if (total >= 15) { riskTxt = 'Trầm cảm vừa (15–19)'; riskCls = 'text-danger'; }
+  else if (total >= 10) { riskTxt = 'Trầm cảm nhẹ (10–14)'; riskCls = 'text-warning fw-bold'; }
+  else if (total >= 5) { riskTxt = 'Triệu chứng nhẹ (5–9)'; riskCls = 'text-secondary'; }
+  if (risk) {
+    risk.textContent = 'Mức độ: ' + riskTxt;
+    risk.className = 'small ' + riskCls;
+  }
+  return total;
+}
+
+function applyPhq9Score_() {
+  const total = calcPhq9_();
+  const inp = document.getElementById('tt_phq9_score');
+  const risk = document.getElementById('tt_phq9_risk');
+  if (inp) inp.value = String(total);
+  if (risk) risk.textContent = document.getElementById('phq9_risk_display')?.textContent || '';
+  const el = document.getElementById('phq9Modal');
+  if (el && typeof bootstrap !== 'undefined') bootstrap.Modal.getInstance(el)?.hide();
+  persistThuThapDraft_();
+}
+
+function collectThuThapFormData_() {
+  const rx = [];
+  document.querySelectorAll('input[name="tt_rx_group"]:checked').forEach((el) => rx.push(el.value));
+  const stopBangDetail = {};
+  document.querySelectorAll('.stopbang-item').forEach((el) => { stopBangDetail[el.id] = !!el.checked; });
+  const phq9Detail = {};
+  for (let i = 1; i <= 9; i++) {
+    const picked = document.querySelector('input[name="phq9_q' + i + '"]:checked');
+    phq9Detail['q' + i] = picked ? parseInt(picked.value, 10) : null;
+  }
+  return {
+    nguoiNhap: document.getElementById('tt_nguoiNhap')?.value || '',
+    ngayNhap: document.getElementById('tt_ngayNhap')?.value || '',
+    maBN: document.getElementById('tt_maBN')?.value || '',
+    hoTen: document.getElementById('tt_hoTen')?.value || '',
+    tuoi: document.getElementById('tt_tuoi')?.value || '',
+    gioiTinh: document.getElementById('tt_gioiTinh')?.value || '',
+    chanDoan: document.getElementById('tt_chanDoan')?.value || '',
+    hba1c: document.getElementById('tt_hba1c')?.value || '',
+    thoiGianDtd: document.getElementById('tt_thoiGianDtd')?.value || '',
+    bmi: document.getElementById('tt_bmi')?.value || '',
+    phacDoThuoc: rx,
+    bienChungMachNho: document.getElementById('tt_bienChungMachNho')?.value || '',
+    bienChungMachLon: document.getElementById('tt_bienChungMachLon')?.value || '',
+    benhThanDtd: document.getElementById('tt_benhThanDtd')?.value || '',
+    thaDongMac: document.getElementById('tt_thaDongMac')?.value || '',
+    insulin: document.getElementById('tt_insulin')?.value || '',
+    stopBang: document.getElementById('tt_stopbang_score')?.value || '',
+    stopBangDetail: stopBangDetail,
+    phq9: document.getElementById('tt_phq9_score')?.value || '',
+    phq9Detail: phq9Detail
+  };
+}
+
+function restoreThuThapFormDraft_(data) {
+  if (!data || typeof data !== 'object') return;
+  const set = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = String(v); };
+  set('tt_nguoiNhap', data.nguoiNhap);
+  set('tt_ngayNhap', data.ngayNhap);
+  set('tt_maBN', data.maBN);
+  set('tt_hoTen', data.hoTen);
+  set('tt_tuoi', data.tuoi);
+  set('tt_gioiTinh', data.gioiTinh);
+  set('tt_chanDoan', data.chanDoan);
+  set('tt_hba1c', data.hba1c);
+  set('tt_thoiGianDtd', data.thoiGianDtd);
+  set('tt_bmi', data.bmi);
+  set('tt_bienChungMachNho', data.bienChungMachNho);
+  set('tt_bienChungMachLon', data.bienChungMachLon);
+  set('tt_benhThanDtd', data.benhThanDtd);
+  set('tt_thaDongMac', data.thaDongMac);
+  set('tt_insulin', data.insulin);
+  set('tt_stopbang_score', data.stopBang);
+  set('tt_phq9_score', data.phq9);
+  document.querySelectorAll('input[name="tt_rx_group"]').forEach((el) => {
+    el.checked = Array.isArray(data.phacDoThuoc) && data.phacDoThuoc.indexOf(el.value) >= 0;
+  });
+  if (data.stopBangDetail) {
+    Object.keys(data.stopBangDetail).forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.checked = !!data.stopBangDetail[id];
+    });
+    calcStopBang_();
+  }
+  if (data.phq9Detail) {
+    Object.keys(data.phq9Detail).forEach((k) => {
+      const v = data.phq9Detail[k];
+      if (v == null) return;
+      const n = k.replace('q', '');
+      const radio = document.querySelector('input[name="phq9_q' + n + '"][value="' + v + '"]');
+      if (radio) radio.checked = true;
+    });
+    calcPhq9_();
+  }
+}
+
+function persistThuThapDraft_() {
+  try {
+    sessionStorage.setItem('TT_FORM_DRAFT', JSON.stringify(collectThuThapFormData_()));
+  } catch (e) { /* ignore */ }
+}
+
+function saveThuThapForm() {
+  const data = collectThuThapFormData_();
+  const status = document.getElementById('thuThapSaveStatus');
+  if (!data.nguoiNhap) {
+    if (status) status.innerHTML = '<span class="text-danger"><i class="fas fa-triangle-exclamation me-1"></i>Chọn Người nhập liệu trước khi lưu.</span>';
+    document.getElementById('tt_nguoiNhap')?.focus();
+    return;
+  }
+  if (!data.maBN && !data.hoTen) {
+    if (status) status.innerHTML = '<span class="text-danger">Nhập Mã BN hoặc Họ tên.</span>';
+    return;
+  }
+  if (status) status.innerHTML = '<i class="fas fa-spinner fa-spin me-1 text-primary"></i> Đang lưu…';
+  if (typeof google === 'undefined' || !google.script || !google.script.run) {
+    persistThuThapDraft_();
+    if (status) status.innerHTML = '<span class="text-warning">Đã lưu tạm trên trình duyệt (không kết nối server).</span>';
+    return;
+  }
+  google.script.run
+    .withSuccessHandler((res) => {
+      res = normalizeServerResult(res);
+      if (res.error) {
+        if (status) status.innerHTML = '<span class="text-danger">' + res.error + '</span>';
+        return;
+      }
+      persistThuThapDraft_();
+      if (status) status.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>Đã lưu phiếu thu thập lúc ' + new Date().toLocaleTimeString('vi-VN') + '</span>';
+      const tbody = document.getElementById('thuThapTableBody');
+      if (tbody) tbody.dataset.loaded = '';
+      loadThuThapPanel(true);
+    })
+    .withFailureHandler((err) => {
+      if (status) status.innerHTML = '<span class="text-danger">' + (err && err.message ? err.message : String(err)) + '</span>';
+    })
+    .saveResearchCollectRecord(data);
+}
+
+function exportForResearch() {
+  if (typeof google === 'undefined' || !google.script || !google.script.run) {
+    alert('Cần kết nối Apps Script để xuất dữ liệu nghiên cứu.');
+    return;
+  }
+  google.script.run
+    .withSuccessHandler((res) => {
+      res = normalizeServerResult(res);
+      if (res.error) { alert(res.error); return; }
+      if (res.url) window.open(res.url, '_blank');
+      else alert('Đã xuất ' + (res.count || 0) + ' dòng nghiên cứu.');
+    })
+    .withFailureHandler((err) => alert(err && err.message ? err.message : String(err)))
+    .exportResearchCollectCsv();
+}
+
 function loadThuThapPanel(forceReload) {
+  initThuThapForm_();
   const status = document.getElementById('thuThapStatusBox');
   const tbody = document.getElementById('thuThapTableBody');
   if (!tbody) return;
@@ -6011,6 +6323,7 @@ function loadThuThapPanel(forceReload) {
     }
     document.getElementById('thuThapStatTotal')?.replaceChildren(document.createTextNode(String(data.total || 0)));
     document.getElementById('thuThapStatMonth')?.replaceChildren(document.createTextNode(String(data.thisMonth || 0)));
+    document.getElementById('thuThapStatResearch')?.replaceChildren(document.createTextNode(String(data.researchTotal != null ? data.researchTotal : '—')));
     const rows = Array.isArray(data.recent) ? data.recent : [];
     if (!rows.length) {
       tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Chưa có hồ sơ nào. Nhập tại tab Dinh dưỡng.</td></tr>';

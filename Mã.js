@@ -345,6 +345,16 @@ function setupDatabaseStructure(ss, options) {
     s.setFrozenRows(1);
   }
 
+  // 10. Sheet RESEARCH_COLLECT (Phiếu thu thập số liệu nghiên cứu)
+  if (!ss.getSheetByName("RESEARCH_COLLECT")) {
+    let s = ss.insertSheet("RESEARCH_COLLECT");
+    s.appendRow([
+      "Timestamp", "NguoiNhap", "PatientID", "PatientName", "NgayNhap",
+      "StopBang", "PHQ9", "PhacDoThuoc", "Form_JSON"
+    ]);
+    s.setFrozenRows(1);
+  }
+
   if (!preserveSheet1) {
     var sheet1 = ss.getSheetByName("Sheet1");
     if (sheet1) ss.deleteSheet(sheet1);
@@ -1001,6 +1011,68 @@ function getLatestPatientIntakeById(patientId) {
 }
 
 /**
+ * Lưu phiếu thu thập số liệu nghiên cứu (tab Thu thập số liệu).
+ */
+function saveResearchCollectRecord(data) {
+  try {
+    data = data || {};
+    if (!data.nguoiNhap) return { error: "Thiếu Người nhập liệu." };
+    var ss = getDatabase();
+    var sheet = ss.getSheetByName("RESEARCH_COLLECT");
+    if (!sheet) {
+      setupDatabaseStructure(ss, { preserveSheet1: true });
+      sheet = ss.getSheetByName("RESEARCH_COLLECT");
+    }
+    if (!sheet) return { error: "Không tạo được sheet RESEARCH_COLLECT." };
+    var rx = Array.isArray(data.phacDoThuoc) ? data.phacDoThuoc.join("; ") : String(data.phacDoThuoc || "");
+    var json = "";
+    try { json = JSON.stringify(data); } catch (e) { json = ""; }
+    sheet.appendRow([
+      new Date(),
+      String(data.nguoiNhap || ""),
+      data.maBN ? ("'" + String(data.maBN).replace(/'/g, "")) : "",
+      String(data.hoTen || ""),
+      data.ngayNhap ? new Date(data.ngayNhap) : "",
+      data.stopBang != null ? String(data.stopBang) : "",
+      data.phq9 != null ? String(data.phq9) : "",
+      rx,
+      json
+    ]);
+    return { success: true };
+  } catch (e) {
+    return { error: "Lỗi lưu RESEARCH_COLLECT: " + (e && e.message ? e.message : e) };
+  }
+}
+
+/**
+ * Xuất CSV RESEARCH_COLLECT (tạo file tạm trên Drive, trả URL).
+ */
+function exportResearchCollectCsv() {
+  try {
+    var ss = getDatabase();
+    var sheet = ss.getSheetByName("RESEARCH_COLLECT");
+    if (!sheet) return { error: "Chưa có dữ liệu RESEARCH_COLLECT." };
+    var data = sheet.getDataRange().getValues();
+    if (!data || data.length < 2) return { error: "Chưa có phiếu thu thập nào." };
+    var csv = data.map(function (row) {
+      return row.map(function (cell) {
+        var s = cell == null ? "" : String(cell);
+        if (s.indexOf(",") >= 0 || s.indexOf('"') >= 0 || s.indexOf("\n") >= 0) {
+          return '"' + s.replace(/"/g, '""') + '"';
+        }
+        return s;
+      }).join(",");
+    }).join("\n");
+    var blob = Utilities.newBlob(csv, "text/csv", "research_collect_" + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyyMMdd_HHmm") + ".csv");
+    var file = DriveApp.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    return { success: true, count: data.length - 1, url: file.getUrl() };
+  } catch (e) {
+    return { error: "Lỗi xuất CSV: " + (e && e.message ? e.message : e) };
+  }
+}
+
+/**
  * Tổng hợp số liệu hồ sơ dinh dưỡng (module Thu thập số liệu).
  */
 function getRecordsDataSummary() {
@@ -1010,7 +1082,8 @@ function getRecordsDataSummary() {
     if (!sheet) return { error: "Không có sheet RECORDS.", total: 0, thisMonth: 0, recent: [] };
     var data = sheet.getDataRange().getValues();
     if (!data || data.length < 2) {
-      return { success: true, total: 0, thisMonth: 0, recent: [] };
+      var rc0 = getResearchCollectCount_();
+      return { success: true, total: 0, thisMonth: 0, recent: [], researchTotal: rc0.total, researchMonth: rc0.thisMonth };
     }
     var headers = data[0].map(function (h) { return String(h).trim(); });
     var idx = {};
@@ -1036,9 +1109,38 @@ function getRecordsDataSummary() {
         doctor: row[idx.Doctor != null ? idx.Doctor : 13] || ""
       };
     });
-    return { success: true, total: rows.length, thisMonth: thisMonth, recent: recent };
+    var rc = getResearchCollectCount_();
+    return {
+      success: true,
+      total: rows.length,
+      thisMonth: thisMonth,
+      recent: recent,
+      researchTotal: rc.total,
+      researchMonth: rc.thisMonth
+    };
   } catch (e) {
     return { error: "Lỗi đọc RECORDS: " + (e && e.message ? e.message : e), total: 0, thisMonth: 0, recent: [] };
+  }
+}
+
+/** Đếm phiếu RESEARCH_COLLECT (thu thập số liệu nghiên cứu). */
+function getResearchCollectCount_() {
+  try {
+    var ss = getDatabase();
+    var sheet = ss.getSheetByName("RESEARCH_COLLECT");
+    if (!sheet) return { total: 0, thisMonth: 0 };
+    var data = sheet.getDataRange().getValues();
+    if (!data || data.length < 2) return { total: 0, thisMonth: 0 };
+    var now = new Date();
+    var monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    var thisMonth = 0;
+    for (var i = 1; i < data.length; i++) {
+      var ts = data[i][0];
+      if (ts && new Date(ts) >= monthStart) thisMonth++;
+    }
+    return { total: data.length - 1, thisMonth: thisMonth };
+  } catch (e) {
+    return { total: 0, thisMonth: 0 };
   }
 }
 
