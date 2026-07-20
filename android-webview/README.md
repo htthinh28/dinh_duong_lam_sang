@@ -19,9 +19,11 @@ Project Android dong goi web app Google Apps Script thanh ung dung Android.
 
 Duoc cau hinh tai `gradle.properties`:
 
-`WEB_APP_URL=https://script.google.com/macros/s/AKfycbyDSJNY44Ob575D6Ulo9xqFGd0P2TZb-QlCXcEjoAhB/exec`
+`WEB_APP_URL=https://script.google.com/macros/s/AKfycbyNxhQVOK8bUjiK5tUHWmgNAbAp6OQbpFBLB_d4AIE713z811pBDpQbK4VUT6s8Sd4umQ/exec`
 
-Neu ban deploy moi, doi URL tai day roi Sync lai Gradle.
+Day la deployment GHIM phien ban (khong tu doi khi push code moi). Khi phat hanh ban moi:
+`clasp push -f` roi `clasp deploy -i AKfycbyNxhQVOK8bUjiK5tUHWmgNAbAp6OQbpFBLB_d4AIE713z811pBDpQbK4VUT6s8Sd4umQ -d "mo ta"`.
+Sau do build lai APK. Neu doi deployment khac, sua URL tai day roi Sync lai Gradle.
 
 ## Cach build APK
 
