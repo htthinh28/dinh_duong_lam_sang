@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "scripts": {
+    "push:script": "bash scripts/push-apps-script.sh"
+  },
+  "devDependencies": {
+    "@google/clasp": "^3.3.0"
+  }
+}
