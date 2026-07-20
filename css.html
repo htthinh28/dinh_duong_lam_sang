@@ -107,32 +107,98 @@
     display: none !important;
   }
 
-  body[data-staff-root="tv"] #section-dd-pack {
+  /* Staff overlay panels — chỉ hiện khi có .staff-panel-active (JS) */
+  #staff-panels-host {
+    width: 100%;
+    min-height: calc(100vh - 2.5rem);
+  }
+  #section-dd-pack:not(.staff-panel-active) {
     display: none !important;
   }
-  body[data-staff-root="tv"] #section-thu-vien-pack:not(.d-none) {
+  #section-dd-pack.staff-panel-active {
+    display: block !important;
+    width: 100%;
+  }
+  #section-thu-vien-pack:not(.staff-panel-active),
+  #section-research-pack:not(.staff-panel-active) {
+    display: none !important;
+  }
+  #section-thu-vien-pack.staff-panel-active {
     display: flex !important;
     flex-direction: column;
     width: 100%;
+    min-height: calc(100vh - 2.5rem);
+  }
+  #section-research-pack.staff-panel-active {
+    display: block !important;
+    width: 100%;
+    min-height: calc(100vh - 2.5rem);
+  }
+  #researchNcFormView,
+  #researchExportView:not(.d-none) {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  #researchNcFormCard .table td {
+    vertical-align: middle;
+  }
+  #researchNcFormCard input[type="radio"].form-check-input {
+    float: none;
+    margin: 0 auto;
+    display: block;
   }
   #section-thu-vien-pack {
     min-height: calc(100vh - 2.5rem);
     flex-direction: column;
   }
-  #thuVienFrameWrap {
+  .thu-vien-frame-wrap {
     flex: 1;
     min-height: calc(100vh - 11rem);
     background: #fff;
+    border-radius: 1rem;
+    border: 1px solid rgba(216, 27, 96, 0.12);
+    box-shadow: 0 8px 24px rgba(31, 38, 135, 0.08);
+    overflow: hidden;
   }
   #thuVienFrame {
     width: 100%;
     height: calc(100vh - 11rem);
-    min-height: 480px;
+    min-height: 420px;
     border: 0;
     display: block;
+    background: #fff;
   }
-
-  /* Utility classes */
+  .thu-vien-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    background: #fff;
+    overflow-y: auto;
+  }
+  .thu-vien-overlay.d-none {
+    display: none !important;
+  }
+  .thu-vien-error-panel,
+  .thu-vien-static-shell {
+    max-width: 36rem;
+    margin: 0 auto;
+    text-align: center;
+    background: #fff;
+    border-radius: 1rem;
+    border: 1px solid rgba(216, 27, 96, 0.15);
+    box-shadow: 0 8px 24px rgba(31, 38, 135, 0.08);
+    padding: 1.25rem 1rem;
+  }
+  body[data-staff-root="tv"] #section-thu-vien-pack > .cdss-glass:first-child {
+    background: #fff !important;
+    border: 1px solid rgba(216, 27, 96, 0.15) !important;
+  }
   .text-upper { text-transform: uppercase; }
   .pointer { cursor: pointer; }
   
@@ -246,6 +312,39 @@
 
   .sidebar-container:hover .nav-text {
     opacity: 1;
+  }
+
+  /* Ghim sidebar — luôn mở rộng */
+  body.sidebar-pinned .sidebar-container {
+    width: var(--sidebar-w-max) !important;
+  }
+  body.sidebar-pinned .sidebar-container .nav-text {
+    opacity: 1 !important;
+  }
+  body.sidebar-pinned .main-content {
+    margin-left: var(--sidebar-w-max) !important;
+    width: calc(100% - var(--sidebar-w-max)) !important;
+  }
+  #sidebarPinBtn {
+    color: rgba(255,255,255,0.9) !important;
+    border-radius: 0 50px 50px 0;
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    background: transparent;
+    border: 0;
+  }
+  #sidebarPinBtn:hover {
+    background-color: rgba(255,255,255,0.18);
+    color: #fff !important;
+  }
+  body.sidebar-pinned #sidebarPinBtn {
+    background-color: rgba(255,255,255,0.95) !important;
+    color: var(--pc-primary) !important;
+    font-weight: 600;
+  }
+  body.sidebar-pinned #sidebarPinIcon {
+    transform: rotate(45deg);
   }
 
   /* =========================================================
@@ -847,13 +946,18 @@
       width: 86px !important;
       min-height: 100vh;
     }
-    .sidebar-container:hover {
+    .sidebar-container:hover,
+    body.sidebar-pinned .sidebar-container {
       width: 220px !important;
     }
     .main-content {
       margin-left: 86px !important;
       width: calc(100% - 86px) !important;
       padding: 12px;
+    }
+    body.sidebar-pinned .main-content {
+      margin-left: 220px !important;
+      width: calc(100% - 220px) !important;
     }
     .card {
       border-radius: 10px;
@@ -864,17 +968,46 @@
   }
 
   @media (max-width: 768px) {
+    body[data-staff-root="tv"] .main-content {
+      padding: 8px 8px 8px 6px;
+    }
+    #section-thu-vien-pack {
+      min-height: calc(100dvh - 1rem);
+    }
+    #section-thu-vien-pack > .cdss-glass:first-child {
+      padding: 0.65rem !important;
+      margin-bottom: 0.5rem !important;
+    }
+    #section-thu-vien-pack > .cdss-glass:first-child h5 {
+      font-size: 1rem;
+    }
+    #section-thu-vien-pack > .cdss-glass:first-child small {
+      display: none;
+    }
+    .thu-vien-frame-wrap {
+      min-height: calc(100dvh - 7.5rem);
+      flex: 1;
+    }
+    #thuVienFrame {
+      height: calc(100dvh - 7.5rem);
+      min-height: 320px;
+    }
     .sidebar-container {
       width: 62px !important;
       padding: 10px 6px !important;
     }
-    .sidebar-container:hover {
+    .sidebar-container:hover,
+    body.sidebar-pinned .sidebar-container {
       width: 190px !important;
     }
     .main-content {
       margin-left: 62px !important;
       width: calc(100% - 62px) !important;
       padding: 10px;
+    }
+    body.sidebar-pinned .main-content {
+      margin-left: 190px !important;
+      width: calc(100% - 190px) !important;
     }
     #clinicalHeaderBar {
       flex-wrap: wrap;
@@ -940,4 +1073,16 @@
       margin: 0.5rem;
     }
   }
+
+  /* DD-06 — phiếu sàng lọc DD bệnh nhi (Module 2) */
+  .dd06-form-body .dd06-screen-table th,
+  .dd06-form-body .dd06-screen-table td { font-size: 0.88rem; }
+  .dd06-form-body .dd06-screen-table ul { font-size: 0.82rem; }
+  #dd06_mod2_card { scroll-margin-top: 88px; }
+  #dd06_mod2_card.dd06-highlight { box-shadow: 0 0 0 3px rgba(216, 27, 96, 0.35); }
+  #dd02_mod2_card { scroll-margin-top: 88px; }
+  #print_area.pc-byt-print-mode { background: #e9ecef !important; padding: 16px 12px !important; }
+  #print_area.pc-byt-print-mode .dd06-inner,
+  #print_area.pc-byt-print-mode .dd02-inner { width: 100%; }
+  #appChangelogModal .modal-content { border: 2px solid var(--pc-primary); }
 </style>

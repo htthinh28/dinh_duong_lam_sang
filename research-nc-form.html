@@ -1,0 +1,460 @@
+<div id="researchNcFormCard" class="card border-0 shadow-sm mb-3">
+  <div class="card-header bg-white border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2 py-2">
+    <div>
+      <span class="fw-bold text-primary"><i class="fas fa-clipboard-list me-1"></i> PHIẾU THU THẬP SỐ LIỆU LÂM SÀNG VÀ SINH HÓA NỘI TIẾT</span>
+      <div class="small text-muted">ĐTĐ type 2 ngoại trú · AOP.01.01 · JCI AOP.01.03 (PSQI)</div>
+    </div>
+    <div class="d-flex flex-wrap gap-1">
+      <button type="button" class="btn btn-outline-secondary btn-sm" onclick="prefillResearchNcFromPatient_()"><i class="fas fa-sync me-1"></i>Lấy BN đang mở</button>
+      <button type="button" class="btn btn-outline-primary btn-sm" onclick="researchNcCalcPsqi_()"><i class="fas fa-calculator me-1"></i>Tính PSQI</button>
+      <button type="button" class="btn btn-outline-danger btn-sm" onclick="resetResearchNcForm()"><i class="fas fa-eraser me-1"></i>Làm mới</button>
+    </div>
+  </div>
+  <div class="card-body small" id="researchNcFormRoot">
+    <div id="researchNcSaveMsg" class="alert alert-success py-1 px-2 d-none mb-2"></div>
+
+    <div class="row g-2 mb-3 p-2 bg-light rounded border">
+      <div class="col-md-3">
+        <label class="form-label mb-0">Mã ID Nghiên cứu</label>
+        <input type="text" class="form-control form-control-sm" id="nc_id_nghien_cuu">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label mb-0">Ngày thu thập</label>
+        <input type="date" class="form-control form-control-sm" id="nc_ngay_thu_thap">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label mb-0">Người thu thập</label>
+        <select class="form-select form-select-sm" id="nc_nguoi_thu_thap">
+          <option value="">— Chọn —</option>
+          <option value="Hồ Tấn Thịnh">1. Hồ Tấn Thịnh</option>
+          <option value="Bành Mỹ Hoa">2. Bành Mỹ Hoa</option>
+          <option value="Vương Ngọc Thắng">3. Vương Ngọc Thắng</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label mb-0 d-block">Giấy đồng thuận nghiên cứu</label>
+        <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="nc_dong_thuan" id="nc_dong_thuan_co" value="1" onchange="researchNcOnDongThuanChange_()"><label class="form-check-label" for="nc_dong_thuan_co">Có</label></div>
+        <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="nc_dong_thuan" id="nc_dong_thuan_khong" value="0" onchange="researchNcOnDongThuanChange_()"><label class="form-check-label" for="nc_dong_thuan_khong">Không</label></div>
+        <button type="button" class="btn btn-outline-primary btn-sm ms-1" onclick="openResearchNcConsentModal_()"><i class="fas fa-file-signature me-1"></i>Xem / In mẫu</button>
+      </div>
+    </div>
+
+    <h6 class="fw-bold text-primary border-bottom pb-1">I. THÔNG TIN HÀNH CHÍNH VÀ NHÂN TRẮC HỌC</h6>
+    <div class="row g-2 mb-2">
+      <div class="col-md-4"><label class="form-label mb-0">1. Họ tên (viết tắt chữ cái đầu)</label><input type="text" class="form-control form-control-sm" id="nc_ho_ten_viet_tat"></div>
+      <div class="col-md-2"><label class="form-label mb-0">2. Năm sinh</label><input type="number" class="form-control form-control-sm" id="nc_nam_sinh" min="1920" max="2026"></div>
+      <div class="col-md-3">
+        <label class="form-label mb-0 d-block">3. Giới tính</label>
+        <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="nc_gioi_tinh" id="nc_gioi_nam" value="Nam"><label class="form-check-label" for="nc_gioi_nam">Nam</label></div>
+        <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="nc_gioi_tinh" id="nc_gioi_nu" value="Nu"><label class="form-check-label" for="nc_gioi_nu">Nữ</label></div>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label mb-0 d-block">4. Trình độ học vấn</label>
+        <div class="form-check"><input class="form-check-input" type="radio" name="nc_hoc_van" id="nc_hoc_van_cap12" value="cap12"><label class="form-check-label" for="nc_hoc_van_cap12">Cấp 1, 2</label></div>
+        <div class="form-check"><input class="form-check-input" type="radio" name="nc_hoc_van" id="nc_hoc_van_cap3" value="cap3"><label class="form-check-label" for="nc_hoc_van_cap3">Cấp 3</label></div>
+        <div class="form-check"><input class="form-check-input" type="radio" name="nc_hoc_van" id="nc_hoc_van_tc" value="tc_cd_dh"><label class="form-check-label" for="nc_hoc_van_tc">Trung cấp/CĐ/ĐH trở lên</label></div>
+      </div>
+      <div class="col-md-4"><label class="form-label mb-0">5. Nghề nghiệp</label><input type="text" class="form-control form-control-sm" id="nc_nghe_nghiep"></div>
+    </div>
+
+    <div class="border rounded p-2 mb-2 bg-white">
+      <div class="fw-bold text-primary mb-2">6. Dấu hiệu sinh tồn</div>
+      <div class="row g-2 mb-2">
+        <div class="col-md-2"><label class="form-label mb-0">Mạch (lần/phút)</label><input type="number" class="form-control form-control-sm nc-vital-src" id="nc_mach" min="0" max="250"></div>
+        <div class="col-md-2"><label class="form-label mb-0">HA tâm thu (mmHg)</label><input type="number" class="form-control form-control-sm nc-vital-src" id="nc_ha_tam_thu" min="0" max="300"></div>
+        <div class="col-md-2"><label class="form-label mb-0">HA tâm trương (mmHg)</label><input type="number" class="form-control form-control-sm nc-vital-src" id="nc_ha_tam_truong" min="0" max="200"></div>
+        <div class="col-md-6">
+          <label class="form-label mb-0 d-block">Phân loại tăng huyết áp <span class="text-muted fw-normal">(tự động)</span></label>
+          <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="nc_tha_nhom" id="nc_tha_bt" value="binh_thuong"><label class="form-check-label" for="nc_tha_bt">Bình thường (&lt;120/&lt;80)</label></div>
+          <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="nc_tha_nhom" id="nc_tha_cb" value="cao_binh_thuong"><label class="form-check-label" for="nc_tha_cb">Cao bình thường (120–139 / 80–89)</label></div>
+          <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="nc_tha_nhom" id="nc_tha_d1" value="do1"><label class="form-check-label" for="nc_tha_d1">THA độ 1 (140–159 / 90–99)</label></div>
+          <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="nc_tha_nhom" id="nc_tha_d2" value="do2"><label class="form-check-label" for="nc_tha_d2">THA độ 2 (≥160 / ≥100)</label></div>
+          <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="nc_tha_nhom" id="nc_tha_hh" value="hon_hop"><label class="form-check-label" for="nc_tha_hh">Huyết áp hỗn hợp / khẩn</label></div>
+        </div>
+      </div>
+      <div class="row g-2">
+        <div class="col-md-2"><label class="form-label mb-0">Chiều cao (cm)</label><input type="number" step="0.1" class="form-control form-control-sm nc-bmi-src" id="nc_chieu_cao_cm"></div>
+        <div class="col-md-2"><label class="form-label mb-0">Cân nặng (kg)</label><input type="number" step="0.1" class="form-control form-control-sm nc-bmi-src" id="nc_can_nang_kg"></div>
+        <div class="col-md-2"><label class="form-label mb-0">BMI (kg/m²)</label><input type="text" class="form-control form-control-sm" id="nc_bmi" readonly></div>
+        <div class="col-md-6">
+          <label class="form-label mb-0 d-block">Phân loại BMI châu Á (WHO Asia / IDI &amp; WPRO) <span class="text-muted fw-normal">(tự động)</span></label>
+          <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="nc_bmi_nhom" id="nc_bmi_tcn" value="thieu_can"><label class="form-check-label" for="nc_bmi_tcn">Thiếu cân &lt;18,5</label></div>
+          <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="nc_bmi_nhom" id="nc_bmi_bt" value="binh_thuong"><label class="form-check-label" for="nc_bmi_bt">Bình thường 18,5–22,9</label></div>
+          <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="nc_bmi_nhom" id="nc_bmi_tc" value="thua_can"><label class="form-check-label" for="nc_bmi_tc">Thừa cân 23–24,9</label></div>
+          <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="nc_bmi_nhom" id="nc_bmi_bp1" value="beo_phi_1"><label class="form-check-label" for="nc_bmi_bp1">Béo phì độ I 25–29,9</label></div>
+          <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="nc_bmi_nhom" id="nc_bmi_bp2" value="beo_phi_2"><label class="form-check-label" for="nc_bmi_bp2">Béo phì độ II ≥30</label></div>
+        </div>
+      </div>
+    </div>
+
+    <h6 class="fw-bold text-primary border-bottom pb-1 mt-3">II. ĐÁNH GIÁ LÂM SÀNG VÀ BỆNH SỬ ĐÁI THÁO ĐƯỜNG</h6>
+    <div class="row g-2 mb-2">
+      <div class="col-md-3"><label class="form-label mb-0">7. Thời gian phát hiện ĐTĐ type 2 (năm)</label><input type="number" step="0.1" class="form-control form-control-sm" id="nc_thoi_gian_pt_dtd2_y"></div>
+      <div class="col-md-9">
+        <label class="form-label mb-0 fw-semibold">8. Phác đồ điều trị hiện tại</label>
+        <div class="border rounded p-2 mb-2">
+          <div class="form-check mb-1">
+            <input class="form-check-input" type="checkbox" id="nc_tx_oad" onchange="researchNcSyncTxParents_()">
+            <label class="form-check-label fw-semibold" for="nc_tx_oad">Thuốc uống</label>
+          </div>
+          <div class="ms-3 row g-1">
+            <div class="col-md-4"><div class="form-check"><input class="form-check-input nc-tx-oad-child" type="checkbox" id="nc_tx_oad_su" onchange="researchNcSyncTxParents_()"><label class="form-check-label" for="nc_tx_oad_su">Sulfonylurea</label></div></div>
+            <div class="col-md-4"><div class="form-check"><input class="form-check-input nc-tx-oad-child" type="checkbox" id="nc_tx_oad_met" onchange="researchNcSyncTxParents_()"><label class="form-check-label" for="nc_tx_oad_met">Metformin</label></div></div>
+            <div class="col-md-4"><div class="form-check"><input class="form-check-input nc-tx-oad-child" type="checkbox" id="nc_tx_oad_dpp4" onchange="researchNcSyncTxParents_()"><label class="form-check-label" for="nc_tx_oad_dpp4">Ức chế DPP-4</label></div></div>
+            <div class="col-md-4"><div class="form-check"><input class="form-check-input nc-tx-oad-child" type="checkbox" id="nc_tx_oad_glp1_uong" onchange="researchNcSyncTxParents_()"><label class="form-check-label" for="nc_tx_oad_glp1_uong">Ức chế GLP-1 uống</label></div></div>
+            <div class="col-md-4"><div class="form-check"><input class="form-check-input nc-tx-oad-child" type="checkbox" id="nc_tx_oad_glp1_tiem" onchange="researchNcSyncTxParents_()"><label class="form-check-label" for="nc_tx_oad_glp1_tiem">Ức chế GLP-1 dạng tiêm</label></div></div>
+            <div class="col-md-4"><div class="form-check"><input class="form-check-input nc-tx-oad-child" type="checkbox" id="nc_tx_oad_sglt2" onchange="researchNcSyncTxParents_()"><label class="form-check-label" for="nc_tx_oad_sglt2">Ức chế SGLT-2</label></div></div>
+            <div class="col-md-4"><div class="form-check"><input class="form-check-input nc-tx-oad-child" type="checkbox" id="nc_tx_oad_acarbose" onchange="researchNcSyncTxParents_()"><label class="form-check-label" for="nc_tx_oad_acarbose">α-glucosidase (Acarbose)</label></div></div>
+          </div>
+        </div>
+        <div class="border rounded p-2 mb-2">
+          <div class="form-check mb-1">
+            <input class="form-check-input" type="checkbox" id="nc_tx_insulin" onchange="researchNcSyncTxParents_()">
+            <label class="form-check-label fw-semibold" for="nc_tx_insulin">Thuốc tiêm (Insulin)</label>
+          </div>
+          <div class="ms-3 row g-1">
+            <div class="col-md-4"><div class="form-check"><input class="form-check-input nc-tx-ins-child" type="checkbox" id="nc_tx_ins_nen" onchange="researchNcSyncTxParents_()"><label class="form-check-label" for="nc_tx_ins_nen">Insulin nền</label></div></div>
+            <div class="col-md-4"><div class="form-check"><input class="form-check-input nc-tx-ins-child" type="checkbox" id="nc_tx_ins_tron" onchange="researchNcSyncTxParents_()"><label class="form-check-label" for="nc_tx_ins_tron">Insulin trộn</label></div></div>
+            <div class="col-md-4"><div class="form-check"><input class="form-check-input nc-tx-ins-child" type="checkbox" id="nc_tx_ins_basal_bolus" onchange="researchNcSyncTxParents_()"><label class="form-check-label" for="nc_tx_ins_basal_bolus">Basal–Bolus</label></div></div>
+          </div>
+        </div>
+        <div class="form-check"><input class="form-check-input" type="checkbox" id="nc_tx_phoi_hop"><label class="form-check-label" for="nc_tx_phoi_hop">Phối hợp đa trị liệu (OAD + Insulin hoặc OAD + GLP-1 RA)</label></div>
+      </div>
+      <div class="col-12">
+        <label class="form-label mb-0">9. Biến chứng mạn tính (ICD-10 EMR)</label>
+        <div class="d-flex flex-wrap gap-3">
+          <div class="form-check"><input class="form-check-input" type="checkbox" id="nc_bc_than_man"><label class="form-check-label" for="nc_bc_than_man">Bệnh thận mạn</label></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" id="nc_bc_vong_mac"><label class="form-check-label" for="nc_bc_vong_mac">Bệnh lý võng mạc</label></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" id="nc_bc_than_kinh"><label class="form-check-label" for="nc_bc_than_kinh">Thần kinh ngoại biên</label></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" id="nc_bc_tim_mach"><label class="form-check-label" for="nc_bc_tim_mach">Tim mạch xơ vữa</label></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" id="nc_bc_chua_ghi_nhan"><label class="form-check-label" for="nc_bc_chua_ghi_nhan">Chưa ghi nhận</label></div>
+        </div>
+      </div>
+    </div>
+
+    <h6 class="fw-bold text-primary border-bottom pb-1 mt-3">III. KẾT QUẢ CẬN LÂM SÀNG <span class="fw-normal text-muted">(trong 30 ngày)</span></h6>
+    <div class="row g-2 mb-2">
+      <div class="col-md-2"><label class="form-label mb-0">10. FPG (mmol/L)</label><input type="number" step="0.01" class="form-control form-control-sm" id="nc_fpg_mmol"></div>
+      <div class="col-md-2"><label class="form-label mb-0">11. HbA1c (%)</label><input type="number" step="0.01" class="form-control form-control-sm" id="nc_hba1c_pct"></div>
+      <div class="col-md-2"><label class="form-label mb-0">12. Cholesterol</label><input type="number" step="0.01" class="form-control form-control-sm" id="nc_cholesterol"></div>
+      <div class="col-md-2"><label class="form-label mb-0">Triglyceride</label><input type="number" step="0.01" class="form-control form-control-sm" id="nc_triglyceride"></div>
+      <div class="col-md-2"><label class="form-label mb-0">HDL-C</label><input type="number" step="0.01" class="form-control form-control-sm" id="nc_hdl_c"></div>
+      <div class="col-md-2"><label class="form-label mb-0">LDL-C</label><input type="number" step="0.01" class="form-control form-control-sm" id="nc_ldl_c"></div>
+      <div class="col-md-8">
+        <label class="form-label mb-0 d-block">Đạt mục tiêu HbA1c (ADA 2026)</label>
+        <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="nc_hba1c_dat_muc_tieu" id="nc_hba1c_dat" value="dat"><label class="form-check-label" for="nc_hba1c_dat">Đạt</label></div>
+        <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="nc_hba1c_dat_muc_tieu" id="nc_hba1c_khong_dat" value="khong_dat"><label class="form-check-label" for="nc_hba1c_khong_dat">Không đạt</label></div>
+      </div>
+    </div>
+
+    <h6 class="fw-bold text-primary border-bottom pb-1 mt-3">IV. SÀNG LỌC BỔ SUNG</h6>
+    <div class="row g-2 mb-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label mb-0">14. STOP-Bang (/8)</label>
+        <div class="input-group input-group-sm">
+          <input type="number" min="0" max="8" class="form-control" id="nc_stop_bang_tong" readonly>
+          <button type="button" class="btn btn-outline-primary" onclick="openResearchNcStopBangModal_()"><i class="fas fa-list-check"></i> Bảng STOP</button>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label mb-0 d-block">Nguy cơ OSA</label>
+        <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="nc_stop_bang_nhom" id="nc_stop_bang_low" value="low"><label class="form-check-label" for="nc_stop_bang_low">&lt; 3 (thấp)</label></div>
+        <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="nc_stop_bang_nhom" id="nc_stop_bang_high" value="high"><label class="form-check-label" for="nc_stop_bang_high">≥ 3 (TB–cao)</label></div>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label mb-0">15. PHQ-9 (/27)</label>
+        <div class="input-group input-group-sm">
+          <input type="number" min="0" max="27" class="form-control" id="nc_phq9_tong" readonly>
+          <button type="button" class="btn btn-outline-primary" onclick="openResearchNcPhq9Modal_()"><i class="fas fa-list-check"></i> Bảng PHQ-9</button>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label mb-0 d-block">PHQ-9</label>
+        <div class="form-check"><input class="form-check-input" type="radio" name="nc_phq9_nhom" id="nc_phq9_low" value="low"><label class="form-check-label" for="nc_phq9_low">&lt; 10</label></div>
+        <div class="form-check"><input class="form-check-input" type="radio" name="nc_phq9_nhom" id="nc_phq9_high" value="high"><label class="form-check-label" for="nc_phq9_high">≥ 10</label></div>
+      </div>
+    </div>
+
+    <h6 class="fw-bold text-primary border-bottom pb-1 mt-4">Phụ lục 2: PSQI — Pittsburgh Sleep Quality Index</h6>
+    <p class="text-muted mb-2"><em>Hướng dẫn: các câu hỏi chỉ liên quan đến thói quen ngủ TRONG VÒNG 1 THÁNG QUA. Hệ thống tự tính C1–C7, tổng điểm và phân loại ngay khi nhập số liệu thô.</em></p>
+    <div id="nc_psqi_result_banner" class="alert alert-secondary py-2 px-3 mb-3">
+      <div class="d-flex flex-wrap gap-3 align-items-center">
+        <span>Hiệu suất ngủ: <strong id="nc_psqi_hieu_suat_lbl">—</strong></span>
+        <span>Tổng PSQI: <strong id="nc_psqi_tong_lbl">—</strong>/21</span>
+        <span>Kết luận: <strong id="nc_psqi_ket_luan_lbl">Nhập số liệu thô để tự tính</strong></span>
+        <button type="button" class="btn btn-sm btn-outline-primary ms-auto" onclick="researchNcCalcPsqi_()"><i class="fas fa-calculator me-1"></i>Tính lại</button>
+      </div>
+    </div>
+    <div class="row g-2 mb-2">
+      <div class="col-md-3"><label class="form-label mb-0">Q1. Giờ lên giường</label><input type="time" class="form-control form-control-sm nc-psqi-src" id="nc_psqi_q1_gio_len_giuong"></div>
+      <div class="col-md-3"><label class="form-label mb-0">Q2. Phút chìm vào giấc</label><input type="number" min="0" class="form-control form-control-sm nc-psqi-src" id="nc_psqi_q2_phut_chim_ngu"></div>
+      <div class="col-md-3"><label class="form-label mb-0">Q3. Giờ thức dậy</label><input type="time" class="form-control form-control-sm nc-psqi-src" id="nc_psqi_q3_gio_thuc_day"></div>
+      <div class="col-md-3"><label class="form-label mb-0">Q4. Giờ ngủ thực tế/đêm</label><input type="number" step="0.1" min="0" max="24" class="form-control form-control-sm nc-psqi-src" id="nc_psqi_q4_gio_ngu"></div>
+    </div>
+
+    <div class="table-responsive mb-2">
+      <table class="table table-sm table-bordered mb-0 align-middle">
+        <thead class="table-light text-center">
+          <tr><th>Vấn đề Q5</th><th>0</th><th>1</th><th>2</th><th>3</th></tr>
+        </thead>
+        <tbody id="researchNcPsqiQ5Body"></tbody>
+      </table>
+    </div>
+    <div class="mb-2"><label class="form-label mb-0">Q5j. Lý do khác (ghi rõ)</label><input type="text" class="form-control form-control-sm" id="nc_psqi_q5j_ly_do"></div>
+
+    <div class="row g-2 mb-2">
+      <div class="col-md-6">
+        <label class="form-label mb-0">Q6. Tự đánh giá chất lượng giấc ngủ</label>
+        <div class="d-flex flex-wrap gap-2">
+          <div class="form-check"><input class="form-check-input nc-psqi-src" type="radio" name="nc_psqi_q6" id="nc_psqi_q6_0" value="0"><label class="form-check-label" for="nc_psqi_q6_0">Rất tốt (0)</label></div>
+          <div class="form-check"><input class="form-check-input nc-psqi-src" type="radio" name="nc_psqi_q6" id="nc_psqi_q6_1" value="1"><label class="form-check-label" for="nc_psqi_q6_1">Khá tốt (1)</label></div>
+          <div class="form-check"><input class="form-check-input nc-psqi-src" type="radio" name="nc_psqi_q6" id="nc_psqi_q6_2" value="2"><label class="form-check-label" for="nc_psqi_q6_2">Khá tệ (2)</label></div>
+          <div class="form-check"><input class="form-check-input nc-psqi-src" type="radio" name="nc_psqi_q6" id="nc_psqi_q6_3" value="3"><label class="form-check-label" for="nc_psqi_q6_3">Rất tệ (3)</label></div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label mb-0">Q7. Tần suất thuốc ngủ</label>
+        <div class="d-flex flex-wrap gap-2">
+          <div class="form-check"><input class="form-check-input nc-psqi-src" type="radio" name="nc_psqi_q7" id="nc_psqi_q7_0" value="0"><label class="form-check-label" for="nc_psqi_q7_0">Không (0)</label></div>
+          <div class="form-check"><input class="form-check-input nc-psqi-src" type="radio" name="nc_psqi_q7" id="nc_psqi_q7_1" value="1"><label class="form-check-label" for="nc_psqi_q7_1">&lt;1/tuần (1)</label></div>
+          <div class="form-check"><input class="form-check-input nc-psqi-src" type="radio" name="nc_psqi_q7" id="nc_psqi_q7_2" value="2"><label class="form-check-label" for="nc_psqi_q7_2">1–2/tuần (2)</label></div>
+          <div class="form-check"><input class="form-check-input nc-psqi-src" type="radio" name="nc_psqi_q7" id="nc_psqi_q7_3" value="3"><label class="form-check-label" for="nc_psqi_q7_3">≥3/tuần (3)</label></div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label mb-0">Q8. Buồn ngủ ban ngày</label>
+        <div class="d-flex flex-wrap gap-2">
+          <div class="form-check"><input class="form-check-input nc-psqi-src" type="radio" name="nc_psqi_q8" id="nc_psqi_q8_0" value="0"><label class="form-check-label" for="nc_psqi_q8_0">Không (0)</label></div>
+          <div class="form-check"><input class="form-check-input nc-psqi-src" type="radio" name="nc_psqi_q8" id="nc_psqi_q8_1" value="1"><label class="form-check-label" for="nc_psqi_q8_1">&lt;1/tuần (1)</label></div>
+          <div class="form-check"><input class="form-check-input nc-psqi-src" type="radio" name="nc_psqi_q8" id="nc_psqi_q8_2" value="2"><label class="form-check-label" for="nc_psqi_q8_2">1–2/tuần (2)</label></div>
+          <div class="form-check"><input class="form-check-input nc-psqi-src" type="radio" name="nc_psqi_q8" id="nc_psqi_q8_3" value="3"><label class="form-check-label" for="nc_psqi_q8_3">≥3/tuần (3)</label></div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label mb-0">Q9. Khó duy trì nhiệt tình khi làm việc</label>
+        <div class="d-flex flex-wrap gap-2">
+          <div class="form-check"><input class="form-check-input nc-psqi-src" type="radio" name="nc_psqi_q9" id="nc_psqi_q9_0" value="0"><label class="form-check-label" for="nc_psqi_q9_0">Không (0)</label></div>
+          <div class="form-check"><input class="form-check-input nc-psqi-src" type="radio" name="nc_psqi_q9" id="nc_psqi_q9_1" value="1"><label class="form-check-label" for="nc_psqi_q9_1">Đôi chút (1)</label></div>
+          <div class="form-check"><input class="form-check-input nc-psqi-src" type="radio" name="nc_psqi_q9" id="nc_psqi_q9_2" value="2"><label class="form-check-label" for="nc_psqi_q9_2">Tương đối (2)</label></div>
+          <div class="form-check"><input class="form-check-input nc-psqi-src" type="radio" name="nc_psqi_q9" id="nc_psqi_q9_3" value="3"><label class="form-check-label" for="nc_psqi_q9_3">Rất khó (3)</label></div>
+        </div>
+      </div>
+    </div>
+
+    <h6 class="fw-bold border-bottom pb-1">Bảng tính điểm PSQI <span class="fw-normal text-muted">(tự động — chỉ đọc)</span></h6>
+    <div class="row g-2 mb-2">
+      <div class="col-md-1"><label class="form-label mb-0" title="Chất lượng ngủ chủ quan (Q6)">C1</label><input type="number" min="0" max="3" class="form-control form-control-sm nc-psqi-c bg-light" id="nc_psqi_c1" readonly tabindex="-1"></div>
+      <div class="col-md-1"><label class="form-label mb-0" title="Thời gian chìm ngủ (Q2+Q5a)">C2</label><input type="number" min="0" max="3" class="form-control form-control-sm nc-psqi-c bg-light" id="nc_psqi_c2" readonly tabindex="-1"></div>
+      <div class="col-md-1"><label class="form-label mb-0" title="Thời lượng ngủ (Q4)">C3</label><input type="number" min="0" max="3" class="form-control form-control-sm nc-psqi-c bg-light" id="nc_psqi_c3" readonly tabindex="-1"></div>
+      <div class="col-md-1"><label class="form-label mb-0" title="Hiệu suất ngủ (Q1,Q3,Q4)">C4</label><input type="number" min="0" max="3" class="form-control form-control-sm nc-psqi-c bg-light" id="nc_psqi_c4" readonly tabindex="-1"></div>
+      <div class="col-md-1"><label class="form-label mb-0" title="Rối loạn giấc ngủ (Q5b–j)">C5</label><input type="number" min="0" max="3" class="form-control form-control-sm nc-psqi-c bg-light" id="nc_psqi_c5" readonly tabindex="-1"></div>
+      <div class="col-md-1"><label class="form-label mb-0" title="Thuốc ngủ (Q7)">C6</label><input type="number" min="0" max="3" class="form-control form-control-sm nc-psqi-c bg-light" id="nc_psqi_c6" readonly tabindex="-1"></div>
+      <div class="col-md-1"><label class="form-label mb-0" title="Rối loạn ban ngày (Q8+Q9)">C7</label><input type="number" min="0" max="3" class="form-control form-control-sm nc-psqi-c bg-light" id="nc_psqi_c7" readonly tabindex="-1"></div>
+      <div class="col-md-2"><label class="form-label mb-0">Tổng PSQI</label><input type="number" min="0" max="21" class="form-control form-control-sm fw-bold bg-light" id="nc_psqi_tong" readonly tabindex="-1"></div>
+      <div class="col-md-2"><label class="form-label mb-0">Hiệu suất ngủ %</label><input type="text" class="form-control form-control-sm bg-light" id="nc_psqi_hieu_suat" readonly tabindex="-1" placeholder="—"></div>
+      <div class="col-md-3">
+        <label class="form-label mb-0 d-block">Kết luận <span class="text-muted fw-normal">(tự động)</span></label>
+        <div class="form-check"><input class="form-check-input" type="radio" name="nc_psqi_ket_luan" id="nc_psqi_kl_tot" value="tot" tabindex="-1" style="pointer-events:none"><label class="form-check-label" for="nc_psqi_kl_tot">≤5: Tốt</label></div>
+        <div class="form-check"><input class="form-check-input" type="radio" name="nc_psqi_ket_luan" id="nc_psqi_kl_rl" value="roi_loan" tabindex="-1" style="pointer-events:none"><label class="form-check-label" for="nc_psqi_kl_rl">&gt;5: Rối loạn giấc ngủ</label></div>
+      </div>
+    </div>
+    <input type="hidden" id="nc_record_id">
+
+    <div class="border-top pt-3 mt-4 research-nc-footer-actions">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+        <div class="fw-semibold text-primary"><i class="fas fa-share-nodes me-1"></i> Lưu · In · Chia sẻ</div>
+        <div id="researchNcShareMsg" class="small text-success d-none"></div>
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-2">
+        <button type="button" class="btn btn-success" onclick="saveResearchNcForm()"><i class="fas fa-save me-1"></i>Lưu CSDL</button>
+        <button type="button" class="btn btn-info text-white" onclick="printResearchNcForm()"><i class="fas fa-print me-1"></i>In phiếu</button>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="shareResearchNc_('native')" title="Chia sẻ hệ thống"><i class="fas fa-share-alt me-1"></i>Chia sẻ</button>
+        <button type="button" class="btn btn-outline-dark btn-sm" onclick="shareResearchNc_('email')" title="Gửi email"><i class="fas fa-envelope me-1"></i>Email</button>
+        <button type="button" class="btn btn-outline-primary btn-sm" onclick="shareResearchNc_('facebook')" title="Facebook"><i class="fab fa-facebook-f me-1"></i>Facebook</button>
+        <button type="button" class="btn btn-outline-primary btn-sm" style="--bs-btn-color:#0068ff;--bs-btn-border-color:#0068ff;--bs-btn-hover-bg:#0068ff;--bs-btn-hover-border-color:#0068ff;" onclick="shareResearchNc_('zalo')" title="Zalo"><i class="fas fa-comment-dots me-1"></i>Zalo</button>
+        <button type="button" class="btn btn-outline-info btn-sm" onclick="shareResearchNc_('telegram')" title="Telegram"><i class="fab fa-telegram-plane me-1"></i>Telegram</button>
+        <button type="button" class="btn btn-outline-success btn-sm" onclick="shareResearchNc_('whatsapp')" title="WhatsApp"><i class="fab fa-whatsapp me-1"></i>WhatsApp</button>
+        <button type="button" class="btn btn-outline-dark btn-sm" onclick="shareResearchNc_('twitter')" title="X / Twitter"><i class="fab fa-x-twitter me-1"></i>X</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="shareResearchNc_('copy')" title="Sao chép tóm tắt"><i class="fas fa-copy me-1"></i>Sao chép</button>
+      </div>
+      <p class="small text-muted mt-2 mb-0">Chia sẻ tóm tắt phiếu (mã NC, chỉ số chính). Không gửi thông tin định danh đầy đủ lên mạng xã hội.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Giấy đồng thuận -->
+<div class="modal fade" id="researchNcConsentModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h5 class="modal-title fw-bold text-primary"><i class="fas fa-file-signature me-2"></i>Giấy đồng thuận tham gia nghiên cứu</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <div class="modal-body" id="researchNcConsentPrintArea">
+        <div class="text-center mb-3">
+          <div class="fw-bold">BỆNH VIỆN QUỐC TẾ PHƯƠNG CHÂU SÓC TRĂNG</div>
+          <div class="fw-bold text-uppercase mt-2">GIẤY ĐỒNG THUẬN THAM GIA NGHIÊN CỨU</div>
+          <div class="small text-muted">Thu thập số liệu lâm sàng – sinh hóa nội tiết ở người bệnh ĐTĐ type 2 ngoại trú</div>
+        </div>
+        <p>Tôi, người bệnh / người đại diện hợp pháp của người bệnh, xác nhận đã được giải thích rõ ràng về:</p>
+        <ol class="small">
+          <li>Mục đích nghiên cứu: thu thập số liệu lâm sàng, cận lâm sàng và sàng lọc bổ sung (STOP-Bang, PHQ-9, PSQI) phục vụ cải thiện chất lượng chăm sóc dinh dưỡng – nội tiết.</li>
+          <li>Nội dung tham gia: trả lời phiếu thu thập, đo dấu hiệu sinh tồn, cho phép sử dụng kết quả xét nghiệm trong 30 ngày gần nhất (nếu có).</li>
+          <li>Tính tự nguyện: tôi có quyền từ chối hoặc rút khỏi nghiên cứu bất kỳ lúc nào mà không ảnh hưởng đến quyền được điều trị.</li>
+          <li>Bảo mật: thông tin định danh được mã hóa; dữ liệu chỉ phục vụ nghiên cứu / cải tiến chất lượng theo quy định của Bệnh viện và JCI (AOP.01.01, AOP.01.03).</li>
+          <li>Không phát sinh chi phí bổ sung ngoài quy trình điều trị thường quy.</li>
+        </ol>
+        <p class="small mb-2">Tôi đồng ý tham gia và cho phép sử dụng số liệu đã thu thập cho mục đích nêu trên.</p>
+        <div class="row mt-4 small">
+          <div class="col-6">
+            <div>Ngày …… / …… / 20……</div>
+            <div class="mt-4 fw-semibold">Người bệnh / Người đại diện</div>
+            <div class="text-muted">(Ký, ghi rõ họ tên)</div>
+            <div style="height:72px"></div>
+          </div>
+          <div class="col-6 text-end">
+            <div>Ngày …… / …… / 20……</div>
+            <div class="mt-4 fw-semibold">Điều tra viên</div>
+            <div class="text-muted">(Ký, ghi rõ họ tên)</div>
+            <div style="height:72px"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer py-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="printResearchNcConsent_()"><i class="fas fa-print me-1"></i>In mẫu đồng thuận</button>
+        <button type="button" class="btn btn-success btn-sm" onclick="researchNcConfirmConsent_()"><i class="fas fa-check me-1"></i>Đã ký — đánh dấu Có</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: STOP-Bang -->
+<div class="modal fade" id="researchNcStopBangModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h5 class="modal-title fw-bold text-primary"><i class="fas fa-lungs me-2"></i>Bảng tầm soát STOP-Bang</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <div class="modal-body small">
+        <p class="text-muted mb-2">Đánh dấu <strong>Có</strong> = 1 điểm. Tổng điểm 0–8. Nguy cơ OSA trung bình–cao khi ≥ 3.</p>
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered align-middle mb-0">
+            <thead class="table-light"><tr><th style="width:3rem">Mã</th><th>Nội dung</th><th class="text-center" style="width:5rem">Có</th></tr></thead>
+            <tbody>
+              <tr><td class="fw-bold">S</td><td><strong>Snoring</strong> — Bạn có ngáy to không? (ngáy đủ lớn để nghe qua cửa đóng hoặc làm người khác khó chịu)</td><td class="text-center"><input type="checkbox" class="form-check-input nc-stop-item" id="nc_stop_s" value="1" onchange="researchNcCalcStopBang_()"></td></tr>
+              <tr><td class="fw-bold">T</td><td><strong>Tired</strong> — Bạn có thường xuyên mệt mỏi, kiệt sức hoặc buồn ngủ ban ngày không?</td><td class="text-center"><input type="checkbox" class="form-check-input nc-stop-item" id="nc_stop_t" value="1" onchange="researchNcCalcStopBang_()"></td></tr>
+              <tr><td class="fw-bold">O</td><td><strong>Observed</strong> — Có ai quan sát thấy bạn ngừng thở hoặc thở hổn hển/nghẹt thở khi ngủ không?</td><td class="text-center"><input type="checkbox" class="form-check-input nc-stop-item" id="nc_stop_o" value="1" onchange="researchNcCalcStopBang_()"></td></tr>
+              <tr><td class="fw-bold">P</td><td><strong>Pressure</strong> — Bạn có đang được điều trị (hoặc đã được chẩn đoán) tăng huyết áp không?</td><td class="text-center"><input type="checkbox" class="form-check-input nc-stop-item" id="nc_stop_p" value="1" onchange="researchNcCalcStopBang_()"></td></tr>
+              <tr><td class="fw-bold">B</td><td><strong>BMI</strong> — BMI &gt; 35 kg/m²?</td><td class="text-center"><input type="checkbox" class="form-check-input nc-stop-item" id="nc_stop_b" value="1" onchange="researchNcCalcStopBang_()"></td></tr>
+              <tr><td class="fw-bold">A</td><td><strong>Age</strong> — Tuổi &gt; 50?</td><td class="text-center"><input type="checkbox" class="form-check-input nc-stop-item" id="nc_stop_a" value="1" onchange="researchNcCalcStopBang_()"></td></tr>
+              <tr><td class="fw-bold">N</td><td><strong>Neck</strong> — Chu vi cổ lớn? (Nam &gt; 40 cm; Nữ &gt; 35–37 cm — theo tiêu chí STOP-Bang)</td><td class="text-center"><input type="checkbox" class="form-check-input nc-stop-item" id="nc_stop_n" value="1" onchange="researchNcCalcStopBang_()"></td></tr>
+              <tr><td class="fw-bold">G</td><td><strong>Gender</strong> — Giới tính nam?</td><td class="text-center"><input type="checkbox" class="form-check-input nc-stop-item" id="nc_stop_g" value="1" onchange="researchNcCalcStopBang_()"></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="alert alert-info py-2 mt-3 mb-0">Tổng điểm hiện tại: <strong id="nc_stop_bang_modal_sum">0</strong> / 8</div>
+      </div>
+      <div class="modal-footer py-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="researchNcApplyStopBang_()"><i class="fas fa-check me-1"></i>Áp dụng vào phiếu</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: PHQ-9 -->
+<div class="modal fade" id="researchNcPhq9Modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h5 class="modal-title fw-bold text-primary"><i class="fas fa-brain me-2"></i>Bảng PHQ-9 — Patient Health Questionnaire</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <div class="modal-body small">
+        <p class="mb-2">Trong <strong>2 tuần qua</strong>, bạn bị ảnh hưởng bởi các vấn đề sau như thế nào?<br>
+          <span class="text-muted">0 = Không chút nào · 1 = Vài ngày · 2 = Hơn nửa số ngày · 3 = Gần như mỗi ngày</span></p>
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered align-middle mb-0">
+            <thead class="table-light text-center">
+              <tr><th class="text-start">Câu hỏi</th><th>0</th><th>1</th><th>2</th><th>3</th></tr>
+            </thead>
+            <tbody id="researchNcPhq9Body">
+              <tr>
+                <td>1. Í quan tâm hoặc không thấy vui thích khi làm việc gì</td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_1" value="0" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_1" value="1" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_1" value="2" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_1" value="3" onchange="researchNcCalcPhq9_()"></td>
+              </tr>
+              <tr>
+                <td>2. Cảm thấy buồn, chán nản hoặc tuyệt vọng</td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_2" value="0" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_2" value="1" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_2" value="2" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_2" value="3" onchange="researchNcCalcPhq9_()"></td>
+              </tr>
+              <tr>
+                <td>3. Khó ngủ, ngủ không yên hoặc ngủ quá nhiều</td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_3" value="0" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_3" value="1" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_3" value="2" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_3" value="3" onchange="researchNcCalcPhq9_()"></td>
+              </tr>
+              <tr>
+                <td>4. Cảm thấy mệt mỏi hoặc ít năng lượng</td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_4" value="0" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_4" value="1" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_4" value="2" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_4" value="3" onchange="researchNcCalcPhq9_()"></td>
+              </tr>
+              <tr>
+                <td>5. Ăn kém ngon miệng hoặc ăn quá nhiều</td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_5" value="0" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_5" value="1" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_5" value="2" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_5" value="3" onchange="researchNcCalcPhq9_()"></td>
+              </tr>
+              <tr>
+                <td>6. Cảm thấy bản thân tệ hại — hoặc cảm thấy mình thất bại, làm gia đình thất vọng</td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_6" value="0" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_6" value="1" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_6" value="2" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_6" value="3" onchange="researchNcCalcPhq9_()"></td>
+              </tr>
+              <tr>
+                <td>7. Khó tập trung vào việc gì (đọc báo hoặc xem TV)</td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_7" value="0" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_7" value="1" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_7" value="2" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_7" value="3" onchange="researchNcCalcPhq9_()"></td>
+              </tr>
+              <tr>
+                <td>8. Vận động hoặc nói chậm đến mức người khác nhận thấy; hoặc ngược lại — bồn chồn, không ngồi yên được</td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_8" value="0" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_8" value="1" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_8" value="2" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_8" value="3" onchange="researchNcCalcPhq9_()"></td>
+              </tr>
+              <tr>
+                <td>9. Nghĩ rằng mình thà chết đi hoặc muốn làm tổn thương bản thân theo cách nào đó</td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_9" value="0" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_9" value="1" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_9" value="2" onchange="researchNcCalcPhq9_()"></td>
+                <td class="text-center"><input type="radio" class="form-check-input nc-phq9-item" name="nc_phq9_9" value="3" onchange="researchNcCalcPhq9_()"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="alert alert-info py-2 mt-3 mb-0">Tổng điểm hiện tại: <strong id="nc_phq9_modal_sum">0</strong> / 27 · Phân loại: <strong id="nc_phq9_modal_label">—</strong></div>
+      </div>
+      <div class="modal-footer py-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="researchNcApplyPhq9_()"><i class="fas fa-check me-1"></i>Áp dụng vào phiếu</button>
+      </div>
+    </div>
+  </div>
+</div>

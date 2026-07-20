@@ -142,10 +142,12 @@
 
             <div class="auth-content text-start">
               <div id="loginPaneStaff">
-                <input type="email" id="txtEmail" class="form-control mb-2" placeholder="Email đăng nhập">
-                <input type="password" id="txtPass" class="form-control mb-2" placeholder="Mật khẩu" onkeypress="if(event.key==='Enter') handleLogin()">
-                <button class="btn btn-primary w-100 fw-bold mb-2" id="btnLogin" onclick="handleLogin()">ĐĂNG NHẬP</button>
-                <div id="loginMsg" class="text-danger small mb-3 fw-bold text-center"></div>
+                <input type="email" id="txtEmail" class="form-control mb-2" placeholder="Email đăng nhập" autocomplete="username">
+                <input type="password" id="txtPass" class="form-control mb-2" placeholder="Mật khẩu" autocomplete="current-password">
+                <button type="button" class="btn btn-primary w-100 fw-bold mb-2" id="btnLogin">ĐĂNG NHẬP</button>
+                <div id="loginMsg" class="text-danger small mb-2 fw-bold text-center"></div>
+                <div id="authPingStatus" class="small text-muted text-center mb-1">Đang kiểm tra kết nối máy chủ…</div>
+                <div id="authClientVersion" class="small text-muted text-center mb-3">Client …</div>
 
                 <button type="button" class="btn btn-outline-secondary w-100 mb-2 d-flex align-items-center justify-content-center gap-2" id="btnToggleStaffRegister" onclick="toggleStaffRegisterPanel()" aria-expanded="false" aria-controls="staffRegisterPanel">
                   <i class="fas fa-user-plus" id="staffRegisterToggleIcon"></i>
@@ -197,12 +199,22 @@
       <button type="button" class="nav-link" id="sidebarNavTv" onclick="setStaffRootNav('tv')" title="Thư viện tra cứu — Dược thư, ICD-10, JCI, NĐ 90">
         <i class="fas fa-book-medical"></i> <span class="nav-text">Thư viện</span>
       </button>
+      <button type="button" class="nav-link" id="sidebarNavNc" onclick="setStaffRootNav('nc')" title="Thu thập và xuất số liệu nghiên cứu">
+        <i class="fas fa-flask"></i> <span class="nav-text">Thu thập số liệu nghiên cứu</span>
+      </button>
+    </div>
+
+    <div class="mt-auto pt-3 border-top border-white border-opacity-25">
+      <button type="button" class="nav-link w-100 justify-content-start" id="sidebarPinBtn" onclick="toggleSidebarPin_()" title="Ghim sidebar luôn mở rộng">
+        <i class="fas fa-thumbtack" id="sidebarPinIcon"></i>
+        <span class="nav-text" id="sidebarPinLabel">Ghim sidebar</span>
+      </button>
     </div>
   </div>
 
   <div class="main-content">
 
-    <div id="section-dd-pack">
+    <div id="section-dd-pack" class="staff-panel-active">
 
     <div id="ddTopChrome" class="cdss-glass rounded-4 p-3 mb-3 border border-white border-opacity-25 shadow-lg d-print-none">
       <div class="dd-steps-scroll mb-2">
@@ -515,9 +527,24 @@
                   <option value="NgoaiTru">Ngoại trú (Out-patient)</option>
                 </select>
               </div>
+              <div class="col-md-4 col-lg-3">
+                <label class="small mb-0 fw-semibold">Số vào viện (phiếu DD-06)</label>
+                <input type="text" class="form-control form-control-sm" id="dd06_so_vao_vien" placeholder="Số BA / vào viện">
+              </div>
+              <div class="col-md-4 col-lg-3">
+                <label class="small mb-0 fw-semibold">Khoa điều trị (DD-06)</label>
+                <input type="text" class="form-control form-control-sm" id="dd06_khoa" value="Khoa Dinh dưỡng tiết chế">
+              </div>
+              <div class="col-md-4 col-lg-3">
+                <label class="small mb-0 fw-semibold">Phòng / Giường (DD-06)</label>
+                <div class="input-group input-group-sm">
+                  <input type="text" class="form-control" id="dd06_phong" placeholder="Phòng">
+                  <input type="text" class="form-control" id="dd06_giuong" placeholder="Giường">
+                </div>
+              </div>
               <div class="col-md-5 col-lg-4">
-                <label class="small mb-0 fw-semibold">Phòng / Giường (nội trú)</label>
-                <input type="text" class="form-control form-control-sm" id="soPhong" placeholder="Ví dụ: P.405">
+                <label class="small mb-0 fw-semibold">Phòng / Giường (ghi chú nội trú)</label>
+                <input type="text" class="form-control form-control-sm" id="soPhong" placeholder="Ví dụ: P.405" oninput="syncMod2RoomToDD06_()">
               </div>
               <div class="col-12 col-lg-5 small text-muted align-self-center pt-lg-2">
                 Phân loại và huy hiệu đối tượng áp dụng cho toàn Module 2; chỉ số nhân trắc nằm ở Bước 1 bên dưới.
@@ -527,7 +554,7 @@
             <div class="d-flex flex-wrap gap-2 mod2-flowline">
               <span class="badge rounded-pill text-bg-light border">B1. Nhân trắc</span>
               <span class="badge rounded-pill text-bg-light border">B2. Lâm sàng & bệnh sử</span>
-              <span class="badge rounded-pill text-bg-light border">B3. Sàng lọc nguy cơ</span>
+              <span class="badge rounded-pill text-bg-light border">B3. Sàng lọc &amp; DD-06</span>
               <span class="badge rounded-pill text-bg-light border">B4. Khẩu phần & vi chất</span>
               <span class="badge rounded-pill text-bg-light border">B5. Hệ số năng lượng</span>
               <span class="badge rounded-pill text-bg-light border">B6. Tình trạng đặc biệt</span>
@@ -1053,6 +1080,173 @@
                     <div class="alert alert-info py-1 mt-2 mb-0 small">
                         <i class="fas fa-info-circle"></i> Hệ thống tự động hiển thị STRONG-kids cho bệnh nhi; người lớn dùng NRS-2002/MUST theo phân loại nội/ngoại trú.
                     </div>
+                    <div class="d-flex flex-wrap align-items-center gap-2 mt-3 pt-2 border-top pediatric-only" id="dd06_open_row">
+                        <button type="button" class="btn btn-success btn-sm" onclick="openDD06PediatricSection()">
+                            <i class="fas fa-file-medical-alt me-1"></i> Mở phiếu sàng lọc dinh dưỡng (DD-06)
+                        </button>
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="printDD06PediatricForm()">
+                            <i class="fas fa-print me-1"></i> In phiếu
+                        </button>
+                        <span id="dd06_status_badge" class="badge bg-secondary">Chưa lập phiếu</span>
+                    </div>
+                </div>
+
+                <!-- Phiếu DD-06 nhúng Module 2 · Bước 3 (bệnh nhi) -->
+                <div id="dd06_mod2_card" class="card border-success border-2 mt-3 pediatric-only dd06-form-body small">
+                  <div class="card-header bg-success bg-opacity-10 text-success fw-bold py-2">
+                    <i class="fas fa-baby me-1"></i> PHIẾU SÀNG LỌC VÀ ĐÁNH GIÁ DINH DƯỠNG BỆNH NHI <span class="badge bg-success ms-1">MS: DD-06</span>
+                  </div>
+                  <div class="card-body">
+                    <input type="hidden" id="dd06_csyt" value="BỆNH VIỆN QUỐC TẾ PHƯƠNG CHÂU — KHOA DINH DƯỠNG TIẾT CHẾ">
+                    <input type="hidden" id="dd06_ma_bn">
+                    <input type="hidden" id="dd06_ho_ten">
+                    <input type="hidden" id="dd06_tuoi">
+                    <input type="hidden" id="dd06_can_nang">
+                    <input type="hidden" id="dd06_chieu_cao">
+                    <input type="hidden" id="dd06_bmi">
+                    <input type="radio" class="d-none" name="dd06_gioi" id="dd06_gioi_nam" value="Nam">
+                    <input type="radio" class="d-none" name="dd06_gioi" id="dd06_gioi_nu" value="Nu">
+                    <div class="row g-2 mb-2 p-2 border rounded bg-light-subtle">
+                      <div class="col-md-4"><span class="text-muted">Họ tên:</span> <strong id="dd06_ho_ten_disp">—</strong></div>
+                      <div class="col-md-2"><span class="text-muted">Tuổi:</span> <strong id="dd06_tuoi_disp">—</strong></div>
+                      <div class="col-md-2"><span class="text-muted">Giới:</span> <strong id="dd06_gioi_disp">—</strong></div>
+                      <div class="col-md-4"><span class="text-muted">CN/CC/BMI:</span> <strong id="dd06_anthro_disp">—</strong></div>
+                      <div class="col-md-6"><span class="text-muted">Z W/A · Z H/A:</span> <strong id="dd06_z_disp">—</strong></div>
+                      <div class="col-md-6">
+                        <label class="form-label mb-0">Chẩn đoán</label>
+                        <textarea class="form-control form-control-sm" id="dd06_chan_doan" rows="2" placeholder="ICD-10 / lâm sàng"></textarea>
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label mb-0">CN chuẩn (Z W/A)</label>
+                        <input type="text" class="form-control form-control-sm" id="dd06_cn_z_sd" placeholder="SD" oninput="calcDD06Pediatric()">
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label mb-0">CC chuẩn (Z H/A)</label>
+                        <input type="text" class="form-control form-control-sm" id="dd06_cc_z_sd" placeholder="SD" oninput="calcDD06Pediatric()">
+                      </div>
+                    </div>
+                    <h6 class="fw-bold text-success border-bottom pb-1">Phần I — Sàng lọc nguy cơ SDD (Điều dưỡng)</h6>
+                    <div class="table-responsive border rounded mb-2">
+                      <table class="table table-sm table-bordered mb-0 dd06-screen-table align-middle">
+                        <thead class="table-light"><tr><th>Yếu tố nguy cơ</th><th class="text-center">Không</th><th class="text-center">Có</th><th class="text-center">Điểm</th></tr></thead>
+                        <tbody>
+                          <tr><td>NB có bệnh lý nền gây nguy cơ SDD hoặc dự kiến phẫu thuật?</td>
+                            <td class="text-center"><input class="form-check-input" type="radio" name="dd06_q1" id="dd06_q1_no" value="0" onchange="calcDD06Pediatric()"></td>
+                            <td class="text-center"><input class="form-check-input" type="radio" name="dd06_q1" id="dd06_q1_yes" value="2" onchange="calcDD06Pediatric()"></td><td class="text-center fw-bold">2</td></tr>
+                          <tr><td>Khám lâm sàng có mất lớp mỡ dưới da và/hoặc teo cơ…</td>
+                            <td class="text-center"><input class="form-check-input" type="radio" name="dd06_q2" id="dd06_q2_no" value="0" onchange="calcDD06Pediatric()"></td>
+                            <td class="text-center"><input class="form-check-input" type="radio" name="dd06_q2" id="dd06_q2_yes" value="1" onchange="calcDD06Pediatric()"></td><td class="text-center fw-bold">1</td></tr>
+                          <tr><td>Khi có ít nhất 01 trong các yếu tố sau:
+                            <ul class="mb-0 ps-3 mt-1 small">
+                              <li><label class="form-check-label"><input class="form-check-input dd06-q3-sub" type="checkbox" id="dd06_q3_diarrhea" onchange="calcDD06Pediatric()"> Tiêu chảy (&gt;5 ngày) và/hoặc nôn (&gt;3 lần/ngày)</label></li>
+                              <li><label class="form-check-label"><input class="form-check-input dd06-q3-sub" type="checkbox" id="dd06_q3_vomit" onchange="calcDD06Pediatric()"> Nôn kéo dài 1–3 ngày</label></li>
+                              <li><label class="form-check-label"><input class="form-check-input dd06-q3-sub" type="checkbox" id="dd06_q3_intake" onchange="calcDD06Pediatric()"> Ăn/bú giảm 1–3 ngày</label></li>
+                              <li><label class="form-check-label"><input class="form-check-input dd06-q3-sub" type="checkbox" id="dd06_q3_prior" onchange="calcDD06Pediatric()"> Đã can thiệp DD trước</label></li>
+                              <li><label class="form-check-label"><input class="form-check-input dd06-q3-sub" type="checkbox" id="dd06_q3_pain" onchange="calcDD06Pediatric()"> Không thu nạp đủ DD do đau</label></li>
+                            </ul></td>
+                            <td class="text-center"><input class="form-check-input" type="radio" name="dd06_q3" id="dd06_q3_no" value="0" onchange="calcDD06Pediatric()"></td>
+                            <td class="text-center"><input class="form-check-input" type="radio" name="dd06_q3" id="dd06_q3_yes" value="1" onchange="calcDD06Pediatric()"></td><td class="text-center fw-bold">1</td></tr>
+                          <tr><td>Sụt cân / không tăng cân·CC (trẻ &lt;1 tuổi) trong 3 tháng?</td>
+                            <td class="text-center"><input class="form-check-input" type="radio" name="dd06_q4" id="dd06_q4_no" value="0" onchange="calcDD06Pediatric()"></td>
+                            <td class="text-center"><input class="form-check-input" type="radio" name="dd06_q4" id="dd06_q4_yes" value="1" onchange="calcDD06Pediatric()"></td><td class="text-center fw-bold">1</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="p-2 border rounded mb-2 bg-white">
+                      <span class="fw-bold">Tổng:</span> <span id="dd06_total" class="badge bg-secondary">0</span>
+                      <span class="fw-bold ms-2">Kết quả:</span> <span id="dd06_risk_result" class="fw-bold text-success">Nguy cơ thấp (0 điểm)</span>
+                    </div>
+                    <div class="row g-2 mb-2">
+                      <div class="col-md-4"><label class="form-label mb-0">Ngày (Điều dưỡng)</label><input type="date" class="form-control form-control-sm" id="dd06_dd_date"></div>
+                      <div class="col-md-8"><label class="form-label mb-0">Điều dưỡng (ký, họ tên)</label><input type="text" class="form-control form-control-sm" id="dd06_dd_nurse"></div>
+                    </div>
+                    <h6 class="fw-bold text-primary border-bottom pb-1">Phần II — Kế hoạch chăm sóc DD (Bác sĩ)</h6>
+                    <div class="row g-1 mb-2">
+                      <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="dd06_plan_oral"><label class="form-check-label" for="dd06_plan_oral">Bổ sung DD qua miệng</label></div></div>
+                      <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="dd06_plan_en"><label class="form-check-label" for="dd06_plan_en">Chế độ DD qua ống thông</label></div></div>
+                      <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="dd06_plan_tpn"><label class="form-check-label" for="dd06_plan_tpn">DD tĩnh mạch toàn phần</label></div></div>
+                      <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="dd06_plan_supp_pn"><label class="form-check-label" for="dd06_plan_supp_pn">DD tĩnh mạch bổ sung</label></div></div>
+                      <div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" id="dd06_plan_consult"><label class="form-check-label" for="dd06_plan_consult">Hội chẩn DD</label></div></div>
+                    </div>
+                    <div class="row g-2 mb-2">
+                      <div class="col-md-4"><label class="form-label mb-0">Ngày (Bác sĩ)</label><input type="date" class="form-control form-control-sm" id="dd06_bs_date"></div>
+                      <div class="col-md-8"><label class="form-label mb-0">Bác sĩ (ký, họ tên)</label><input type="text" class="form-control form-control-sm" id="dd06_bs_name"></div>
+                    </div>
+                    <textarea class="form-control form-control-sm mb-2" id="dd06_ghi_chu" rows="2" placeholder="Ghi chú bổ sung"></textarea>
+                    <div class="d-flex flex-wrap gap-2">
+                      <button type="button" class="btn btn-outline-secondary btn-sm" onclick="syncDD06FromStrongkids_()"><i class="fas fa-sync me-1"></i> Lấy từ STRONG-kids</button>
+                      <button type="button" class="btn btn-success btn-sm" onclick="applyDD06ToWorkflow_()"><i class="fas fa-check me-1"></i> Xác nhận &amp; đồng bộ</button>
+                      <button type="button" class="btn btn-outline-primary btn-sm" onclick="printDD06PediatricForm()"><i class="fas fa-print me-1"></i> In phiếu DD-06</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Phiếu DD-02 — Khám & tư vấn DD ngoại trú (Module 2) -->
+                <div id="dd02_mod2_card" class="card border-info border-2 mt-3 dd02-outpatient-only small">
+                  <div class="card-header bg-info bg-opacity-10 text-info fw-bold py-2">
+                    <i class="fas fa-file-medical me-1"></i> PHIẾU KHÁM VÀ TƯ VẤN DINH DƯỠNG NGOẠI TRÚ <span class="badge bg-info ms-1">MS: DD-02</span>
+                  </div>
+                  <div class="card-body">
+                    <input type="hidden" id="dd02_csyt" value="BỆNH VIỆN QUỐC TẾ PHƯƠNG CHÂU — KHOA DINH DƯỠNG TIẾT CHẾ">
+                    <input type="hidden" id="dd02_ma_bn">
+                    <input type="hidden" id="dd02_ho_ten">
+                    <input type="hidden" id="dd02_tuoi">
+                    <input type="hidden" id="dd02_can_nang">
+                    <input type="hidden" id="dd02_chieu_cao">
+                    <input type="hidden" id="dd02_bmi">
+                    <input type="hidden" id="dd02_cn_z">
+                    <input type="hidden" id="dd02_cc_z">
+                    <input type="radio" class="d-none" name="dd02_gioi" id="dd02_gioi_nam" value="Nam">
+                    <input type="radio" class="d-none" name="dd02_gioi" id="dd02_gioi_nu" value="Nu">
+                    <div class="row g-2 mb-2">
+                      <div class="col-md-3"><label class="form-label mb-0">Số vào viện</label><input type="text" class="form-control form-control-sm" id="dd02_so_vao_vien"></div>
+                      <div class="col-md-9"><label class="form-label mb-0">Chẩn đoán</label><input type="text" class="form-control form-control-sm" id="dd02_chan_doan"></div>
+                    </div>
+                    <h6 class="fw-bold text-info border-bottom pb-1">1. Khám, đánh giá tình trạng DD</h6>
+                    <div class="row g-2 mb-2">
+                      <div class="col-md-4"><label class="form-label mb-0">Bệnh sử</label><textarea class="form-control form-control-sm" id="dd02_benh_su" rows="2"></textarea></div>
+                      <div class="col-md-4"><label class="form-label mb-0">Tiền sử</label><textarea class="form-control form-control-sm" id="dd02_tien_su" rows="2"></textarea></div>
+                      <div class="col-md-4"><label class="form-label mb-0">Cận lâm sàng</label><textarea class="form-control form-control-sm" id="dd02_cls" rows="2"></textarea></div>
+                      <div class="col-md-4"><label class="form-label mb-0">Da niêm mạc (lâm sàng)</label><textarea class="form-control form-control-sm" id="dd02_ls_da_niem" rows="2"></textarea></div>
+                      <div class="col-md-4"><label class="form-label mb-0">Khối cơ, mỡ</label><textarea class="form-control form-control-sm" id="dd02_ls_khoi_co" rows="2"></textarea></div>
+                      <div class="col-md-4"><label class="form-label mb-0">Khác (phù, lưỡi…)</label><textarea class="form-control form-control-sm" id="dd02_ls_khac" rows="2"></textarea></div>
+                      <div class="col-12"><label class="form-label mb-0">Điều tra khẩu phần / thói quen ăn uống</label><textarea class="form-control form-control-sm" id="dd02_khau_phan" rows="2"></textarea></div>
+                    </div>
+                    <h6 class="fw-bold text-primary border-bottom pb-1">2. Tư vấn dinh dưỡng</h6>
+                    <div class="row g-2 mb-2">
+                      <div class="col-md-6"><label class="form-label mb-0">Chẩn đoán DD</label><textarea class="form-control form-control-sm" id="dd02_chan_doan_dd" rows="2"></textarea></div>
+                      <div class="col-md-6"><label class="form-label mb-0">Lựa chọn thực phẩm</label><input type="text" class="form-control form-control-sm mb-1" id="dd02_lua_chon_tp"><label class="form-label mb-0">Nên ăn</label><textarea class="form-control form-control-sm" id="dd02_nen_an" rows="2"></textarea></div>
+                      <div class="col-md-4"><label class="form-label mb-0">Mục tiêu</label><input type="text" class="form-control form-control-sm" id="dd02_muc_tieu"></div>
+                      <div class="col-md-4"><label class="form-label mb-0">Năng lượng</label><input type="text" class="form-control form-control-sm" id="dd02_nang_luong"></div>
+                      <div class="col-md-4"><label class="form-label mb-0">Cân nặng mục tiêu (kg)</label><input type="text" class="form-control form-control-sm" id="dd02_can_nang_muc_tieu"></div>
+                      <div class="col-md-4"><label class="form-label mb-0">Protid</label><input type="text" class="form-control form-control-sm" id="dd02_protid"></div>
+                      <div class="col-md-4"><label class="form-label mb-0">Glucid</label><input type="text" class="form-control form-control-sm" id="dd02_glucid"></div>
+                      <div class="col-md-4"><label class="form-label mb-0">Lipid / Khác</label><input type="text" class="form-control form-control-sm" id="dd02_lipid"></div>
+                      <div class="col-md-6"><label class="form-label mb-0">Hạn chế / tránh</label><textarea class="form-control form-control-sm" id="dd02_han_che" rows="2"></textarea></div>
+                      <div class="col-md-6"><label class="form-label mb-0">Thực phẩm bổ sung</label><textarea class="form-control form-control-sm" id="dd02_tps" rows="2"></textarea></div>
+                      <div class="col-md-4"><label class="form-label mb-0">Thuốc liên quan DD</label><textarea class="form-control form-control-sm" id="dd02_thuoc_dd" rows="2"></textarea></div>
+                      <div class="col-md-4"><label class="form-label mb-0">Vitamin</label><textarea class="form-control form-control-sm" id="dd02_vitamin" rows="2"></textarea></div>
+                      <div class="col-md-4"><label class="form-label mb-0">Khoáng chất</label><textarea class="form-control form-control-sm" id="dd02_khoang_chat" rows="2"></textarea></div>
+                      <div class="col-md-6"><label class="form-label mb-0">Dặn dò / Tập luyện</label><textarea class="form-control form-control-sm" id="dd02_dan_do" rows="1"></textarea><textarea class="form-control form-control-sm mt-1" id="dd02_tap_luyen" rows="2"></textarea></div>
+                      <div class="col-md-6">
+                        <label class="form-label mb-0 d-block">Cung cấp thực đơn mẫu</label>
+                        <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" id="dd02_menu_khong"><label class="form-check-label" for="dd02_menu_khong">Không</label></div>
+                        <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" id="dd02_menu_co"><label class="form-check-label" for="dd02_menu_co">Có</label></div>
+                        <label class="form-label mb-0 mt-1">Hẹn khám lại (ngày)</label><input type="number" class="form-control form-control-sm" id="dd02_hen_kham" min="1" placeholder="30">
+                      </div>
+                    </div>
+                    <div class="row g-2 mb-2">
+                      <div class="col-md-4"><label class="form-label mb-0">Ngày thực hiện</label><input type="date" class="form-control form-control-sm" id="dd02_ngay"></div>
+                      <div class="col-md-8"><label class="form-label mb-0">Người thực hiện khám</label><input type="text" class="form-control form-control-sm" id="dd02_nguoi_thuc_hien"></div>
+                    </div>
+                    <input type="hidden" id="dd02_khac_dd">
+                    <input type="hidden" id="dd02_khac_thuoc">
+                    <div class="d-flex flex-wrap gap-2">
+                      <button type="button" class="btn btn-outline-secondary btn-sm" onclick="syncDD02FromModules_()"><i class="fas fa-sync me-1"></i> Lấy từ Module 1–3</button>
+                      <button type="button" class="btn btn-outline-info btn-sm" onclick="switchPrintMode('DD02')"><i class="fas fa-eye me-1"></i> Xem trước in (M5)</button>
+                      <button type="button" class="btn btn-info btn-sm text-white" onclick="printDD02OutpatientForm()"><i class="fas fa-print me-1"></i> In phiếu DD-02</button>
+                    </div>
+                  </div>
                 </div>
 
             </div>
@@ -1826,9 +2020,9 @@
                 <div class="card-body p-2">
                     <!-- A. Kiêng cữ -->
                     <div class="mb-2">
-                        <label class="fw-bold small text-danger d-block mb-1"><i class="fas fa-exclamation-circle me-1"></i> A. Cần kiêng cữ / cần tránh (tự động theo chẩn đoán &amp; tình trạng)</label>
+                        <label class="fw-bold small text-danger d-block mb-1"><i class="fas fa-exclamation-circle me-1"></i> A. Cần kiêng cữ / cần tránh (tự động theo chẩn đoán, tình trạng &amp; thuốc MME.5)</label>
                         <div id="avoid_chips" class="d-flex flex-wrap gap-1 small"></div>
-                        <div id="avoid_empty" class="small fst-italic text-muted">Chưa có cảnh báo kiêng cữ — bổ sung chẩn đoán/tình trạng để hiển thị.</div>
+                        <div id="avoid_empty" class="small fst-italic text-muted">Chưa có cảnh báo kiêng cữ — bổ sung chẩn đoán, thuốc (Bước 2) hoặc tình trạng để hiển thị.</div>
                     </div>
 
                     <hr class="my-2">
@@ -2050,7 +2244,7 @@
                         <i class="fas fa-print"></i> TÙY CHỌN IN ẤN
                     </div>
                     <div class="card-body d-grid gap-2">
-                        <div class="btn-group">
+                        <div class="btn-group flex-wrap">
                             <button class="btn btn-outline-primary active" id="btnModeRecord" onclick="switchPrintMode('RECORD')">
                                 <i class="fas fa-file-medical"></i> Phiếu Hội Chẩn
                             </button>
@@ -2058,6 +2252,12 @@
                                 <i class="fas fa-hand-holding-heart"></i> Hướng Dẫn NB
                             </button>
                         </div>
+                        <button type="button" class="btn btn-outline-success fw-bold text-start" id="btnModeDD06" onclick="switchPrintMode('DD06')">
+                            <i class="fas fa-baby me-1"></i> PHIẾU SÀNG LỌC DD-06 (BỆNH NHI)
+                        </button>
+                        <button type="button" class="btn btn-outline-info fw-bold text-start" id="btnModeDD02" onclick="switchPrintMode('DD02')">
+                            <i class="fas fa-file-medical me-1"></i> PHIẾU KHÁM &amp; TƯ VẤN DD-02 (NGOẠI TRÚ)
+                        </button>
 
                         <hr class="my-1">
                         
@@ -2967,11 +3167,14 @@
         </div>
       </div>
 
-    </div>
+    </div><!-- mod7 / v-pills inner -->
 
-  </div><!-- #section-dd-pack -->
+    </div><!-- #v-pills-tabContent -->
 
-    <div id="section-thu-vien-pack" class="d-none d-print-none">
+    </div><!-- #section-dd-pack -->
+
+    <div id="staff-panels-host">
+    <div id="section-thu-vien-pack" class="d-print-none">
       <div class="cdss-glass rounded-4 p-2 p-md-3 border border-white border-opacity-25 shadow-lg mb-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
         <div>
           <h5 class="text-primary fw-bold mb-0"><i class="fas fa-book-medical me-2"></i>THƯ VIỆN</h5>
@@ -2986,16 +3189,131 @@
           </button>
         </div>
       </div>
-      <div id="thuVienFrameWrap" class="cdss-glass rounded-4 border border-white border-opacity-25 shadow-lg overflow-hidden position-relative">
-        <div id="thuVienFrameLoading" class="text-center text-muted py-5">
-          <i class="fas fa-spinner fa-spin fa-2x mb-3 d-block text-primary"></i>
-          Đang tải thư viện tra cứu...
-        </div>
+      <div id="thuVienFrameWrap" class="thu-vien-frame-wrap position-relative">
         <iframe id="thuVienFrame" class="d-none" title="Thư viện tra cứu TĐYT Phương Châu"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals allow-popups-to-escape-sandbox"
-          loading="lazy"></iframe>
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals allow-popups-to-escape-sandbox"></iframe>
+        <div id="thuVienFrameLoading" class="thu-vien-overlay">
+          <div id="thuVienStaticShell" class="thu-vien-static-shell">
+            <i class="fas fa-book-medical fa-2x mb-3 d-block text-primary"></i>
+            <p class="fw-bold text-dark mb-2">Thư viện tra cứu</p>
+            <p class="small text-secondary mb-2">Dược thư · ICD-10 · JCI · Kháng sinh · NĐ 90</p>
+            <div id="thuVienStatusBox" class="small text-dark">
+              <i class="fas fa-spinner fa-spin me-1 text-primary"></i> Đang tải thư viện…
+            </div>
+            <p class="small text-muted mt-2 mb-0">Lần đầu có thể mất 1–2 phút (dữ liệu ~30MB).</p>
+            <div class="d-flex flex-wrap gap-2 justify-content-center mt-3">
+              <button type="button" class="btn btn-sm btn-primary" onclick="reloadThuVienFrame(true)"><i class="fas fa-rotate-right"></i> Thử lại</button>
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="openThuVienInNewTab()"><i class="fas fa-up-right-from-square"></i> Mở tab mới</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+
+    <div id="section-research-pack" class="d-print-none">
+      <div class="cdss-glass rounded-4 p-2 p-md-3 border border-white border-opacity-25 shadow-lg mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div>
+          <h5 class="text-primary fw-bold mb-0"><i class="fas fa-flask me-2"></i>THU THẬP SỐ LIỆU NGHIÊN CỨU</h5>
+          <small class="text-muted">Phiếu NC ĐTĐ type 2 · PSQI · lưu sheet RESEARCH_NC</small>
+        </div>
+        <div class="btn-group" role="group" aria-label="Chế độ xem nghiên cứu">
+          <button type="button" class="btn btn-primary btn-sm active" id="researchViewFormBtn" onclick="researchPackShowView_('form')">
+            <i class="fas fa-clipboard-list me-1"></i> Phiếu thu thập
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" id="researchViewExportBtn" onclick="researchPackShowView_('export')">
+            <i class="fas fa-file-excel me-1"></i> Xuất / truy vấn
+          </button>
+        </div>
+        <span class="badge bg-primary" id="research_db_count_badge">Đang tải…</span>
+      </div>
+
+      <div id="researchNcFormView">
+        <?!= include('research-nc-form'); ?>
+      </div>
+
+      <div id="researchExportView" class="d-none">
+      <div class="cdss-glass rounded-4 p-3 p-md-4 border border-white border-opacity-25 shadow-lg mb-3">
+        <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
+          <div>
+            <h5 class="text-primary fw-bold mb-1"><i class="fas fa-database me-2"></i>TRUY VẤN &amp; XUẤT EXCEL</h5>
+            <small class="text-muted">Phiếu NC đã lưu · hoặc snapshot Module 1–5 ca hiện tại</small>
+          </div>
+        </div>
+        <div class="row g-3">
+          <div class="col-lg-5">
+            <div class="card h-100 border-primary border-opacity-25">
+              <div class="card-header bg-primary bg-opacity-10 text-primary fw-bold py-2">
+                <i class="fas fa-user-injured me-1"></i> Bệnh nhân đang mở
+              </div>
+              <div class="card-body">
+                <p class="small text-muted mb-2">Xuất toàn bộ trường nhập liệu và chỉ số tính toán của ca hiện tại (1 dòng Excel).</p>
+                <button type="button" class="btn btn-primary w-100" onclick="exportForResearch()">
+                  <i class="fas fa-file-excel me-1"></i> Xuất Excel — ca hiện tại
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-7">
+            <div class="card h-100 border-secondary">
+              <div class="card-header bg-light fw-bold py-2">
+                <i class="fas fa-database me-1"></i> Truy vấn hồ sơ đã lưu
+              </div>
+              <div class="card-body">
+                <div class="row g-2 align-items-end mb-2">
+                  <div class="col-md-4">
+                    <label class="form-label small mb-0">Từ ngày</label>
+                    <input type="date" class="form-control form-control-sm" id="research_from_date">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label small mb-0">Đến ngày</label>
+                    <input type="date" class="form-control form-control-sm" id="research_to_date">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label small mb-0">Số dòng tối đa</label>
+                    <select class="form-select form-select-sm" id="research_limit">
+                      <option value="100">100</option>
+                      <option value="250">250</option>
+                      <option value="500" selected>500</option>
+                      <option value="1000">1000</option>
+                    </select>
+                  </div>
+                  <div class="col-12">
+                    <div class="input-group input-group-sm">
+                      <input type="text" class="form-control" id="research_keyword" placeholder="Lọc theo Mã ID NC / họ tên viết tắt">
+                      <button type="button" class="btn btn-secondary" onclick="researchLoadPreview()"><i class="fas fa-search"></i> Tải dữ liệu</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                  <button type="button" class="btn btn-success btn-sm" id="research_export_btn" onclick="researchExportBatchExcel()" disabled>
+                    <i class="fas fa-download me-1"></i> Xuất Excel bảng dưới
+                  </button>
+                  <span class="small text-muted align-self-center" id="research_preview_meta">Chưa tải dữ liệu.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+          <div class="table-responsive" style="max-height: 52vh;">
+            <table class="table table-sm table-hover table-bordered mb-0 small">
+              <thead class="table-light sticky-top">
+                <tr id="research_preview_head">
+                  <th class="text-center text-muted">Chưa có dữ liệu</th>
+                </tr>
+              </thead>
+              <tbody id="research_preview_body">
+                <tr><td class="text-center text-muted py-4">Bấm <strong>Tải dữ liệu</strong> để xem trước hồ sơ từ CSDL.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      </div><!-- #researchExportView -->
+    </div><!-- #section-research-pack -->
+    </div><!-- #staff-panels-host -->
 
   </div><!-- main-content -->
 
@@ -3048,6 +3366,27 @@
     </div>
   </div>
 
+
+  <!-- Modal: Thông báo cập nhật phiên bản -->
+  <div class="modal fade" id="appChangelogModal" tabindex="-1" aria-labelledby="appChangelogModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-primary">
+        <div class="modal-header text-white py-2" style="background: linear-gradient(135deg, #D81B60, #880E4F);">
+          <div>
+            <h5 class="modal-title fw-bold mb-0" id="appChangelogModalLabel"><i class="fas fa-sparkles me-2"></i>Cập nhật ứng dụng CDSS</h5>
+            <small class="opacity-75" id="appChangelogSubtitle">Phiên bản mới</small>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+        </div>
+        <div class="modal-body" id="appChangelogBody">
+          <p class="text-muted mb-0">Đang tải...</p>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">Đã hiểu</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal: Đổi Mật Khẩu -->
   <div class="modal fade" id="changePassModal" tabindex="-1" aria-hidden="true">
@@ -3198,6 +3537,14 @@
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   
   <?!= include('js'); ?>
+  <script>
+  (function () {
+    var cdn = '<?= THU_VIEN_CDN_URL ?>';
+    if (typeof THU_VIEN_DEFAULT_URLS !== 'undefined' && THU_VIEN_DEFAULT_URLS.indexOf(cdn) < 0) {
+      THU_VIEN_DEFAULT_URLS.unshift(cdn);
+    }
+  })();
+  </script>
 
 </body>
 </html>

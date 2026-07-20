@@ -7,8 +7,39 @@
 // Đơn vị: BVQT Phương Châu Sóc Trăng
 // Tiêu chuẩn: JCI (IPSG.1, COP.3, MME.6) & QĐ 2879/QĐ-BYT
 // Tác giả: BS. Hồ Tấn Thịnh
-// Phiên bản: 5.3 (đồng bộ với Mã.js — Stable Connection)
+// Phiên bản: 5.4 (DD-06 Phương Châu · Module 2 · Changelog)
 // ======================================================================================
+
+/** Phiên bản client — tăng khi có thay đổi đáng chú ý; popup hiện khi khác localStorage PC_APP_VERSION_SEEN */
+const APP_RELEASE = {
+    version: '5.8.7',
+    date: '20/07/2026',
+    title: 'Sửa treo google.script.run khi đăng nhập',
+    items: [
+        'Web app ANYONE_ANONYMOUS — tránh RPC treo vì nhiều tài khoản Google',
+        'rpcEcho + timeout 12s — phân biệt lỗi máy chủ vs Database',
+        'Bind nút Đăng nhập chắc chắn; hiện phiên bản trên màn login'
+    ]
+};
+
+function showAppChangelogIfNew_() {
+    if (!APP_RELEASE?.version) return;
+    const key = 'PC_APP_VERSION_SEEN';
+    if (localStorage.getItem(key) === APP_RELEASE.version) return;
+    const modal = document.getElementById('appChangelogModal');
+    if (!modal || !window.bootstrap) return;
+    const body = document.getElementById('appChangelogBody');
+    const sub = document.getElementById('appChangelogSubtitle');
+    if (sub) sub.textContent = `Phiên bản ${APP_RELEASE.version} · ${APP_RELEASE.date}`;
+    if (body) {
+        const items = (APP_RELEASE.items || []).map(i => `<li class="mb-1">${i}</li>`).join('');
+        body.innerHTML = `<p class="fw-bold text-primary mb-2">${APP_RELEASE.title || 'Cập nhật mới'}</p><ul class="mb-0 ps-3">${items}</ul>`;
+    }
+    modal.addEventListener('hidden.bs.modal', () => {
+        localStorage.setItem(key, APP_RELEASE.version);
+    }, { once: true });
+    setTimeout(() => bootstrap.Modal.getOrCreateInstance(modal).show(), 500);
+}
 
 // ============================================
 // 1. CƠ SỞ DỮ LIỆU & CẤU HÌNH (DATA MODELS)
@@ -613,6 +644,48 @@ function normalizeServerResult(res) {
     return { error: 'Không nhận được phản hồi hợp lệ từ máy chủ.' };
 }
 
+/** Gọi google.script.run có timeout — tránh treo vô hạn khi RPC không callback. */
+function gasCall_(fnName, args, opts) {
+  opts = opts || {};
+  const timeoutMs = opts.timeoutMs != null ? opts.timeoutMs : 15000;
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (payload) => {
+      if (settled) return;
+      settled = true;
+      if (timer) clearTimeout(timer);
+      resolve(payload);
+    };
+    const timer = setTimeout(() => {
+      finish({
+        __timeout: true,
+        error: 'Máy chủ không phản hồi sau ' + Math.round(timeoutMs / 1000) + 's. Thử cửa sổ Ẩn danh hoặc chỉ 1 tài khoản Google, rồi Ctrl+F5.'
+      });
+    }, timeoutMs);
+
+    if (typeof google === 'undefined' || !google.script || !google.script.run) {
+      finish({
+        __noRpc: true,
+        error: 'Không có google.script.run. Mở đúng URL /exec hoặc /dev (không mở file HTML local).'
+      });
+      return;
+    }
+
+    try {
+      const runner = google.script.run
+        .withSuccessHandler((res) => finish({ __ok: true, res: res }))
+        .withFailureHandler((err) => {
+          const text = (err && (err.message || err.details)) ? (err.message || err.details) : String(err || 'Lỗi không xác định');
+          finish({ __rpcFail: true, error: text, err: err });
+        });
+      // google.script.run dùng API động — gọi trực tiếp theo tên hàm
+      runner[fnName].apply(runner, Array.isArray(args) ? args : []);
+    } catch (e) {
+      finish({ error: 'Không gọi được máy chủ: ' + (e && e.message ? e.message : String(e)) });
+    }
+  });
+}
+
 // ============================================
 // 2. AUTHENTICATION & THEME (BẢO MẬT & GIAO DIỆN)
 // ============================================
@@ -620,41 +693,193 @@ function normalizeServerResult(res) {
 function checkLoginSession() {
   const session = sessionStorage.getItem('PC_USER_SESSION');
   if (session) {
-    CURRENT_USER = JSON.parse(session);
+    try {
+      CURRENT_USER = JSON.parse(session);
+    } catch (e) {
+      sessionStorage.removeItem('PC_USER_SESSION');
+      document.getElementById('login_overlay')?.classList.remove('d-none');
+      return;
+    }
     document.getElementById('login_overlay')?.classList.add('d-none');
     const cu = document.getElementById('currentUser');
-    if (cu) cu.innerHTML = `BS. ${CURRENT_USER.name}`;
+    if (cu) cu.innerHTML = `BS. ${CURRENT_USER.name || CURRENT_USER.email || ''}`;
     const lbl = document.getElementById('loggedAccountLabel');
-    if (lbl) lbl.innerText = `${CURRENT_USER.name} (${CURRENT_USER.email})`;
-    
-    initApp(); // Load dữ liệu hệ thống sau khi login thành công
+    if (lbl) lbl.innerText = `${CURRENT_USER.name || ''} (${CURRENT_USER.email || ''})`;
+    try {
+      initApp();
+    } catch (e) {
+      console.error('initApp after login:', e);
+      try { setStaffRootNav('dd', { clinicalStep: 0 }); } catch (_) {}
+    }
   } else {
     document.getElementById('login_overlay')?.classList.remove('d-none');
   }
 }
 
-function handleLogin() {
-  const email = document.getElementById('txtEmail')?.value;
-  const pass = document.getElementById('txtPass')?.value;
+function loginErrorHint_(code) {
+  const hints = {
+    BAD_CREDENTIALS: ' Kiểm tra email, mật khẩu và cột Password (định dạng Văn bản) trên sheet USERS.',
+    INACTIVE: ' Liên hệ quản trị để kích hoạt (Status = ACTIVE).',
+    PENDING: ' Tài khoản cần được quản trị duyệt trước khi đăng nhập.',
+    BAD_HEADERS: ' Mở sheet USERS — dòng 1 cần có cột Email và Password.',
+    NO_USERS: ' Sheet USERS chưa có dòng tài khoản.',
+    SERVER_ERROR: ' Thử lại sau hoặc mở cửa sổ ẩn danh với 1 tài khoản Google.'
+  };
+  return hints[code] || '';
+}
+
+async function handleLogin(ev) {
+  try {
+    if (ev && typeof ev.preventDefault === 'function') ev.preventDefault();
+  } catch (_) {}
+
+  const emailEl = document.getElementById('txtEmail');
+  const passEl = document.getElementById('txtPass');
+  const email = emailEl ? String(emailEl.value || '').trim() : '';
+  const pass = passEl ? String(passEl.value || '') : '';
   const btn = document.getElementById('btnLogin');
-  
-  if(!email || !pass) return alert("Vui lòng nhập đủ thông tin!");
-  if (!btn) return;
+  const msg = document.getElementById('loginMsg');
+
+  if (!email || !pass) {
+    if (msg) msg.innerText = 'Vui lòng nhập đủ email và mật khẩu.';
+    else alert('Vui lòng nhập đủ thông tin!');
+    return false;
+  }
+  if (!btn) return false;
 
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
   btn.disabled = true;
+  if (msg) msg.innerText = '';
 
-  google.script.run.withSuccessHandler(res => {
-    res = normalizeServerResult(res);
-    btn.innerHTML = 'ĐĂNG NHẬP'; btn.disabled = false;
-    
-    if (res.error) {
-       document.getElementById('loginMsg').innerText = res.error;
-    } else {
-       sessionStorage.setItem('PC_USER_SESSION', JSON.stringify(res.user));
-       checkLoginSession();
+  const resetBtn = () => {
+    btn.innerHTML = 'ĐĂNG NHẬP';
+    btn.disabled = false;
+  };
+
+  try {
+    const call = await gasCall_('loginUser', [email, pass], { timeoutMs: 20000 });
+    resetBtn();
+
+    if (call.__timeout || call.__noRpc || call.__rpcFail) {
+      if (msg) {
+        msg.innerText = (call.error || 'Không kết nối được máy chủ.') +
+          ' Nếu đang đăng nhập nhiều tài khoản Google: mở Cửa sổ ẩn danh.';
+      }
+      console.error('loginUser rpc issue', call);
+      return false;
     }
-  }).loginUser(email, pass);
+
+    const res = normalizeServerResult(call.res);
+    if (res.error) {
+      if (msg) msg.innerText = res.error + loginErrorHint_(res.code);
+      return false;
+    }
+    if (!res.success && !res.user) {
+      if (msg) msg.innerText = 'Phản hồi đăng nhập không hợp lệ từ máy chủ.';
+      return false;
+    }
+    if (!res.user || !res.user.email) {
+      if (msg) msg.innerText = 'Máy chủ không trả về thông tin người dùng.';
+      return false;
+    }
+    try {
+      sessionStorage.setItem('PC_USER_SESSION', JSON.stringify(res.user));
+    } catch (e) {
+      if (msg) msg.innerText = 'Không lưu được phiên đăng nhập trên trình duyệt.';
+      return false;
+    }
+    if (passEl) passEl.value = '';
+    checkLoginSession();
+    return true;
+  } catch (e) {
+    resetBtn();
+    if (msg) msg.innerText = 'Lỗi client khi đăng nhập: ' + (e && e.message ? e.message : String(e));
+    console.error('handleLogin exception', e);
+    return false;
+  }
+}
+
+/** Expose global — onclick HTML + addEventListener đều gọi được */
+window.handleLogin = handleLogin;
+
+/** Kiểm tra kết nối: rpcEcho trước, rồi pingAuth (có timeout). */
+async function pingAuthStatus_() {
+  const el = document.getElementById('authPingStatus');
+  if (!el) return;
+
+  el.className = 'small text-muted text-center mb-3';
+  el.textContent = 'Đang kiểm tra kết nối máy chủ…';
+
+  const echo = await gasCall_('rpcEcho', [], { timeoutMs: 12000 });
+  if (echo.__timeout || echo.__noRpc || echo.__rpcFail || (echo.res && echo.res.ok === false)) {
+    el.className = 'small text-danger text-center mb-3';
+    el.textContent = 'RPC lỗi: ' + (echo.error || (echo.res && echo.res.error) || 'không rõ') +
+      ' — thử Ẩn danh / 1 tài khoản Google, Ctrl+F5.';
+    return;
+  }
+  if (!echo.__ok) {
+    el.className = 'small text-danger text-center mb-3';
+    el.textContent = echo.error || 'Không gọi được rpcEcho (cần deploy bản mới).';
+    return;
+  }
+
+  el.textContent = 'RPC OK · đang mở Database…';
+  const ping = await gasCall_('pingAuth', [], { timeoutMs: 20000 });
+  if (ping.__timeout || ping.__noRpc || ping.__rpcFail) {
+    el.className = 'small text-warning text-center mb-3';
+    el.textContent = 'RPC OK nhưng Database chậm/lỗi: ' + (ping.error || 'timeout') +
+      ' — kiểm tra quyền Sheet DB của tài khoản deploy.';
+    return;
+  }
+  if (!ping.__ok) {
+    el.className = 'small text-danger text-center mb-3';
+    el.textContent = ping.error || 'pingAuth thất bại';
+    return;
+  }
+
+  const res = normalizeServerResult(ping.res);
+  if (!res.ok) {
+    el.className = 'small text-danger text-center mb-3';
+    el.textContent = 'Lỗi Database: ' + (res.error || 'không rõ');
+    return;
+  }
+  const cols = res.columns || {};
+  const colOk = cols.email >= 0 && cols.password >= 0;
+  el.className = 'small text-center mb-3 ' + (colOk ? 'text-success' : 'text-warning');
+  let line = 'Kết nối OK · ' + (res.spreadsheetName || 'DB');
+  line += ' · ' + (res.userCount || 0) + ' TK';
+  if (typeof res.activeCount === 'number') line += ' (' + res.activeCount + ' ACTIVE)';
+  line += colOk ? ' · Email/PW OK' : ' · thiếu cột Email/Password';
+  if (res.release || (echo.res && echo.res.release)) {
+    line += ' · v' + (res.release || echo.res.release);
+  }
+  el.textContent = line;
+}
+
+function bindLoginUi_() {
+  const ver = document.getElementById('authClientVersion');
+  if (ver && typeof APP_RELEASE !== 'undefined') {
+    ver.textContent = 'Client v' + APP_RELEASE.version;
+  }
+  const btn = document.getElementById('btnLogin');
+  if (btn) {
+    btn.type = 'button';
+    btn.onclick = null;
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      handleLogin(e);
+    });
+  }
+  const pass = document.getElementById('txtPass');
+  if (pass) {
+    pass.onkeypress = null;
+    pass.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleLogin(e);
+      }
+    });
+  }
 }
 
 function handleLogout() {
@@ -1287,6 +1512,7 @@ function syncPatientInfo() {
     
     document.getElementById('p_name').innerText = name;
     document.getElementById('p_id').innerText = id;
+    if (typeof syncDD06DisplayFields_ === 'function') syncDD06DisplayFields_();
 }
 
 function toggleLegalRepRequiredHint() {
@@ -1342,6 +1568,7 @@ function addDrugAllergyItem() {
     typeEl.value = '';
     renderDrugAllergyList();
     updateAllergyState();
+    if (typeof updateLifestyleRecommendations === 'function') updateLifestyleRecommendations();
 }
 
 function removeDrugAllergyItem(index) {
@@ -1349,6 +1576,7 @@ function removeDrugAllergyItem(index) {
     currentDrugAllergies.splice(index, 1);
     renderDrugAllergyList();
     updateAllergyState();
+    if (typeof updateLifestyleRecommendations === 'function') updateLifestyleRecommendations();
 }
 
 function getDrugAllergySummaryText() {
@@ -1412,6 +1640,7 @@ function updateAllergyState() {
         if(alertBadge) alertBadge.style.display = 'none';
         if(stickyInput) stickyInput.value = "";
     }
+    if (typeof updateLifestyleRecommendations === 'function') updateLifestyleRecommendations();
 }
 
 function isFoodBlockedByAllergy(food) {
@@ -1456,6 +1685,10 @@ function checkPatientType() {
     const isInpatient = ptTypeSelect.value === 'NoiTru';
     currentPatient = { type: isPediatric ? 'PED' : 'ADULT', inPatient: isInpatient, month: monthAge };
 
+    document.querySelectorAll('.dd02-outpatient-only').forEach(el => {
+        el.style.display = isInpatient ? 'none' : '';
+    });
+
     if (isPediatric) {
         const absNote = monthAge >= 6 && monthAge <= 23 ? ' · Ăn bổ sung BYT (6–23 tháng)' : '';
         badge.innerText = `NHI KHOA (${monthAge} tháng) · Z-score QĐ 3777${absNote}`;
@@ -1485,6 +1718,8 @@ function checkPatientType() {
     const wgCard = document.getElementById('weight_goal_card');
     if (wgCard) delete wgCard.dataset.userTouched;
     if (typeof updateNutritionWeightGoalBadge_ === 'function') updateNutritionWeightGoalBadge_();
+    if (isPediatric && typeof prefillDD06PediatricModal_ === 'function') prefillDD06PediatricModal_();
+    if (!isInpatient && typeof prefillDD02Form_ === 'function') prefillDD02Form_();
 }
 
 // Bật/tắt khu vực đánh giá theo giới tính & đối tượng để bản đánh giá tinh gọn.
@@ -1610,6 +1845,14 @@ function calcAnthropometryV3() {
     if (typeof calcPregWeightChange === 'function') calcPregWeightChange();
     if (typeof updateNutritionClassification === 'function') updateNutritionClassification();
     if (typeof updateNutritionWeightGoalBadge_ === 'function') updateNutritionWeightGoalBadge_();
+    if (currentPatient.type === 'PED' || currentPatient.type === 'PED_WHO') {
+        [['dd06_can_nang', 'm2_canNang'], ['dd06_chieu_cao', 'm2_chieuCao'], ['dd06_bmi', 'm2_bmi']].forEach(([dst, src]) => {
+            const d = document.getElementById(dst);
+            const s = document.getElementById(src);
+            if (d && s) d.value = s.value || '';
+        });
+        if (typeof syncDD06DisplayFields_ === 'function') syncDD06DisplayFields_();
+    }
 }
 
 /** CC — AWGS case-finding NL; TE có thêm vùng vàng biên. */
@@ -1862,7 +2105,663 @@ function calcSTRONGkids() {
             : 'Lập Phụ lục 6.2 (bệnh nhi ngoại trú).';
         actionEl.innerText = `${actionEl.innerText} ${appendixText}`;
     }
+    updateDD06StatusBadge_();
 }
+
+// ===== DD-06 — Phiếu sàng lọc & đánh giá DD bệnh nhi (BYT · Phương Châu) =====
+function getDD06RootEl_() {
+    return document.getElementById('dd06_mod2_card');
+}
+
+function markDD06Complete_(on) {
+    const root = getDD06RootEl_();
+    if (root) root.setAttribute('data-dd06-complete', on ? '1' : '0');
+}
+
+function isDD06Complete_() {
+    const root = getDD06RootEl_();
+    if (root?.getAttribute('data-dd06-complete') === '1') return true;
+    return document.querySelectorAll('input[name="dd06_q1"]:checked').length > 0;
+}
+
+function syncMod2RoomToDD06_() {
+    const src = document.getElementById('soPhong')?.value?.trim() || '';
+    const phong = document.getElementById('dd06_phong');
+    if (!phong || phong.dataset.userTouched === '1') return;
+    if (src) phong.value = src;
+}
+
+function syncDD06DisplayFields_() {
+    const setText = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text || '—';
+    };
+    const hoTen = document.getElementById('dd06_ho_ten')?.value || document.getElementById('hoTen')?.value || '';
+    const tuoi = document.getElementById('dd06_tuoi')?.value || document.getElementById('hienThiTuoi')?.value || '';
+    const gioiRaw = document.getElementById('gioiTinh')?.value || '';
+    const gioi = gioiRaw === 'Nu' || gioiRaw === 'Nữ' ? 'Nữ' : 'Nam';
+    const cn = document.getElementById('dd06_can_nang')?.value || document.getElementById('m2_canNang')?.value || '';
+    const cc = document.getElementById('dd06_chieu_cao')?.value || document.getElementById('m2_chieuCao')?.value || '';
+    const bmi = document.getElementById('dd06_bmi')?.value || document.getElementById('m2_bmi')?.value || '';
+    const zWa = document.getElementById('dd06_cn_z_sd')?.value || document.getElementById('ped519_z_wa')?.value || '';
+    const zHa = document.getElementById('dd06_cc_z_sd')?.value || document.getElementById('ped519_z_ha')?.value || '';
+
+    setText('dd06_ho_ten_disp', hoTen);
+    setText('dd06_tuoi_disp', tuoi);
+    setText('dd06_gioi_disp', gioi);
+    setText('dd06_anthro_disp', [cn && `${cn} kg`, cc && `${cc} cm`, bmi && `BMI ${bmi}`].filter(Boolean).join(' · ') || '—');
+    setText('dd06_z_disp', [zWa && `W/A ${zWa}`, zHa && `H/A ${zHa}`].filter(Boolean).join(' · ') || '—');
+}
+
+function openDD06PediatricSection() {
+    const ped = currentPatient.type === 'PED' || currentPatient.type === 'PED_WHO';
+    if (!ped) {
+        if (!confirm('Phiếu DD-06 dành cho bệnh nhi. Bạn vẫn muốn mở biểu mẫu?')) return;
+    }
+    prefillDD06PediatricModal_();
+    const card = getDD06RootEl_();
+    if (!card) return;
+    card.classList.add('dd06-highlight');
+    setTimeout(() => card.classList.remove('dd06-highlight'), 2400);
+    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/** @deprecated dùng openDD06PediatricSection */
+function openDD06PediatricModal() {
+    openDD06PediatricSection();
+}
+
+function prefillDD06PediatricModal_() {
+    const gioi = document.getElementById('gioiTinh')?.value || 'Nam';
+    const setRadio = (name, val) => {
+        document.querySelectorAll(`input[name="${name}"]`).forEach(r => { r.checked = r.value === val; });
+    };
+    const setIfEmpty = (id, val) => {
+        const el = document.getElementById(id);
+        if (!el || el.dataset.userTouched === '1') return;
+        if (!String(el.value || '').trim()) el.value = val || '';
+    };
+
+    setIfEmpty('dd06_ma_bn', document.getElementById('cccd')?.value || '');
+    const hoTenEl = document.getElementById('dd06_ho_ten');
+    if (hoTenEl) hoTenEl.value = document.getElementById('hoTen')?.value || '';
+    const tuoiEl = document.getElementById('dd06_tuoi');
+    if (tuoiEl) tuoiEl.value = document.getElementById('hienThiTuoi')?.value || '';
+    setRadio('dd06_gioi', gioi === 'Nu' || gioi === 'Nữ' ? 'Nu' : 'Nam');
+    const cnEl = document.getElementById('dd06_can_nang');
+    if (cnEl) cnEl.value = document.getElementById('m2_canNang')?.value || '';
+    const ccEl = document.getElementById('dd06_chieu_cao');
+    if (ccEl) ccEl.value = document.getElementById('m2_chieuCao')?.value || '';
+    const bmiEl = document.getElementById('dd06_bmi');
+    if (bmiEl) bmiEl.value = document.getElementById('m2_bmi')?.value || '';
+
+    const zWa = document.getElementById('ped519_z_wa')?.value || '';
+    const zHa = document.getElementById('ped519_z_ha')?.value || '';
+    setIfEmpty('dd06_cn_z_sd', zWa);
+    setIfEmpty('dd06_cc_z_sd', zHa);
+
+    const dx = (typeof selectedDiagnosisList !== 'undefined' && selectedDiagnosisList.length)
+        ? selectedDiagnosisList.map(d => `${d.code} — ${d.name}`).join('; ')
+        : '';
+    setIfEmpty('dd06_chan_doan', dx);
+
+    syncMod2RoomToDD06_();
+
+    const doc = getSelectedDoctor();
+    setIfEmpty('dd06_bs_name', doc?.name || (CURRENT_USER?.name || ''));
+    setIfEmpty('dd06_dd_nurse', CURRENT_USER?.name || '');
+
+    const today = new Date().toISOString().slice(0, 10);
+    setIfEmpty('dd06_dd_date', today);
+    setIfEmpty('dd06_bs_date', today);
+
+    if (!document.querySelector('input[name="dd06_q1"]:checked')) {
+        syncDD06FromStrongkids_();
+    }
+    syncDD06DisplayFields_();
+    calcDD06Pediatric();
+}
+
+function getDD06QuestionScore_(qNum) {
+    const yes = document.getElementById(`dd06_q${qNum}_yes`);
+    if (yes && yes.checked) {
+        if (qNum === 1) return 2;
+        return 1;
+    }
+    const no = document.getElementById(`dd06_q${qNum}_no`);
+    if (no && no.checked) return 0;
+    return null;
+}
+
+function calcDD06Pediatric() {
+    const q3Subs = ['dd06_q3_diarrhea', 'dd06_q3_vomit', 'dd06_q3_intake', 'dd06_q3_prior', 'dd06_q3_pain'];
+    const anyQ3Sub = q3Subs.some(id => document.getElementById(id)?.checked);
+    if (anyQ3Sub && !document.getElementById('dd06_q3_yes')?.checked) {
+        const yes = document.getElementById('dd06_q3_yes');
+        const no = document.getElementById('dd06_q3_no');
+        if (yes) yes.checked = true;
+        if (no) no.checked = false;
+    }
+
+    let total = 0;
+    let answered = 0;
+    for (let q = 1; q <= 4; q++) {
+        const s = getDD06QuestionScore_(q);
+        if (s !== null) { total += s; answered++; }
+    }
+
+    const totalEl = document.getElementById('dd06_total');
+    const riskEl = document.getElementById('dd06_risk_result');
+    if (totalEl) totalEl.innerText = String(total);
+
+    if (!riskEl) return;
+    if (answered < 4) {
+        riskEl.innerText = 'Chưa đủ 4 tiêu chí';
+        riskEl.className = 'fw-bold text-muted ms-1';
+        if (totalEl) totalEl.className = 'badge bg-secondary fs-6';
+        updateDD06StatusBadge_();
+        return;
+    }
+    if (total >= 4) {
+        riskEl.innerText = 'Nguy cơ cao (4–5 điểm) — Hội chẩn DD';
+        riskEl.className = 'fw-bold text-danger ms-1';
+        if (totalEl) totalEl.className = 'badge bg-danger fs-6';
+    } else if (total >= 1) {
+        riskEl.innerText = 'Nguy cơ trung bình (1–3 điểm) — Can thiệp DD, cân 2 lần/tuần';
+        riskEl.className = 'fw-bold text-warning ms-1';
+        if (totalEl) totalEl.className = 'badge bg-warning text-dark fs-6';
+    } else {
+        riskEl.innerText = 'Nguy cơ thấp (0 điểm) — Đánh giá lại sau 7 ngày';
+        riskEl.className = 'fw-bold text-success ms-1';
+        if (totalEl) totalEl.className = 'badge bg-success fs-6';
+    }
+    updateDD06StatusBadge_();
+}
+
+function syncDD06FromStrongkids_() {
+    const map = [
+        ['sk_high_risk_disease', 1],
+        ['sk_subj_assess', 2],
+        ['sk_intake_losses', 3],
+        ['sk_weight_loss_or_poor_gain', 4]
+    ];
+    map.forEach(([skId, q]) => {
+        const on = document.getElementById(skId)?.checked;
+        const yes = document.getElementById(`dd06_q${q}_yes`);
+        const no = document.getElementById(`dd06_q${q}_no`);
+        if (yes) yes.checked = !!on;
+        if (no) no.checked = !on;
+    });
+    calcDD06Pediatric();
+}
+
+function applyDD06ToWorkflow_() {
+    calcDD06Pediatric();
+    const pairs = [
+        ['sk_high_risk_disease', 'dd06_q1_yes'],
+        ['sk_subj_assess', 'dd06_q2_yes'],
+        ['sk_intake_losses', 'dd06_q3_yes'],
+        ['sk_weight_loss_or_poor_gain', 'dd06_q4_yes']
+    ];
+    pairs.forEach(([skId, yesId]) => {
+        const sk = document.getElementById(skId);
+        const yes = document.getElementById(yesId);
+        if (sk && yes) sk.checked = yes.checked;
+    });
+    document.getElementById('screenToolSelect').value = 'STRONG_KIDS';
+    toggleScreeningTool();
+    calcSTRONGkids();
+    markDD06Complete_(true);
+    updateDD06StatusBadge_();
+}
+
+function updateDD06StatusBadge_() {
+    const badge = document.getElementById('dd06_status_badge');
+    if (!badge) return;
+    const total = document.getElementById('dd06_total')?.innerText || '0';
+    const risk = document.getElementById('dd06_risk_result')?.innerText || '';
+    const complete = isDD06Complete_();
+    if (!complete) {
+        badge.className = 'badge bg-secondary';
+        badge.innerText = 'Chưa lập phiếu';
+        return;
+    }
+    badge.className = 'badge bg-success';
+    badge.innerText = `DD-06: ${total} điểm — ${risk.split('—')[0].trim()}`;
+}
+
+function getDD06PediatricSummary_() {
+    if (!isDD06Complete_()) return '';
+    const total = document.getElementById('dd06_total')?.innerText || '0';
+    const risk = document.getElementById('dd06_risk_result')?.innerText || '';
+    return `DD-06 (bệnh nhi): ${risk} (tổng ${total} điểm)`;
+}
+
+function formatDD06DateLine_(inputId) {
+    const raw = document.getElementById(inputId)?.value || '';
+    if (!raw) return 'Ngày ...... tháng .......... năm 20..........';
+    const p = raw.split('-');
+    if (p.length !== 3) return 'Ngày ...... tháng .......... năm 20..........';
+    return `Ngày ${p[2]} tháng ${p[1]} năm ${p[0]}`;
+}
+
+/** Theme in biểu mẫu BYT — style Phương Châu (DD-06, DD-02), canh lề A4 */
+function getPcBytPrintBaseCss_(scoped, innerSel) {
+    const docSel = scoped ? `#print_area ${innerSel}` : '.pc-byt-doc';
+    return [
+        '@page{size:A4 portrait;margin:18mm 20mm 20mm 20mm}',
+        scoped ? '#print_area.pc-byt-print-mode{background:#e9ecef;padding:16px 12px}' : '',
+        (scoped ? `#print_area ${innerSel}` : 'body') + '{font-family:"Times New Roman",Times,serif;font-size:11pt;line-height:1.42;color:#1a1a1a;margin:0}',
+        docSel + '{background:#fff;max-width:210mm;margin:0 auto;padding:' + (scoped ? '18mm 20mm' : '0') + ';box-sizing:border-box;' + (scoped ? 'min-height:297mm;box-shadow:0 2px 16px rgba(0,0,0,.08);' : '') + '}',
+        '.csyt{text-align:center;font-weight:700;text-transform:uppercase;margin:0 0 6px;font-size:11pt;color:#880E4F}',
+        '.pc-byt-title-block{text-align:center;margin:6px 0 10px}',
+        '.byt-title{color:#E6007E;font-size:13pt;font-weight:700;text-transform:uppercase;margin:0;line-height:1.35}',
+        '.byt-subtitle{color:#AD1457;font-size:11.5pt;font-weight:700;text-transform:uppercase;margin:3px 0 0}',
+        '.ms,.ms-row{text-align:center;margin:4px 0 12px;font-size:11pt}',
+        '.pc-byt-info{background:linear-gradient(180deg,#FFFBFC,#FFF0F5);border:1px solid #F8BBD0;border-radius:6px;padding:8px 12px;margin-bottom:10px}',
+        '.pc-byt-info .row-line{margin:3px 0}',
+        '.part-title,.part-h{background:#FCE4EC;color:#AD1457;border-left:5px solid #E6007E;padding:5px 10px;font-weight:700;margin:12px 0 6px;font-size:10.5pt}',
+        '.part-title .pc-byt-sec-note,.part-h .pc-byt-sec-note{font-weight:400;font-style:italic;color:#7a5c66;font-size:9.5pt}',
+        '.row-line{margin:4px 0}',
+        '.dots{border-bottom:1px dotted #C2185B;display:inline-block;min-width:60px;padding:0 2px 1px}',
+        'table.form-tbl,table.dd02-tbl,table.pc-byt-tbl{width:100%;border-collapse:collapse;margin:6px 0;font-size:10pt;table-layout:fixed}',
+        'table.form-tbl th,table.dd02-tbl th,table.pc-byt-tbl th{background:#FCE4EC;color:#AD1457;border:1px solid #E6007E;padding:5px 6px;font-weight:700;text-align:center;vertical-align:middle}',
+        'table.form-tbl td,table.dd02-tbl td,table.pc-byt-tbl td{border:1px solid #E8B4C8;padding:5px 6px;vertical-align:top;word-wrap:break-word}',
+        'table.form-tbl tbody tr:nth-child(even) td,table.dd02-tbl tbody tr:nth-child(even) td{background:#FFFBFC}',
+        '.result-box{background:#FFF5F8;border:1px solid #E6007E;border-radius:6px;padding:8px 10px;margin:8px 0;font-size:10pt}',
+        '.pc-byt-score{display:inline-block;background:#E6007E;color:#fff;font-size:12pt;font-weight:700;padding:1px 12px;border-radius:4px;margin-left:4px}',
+        '.pc-byt-check{margin:4px 0;padding-left:2px;font-size:10.5pt}',
+        '.sign-row{display:flex;justify-content:flex-start;margin-top:18px;padding-top:12px;border-top:1px dashed #F48FB1}',
+        '.sign-box{width:42%;text-align:center;font-size:10.5pt}',
+        '.sign-space{height:56px}',
+        'ul.q3{margin:3px 0 0 16px;padding:0;font-size:9.5pt}',
+        'ul.q3 li{margin:2px 0}',
+        '.pc-byt-footer-note{font-style:italic;font-size:9.5pt;color:#666;margin-top:4px}',
+        '.pc-byt-sign-end{display:flex;justify-content:flex-end;margin-top:18px;padding-top:12px;border-top:1px dashed #F48FB1}',
+        '@media print{',
+        'body{-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0;padding:0}',
+        '.pc-byt-doc{max-width:none;padding:0;box-shadow:none;min-height:auto}',
+        scoped ? `#print_area{padding:0!important;background:#fff!important}` : '',
+        '}'
+    ].filter(Boolean).join('');
+}
+
+/** CSS in phiếu DD-06 — scoped cho #print_area khi embed preview */
+function getDD06PrintCss_(scoped) {
+    return getPcBytPrintBaseCss_(scoped, '.dd06-inner');
+}
+
+function buildDD06PrintBodyHtml_() {
+    const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const val = (id) => esc(document.getElementById(id)?.value || '');
+    const chk = (id) => (document.getElementById(id)?.checked ? '☑' : '☐');
+    const radPair = (name, noVal, yesVal) => {
+        const noEl = document.querySelector(`input[name="${name}"][value="${noVal}"]`);
+        const yesEl = document.querySelector(`input[name="${name}"][value="${yesVal}"]`);
+        const noOn = noEl && noEl.checked;
+        const yesOn = yesEl && yesEl.checked;
+        return `${noOn ? '☑' : '☐'} Không &nbsp;&nbsp; ${yesOn ? '☑' : '☐'} Có`;
+    };
+    const q3Line = (id, text) => `${document.getElementById(id)?.checked ? '☑' : '☐'} ${text}`;
+    const isNam = document.getElementById('dd06_gioi_nam')?.checked;
+    const gioi = `${isNam ? '☑' : '☐'} Nam &nbsp;&nbsp;&nbsp; ${isNam ? '☐' : '☑'} Nữ`;
+    const total = esc(document.getElementById('dd06_total')?.innerText || '0');
+    const t = parseInt(document.getElementById('dd06_total')?.innerText || '0', 10) || 0;
+    const riskLow = t === 0 ? 'font-weight:bold;text-decoration:underline' : '';
+    const riskMid = t >= 1 && t <= 3 ? 'font-weight:bold;text-decoration:underline' : '';
+    const riskHigh = t >= 4 ? 'font-weight:bold;text-decoration:underline' : '';
+
+    const p = [];
+    p.push('<div class="pc-byt-doc">');
+    p.push('<div class="csyt">', val('dd06_csyt'), '</div>');
+    p.push('<div class="pc-byt-title-block"><div class="byt-title">Phiếu sàng lọc và đánh giá dinh dưỡng bệnh nhi</div></div>');
+    p.push('<div class="ms"><b>MS: DD-06</b></div>');
+    p.push('<div class="pc-byt-info">');
+    p.push('<div class="row-line">Số vào viện: <span class="dots">', val('dd06_so_vao_vien') || '&nbsp;', '</span>');
+    p.push('&nbsp;&nbsp;&nbsp; Mã người bệnh: <span class="dots">', val('dd06_ma_bn') || '&nbsp;', '</span></div>');
+    p.push('<div class="row-line">Họ và tên người bệnh: <b>', val('dd06_ho_ten'), '</b>');
+    p.push('&nbsp;&nbsp;&nbsp; Tuổi: <b>', val('dd06_tuoi'), '</b> &nbsp;&nbsp;&nbsp; ', gioi, '</div>');
+    p.push('<div class="row-line">Khoa: <span class="dots">', val('dd06_khoa') || '&nbsp;', '</span>');
+    p.push('&nbsp;&nbsp; Phòng: <span class="dots">', val('dd06_phong') || '&nbsp;', '</span>');
+    p.push('&nbsp;&nbsp; Giường: <span class="dots">', val('dd06_giuong') || '&nbsp;', '</span></div>');
+    p.push('<div class="row-line">Chẩn đoán: ', val('dd06_chan_doan'), '</div>');
+    p.push('<div class="row-line">Cân nặng: <b>', val('dd06_can_nang'), '</b> (kg) &nbsp;&nbsp; Chiều cao: <b>', val('dd06_chieu_cao'), '</b> (cm)');
+    p.push('&nbsp;&nbsp; BMI: <b>', val('dd06_bmi'), '</b></div>');
+    p.push('<div class="row-line">Cân nặng chuẩn so với tuổi: <b>', val('dd06_cn_z_sd'), '</b> SD &nbsp;&nbsp;');
+    p.push('Chiều cao chuẩn so với tuổi: <b>', val('dd06_cc_z_sd'), '</b> SD');
+    p.push(' <span style="font-style:italic;font-size:10pt">(Theo hướng dẫn của Tổ chức Y tế Thế giới)</span></div>');
+    p.push('</div>');
+
+    p.push('<div class="part-title">Phần I: Sàng lọc nguy cơ suy dinh dưỡng (SDD) <span class="pc-byt-sec-note">(Phần dành cho Điều dưỡng)</span></div>');
+    p.push('<table class="form-tbl"><thead><tr><th style="width:58%">Yếu tố nguy cơ</th><th style="width:28%">Lựa chọn</th><th style="width:14%">Điểm</th></tr></thead><tbody>');
+
+    p.push('<tr><td>Người bệnh (NB) có bệnh lý nền gây nguy cơ SDD hoặc dự kiến phẫu thuật?</td>');
+    p.push('<td style="text-align:center">', radPair('dd06_q1', '0', '2'), ' (2 điểm)</td><td style="text-align:center">2</td></tr>');
+
+    p.push('<tr><td>Khám lâm sàng có mất lớp mỡ dưới da và/hoặc teo cơ…</td>');
+    p.push('<td style="text-align:center">', radPair('dd06_q2', '0', '1'), ' (1 điểm)</td><td style="text-align:center">1</td></tr>');
+
+    p.push('<tr><td>Khi có ít nhất 01 trong các yếu tố sau:<ul class="q3">');
+    p.push('<li>', (document.getElementById('dd06_q3_diarrhea')?.checked || document.getElementById('dd06_q3_vomit')?.checked ? '☑' : '☐'), ' Tiêu chảy (&gt; 5 ngày) và/hoặc nôn (&gt; 3 lần/ngày) kéo dài 1–3 ngày</li>');
+    p.push('<li>', q3Line('dd06_q3_intake', 'Ăn hoặc bú giảm kéo dài 1–3 ngày'), '</li>');
+    p.push('<li>', q3Line('dd06_q3_prior', 'Đã can thiệp DD trước đó (như bổ sung DD qua miệng hoặc qua ống thông)'), '</li>');
+    p.push('<li>', q3Line('dd06_q3_pain', 'Không thể thu nạp đủ dinh dưỡng do đau'), '</li></ul></td>');
+    p.push('<td style="text-align:center">', radPair('dd06_q3', '0', '1'), ' (1 điểm)</td><td style="text-align:center">1</td></tr>');
+
+    p.push('<tr><td>Có bị sụt cân (mọi lứa tuổi) và/hoặc không tăng cân/chiều cao (trẻ em &lt; 1 tuổi) trong vòng 3 tháng gần đây?</td>');
+    p.push('<td style="text-align:center">', radPair('dd06_q4', '0', '1'), ' (1 điểm)</td><td style="text-align:center">1</td></tr>');
+    p.push('</tbody></table>');
+
+    p.push('<div class="row-line"><b>Tổng điểm:</b> <span class="pc-byt-score">', total, '</span></div>');
+    p.push('<div class="result-box"><b>Kết quả:</b><br>');
+    p.push('<span style="', riskLow, '">- Nguy cơ thấp: 0 điểm (Kết thúc đánh giá và đánh giá lại sau 7 ngày).</span><br>');
+    p.push('<span style="', riskMid, '">- Nguy cơ trung bình: từ 1 – 3 điểm (Khuyến cáo can thiệp DD, cân lại người bệnh 2 lần/tuần và đánh giá lại nguy cơ mỗi tuần).</span><br>');
+    p.push('<span style="', riskHigh, '">- Nguy cơ cao: từ 4–5 điểm (Mời hội chẩn DD).</span></div>');
+
+    p.push('<div class="sign-row"><div class="sign-box">', formatDD06DateLine_('dd06_dd_date'), '<div class="sign-space"></div><b>Điều dưỡng</b><br>(Ký, ghi rõ họ tên)<br>', val('dd06_dd_nurse'), '</div><div></div></div>');
+
+    p.push('<div class="part-title">Phần II: Xác nhận kế hoạch chăm sóc DD <span class="pc-byt-sec-note">(Phần dành cho bác sỹ)</span></div>');
+    p.push('<div class="pc-byt-check">', chk('dd06_plan_oral'), ' Bổ sung DD qua miệng</div>');
+    p.push('<div class="pc-byt-check">', chk('dd06_plan_en'), ' Chế độ DD qua ống thông</div>');
+    p.push('<div class="pc-byt-check">', chk('dd06_plan_tpn'), ' Chế độ DD qua tĩnh mạch toàn phần</div>');
+    p.push('<div class="pc-byt-check">', chk('dd06_plan_supp_pn'), ' Chế độ DD qua tĩnh mạch bổ sung</div>');
+    p.push('<div class="pc-byt-check">', chk('dd06_plan_consult'), ' Hội chẩn DD.</div>');
+
+    if (val('dd06_ghi_chu')) {
+        p.push('<div class="row-line" style="margin-top:8px"><b>Ghi chú:</b> ', val('dd06_ghi_chu'), '</div>');
+    }
+
+    p.push('<div class="sign-row"><div class="sign-box">', formatDD06DateLine_('dd06_bs_date'), '<div class="sign-space"></div><b>Bác sỹ</b><br>(Ký, ghi rõ họ tên)<br>', val('dd06_bs_name'), '</div><div></div></div>');
+    p.push('</div>');
+
+    return p.join('');
+}
+
+/** Tạo HTML in phiếu DD-06 — KHÔNG dùng thẻ script trong chuỗi (tránh vỡ js.html khi include). */
+function buildDD06PrintHtml_() {
+    const parts = [];
+    parts.push('<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><title>Phiếu sàng lọc dinh dưỡng DD-06</title>');
+    parts.push('<style>', getDD06PrintCss_(false), '</style></head><body>');
+    parts.push(buildDD06PrintBodyHtml_());
+    parts.push('</body></html>');
+    return parts.join('');
+}
+
+function ensureDD06DataReady_() {
+    if (!document.getElementById('dd06_ho_ten')?.value) prefillDD06PediatricModal_();
+    if (!document.querySelector('input[name="dd06_q1"]:checked')) syncDD06FromStrongkids_();
+    calcDD06Pediatric();
+}
+
+/** Hiển thị phiếu DD-06 trong #print_area (Bước 5 · In ấn) */
+function renderDD06ScreeningToArea() {
+    ensureDD06DataReady_();
+    const area = document.getElementById('print_area');
+    if (!area) return;
+    area.classList.add('dd06-print-mode', 'pc-byt-print-mode');
+    area.setAttribute('data-print-doc', 'DD06');
+    const parts = [];
+    parts.push('<style>', getDD06PrintCss_(true), '</style>');
+    parts.push('<div class="dd06-inner">', buildDD06PrintBodyHtml_(), '</div>');
+    area.innerHTML = parts.join('');
+}
+
+function printDD06PediatricForm() {
+    ensureDD06DataReady_();
+    const html = buildDD06PrintHtml_();
+    const w = window.open('', '_blank', 'width=920,height=780');
+    if (!w) {
+        alert('Trình duyệt chặn cửa sổ in. Vui lòng cho phép popup và thử lại.');
+        return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    w.onload = function () { w.focus(); w.print(); };
+}
+
+document.getElementById('dd06_mod2_card')?.addEventListener('input', (e) => {
+    if (e.target?.id?.startsWith('dd06_') && e.target.id !== 'dd06_ho_ten') {
+        e.target.dataset.userTouched = '1';
+    }
+    if (e.target?.id === 'dd06_cn_z_sd' || e.target?.id === 'dd06_cc_z_sd') {
+        syncDD06DisplayFields_();
+    }
+});
+
+document.getElementById('mod2')?.addEventListener('input', (e) => {
+    const id = e.target?.id || '';
+    if (!id.startsWith('m2_med_')) return;
+    if (typeof updateLifestyleRecommendations === 'function') updateLifestyleRecommendations();
+    if (typeof updateKitchenNote === 'function') updateKitchenNote();
+});
+
+// ===== DD-02 — Phiếu khám & tư vấn DD người bệnh ngoại trú (BYT) =====
+function _dd02Esc_(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+}
+
+function _dd02Val_(id) {
+    return _dd02Esc_(document.getElementById(id)?.value || '');
+}
+
+function _dd02TextOrDots_(id, lines) {
+    const raw = (document.getElementById(id)?.value || '').trim();
+    if (raw) return _dd02Esc_(raw).replace(/\n/g, '<br>');
+    return Array.from({ length: lines || 3 }, () => '..............................................................').join('<br>');
+}
+
+function _gatherMod2HistoryText_() {
+    const ids = ['m2_ts_surgery_note', 'm2_ts_other_pmh', 'm2_obs_note_free', 'm2_ped_hx_note'];
+    return ids.map(id => document.getElementById(id)?.value?.trim()).filter(Boolean).join('\n');
+}
+
+function _gatherMod2BenhSuText_() {
+    const parts = [];
+    document.querySelectorAll('#th_non, #th_tieuchay, #th_taobon, #th_khonuat, #th_chanan, #th_daybung, #th_viemloet, #th_matvi').forEach(el => {
+        if (el.checked) parts.push(_labelOf_(el));
+    });
+    document.querySelectorAll('input[name="m2_hpi_nutri"]:checked').forEach(el => parts.push(_labelOf_(el)));
+    document.querySelectorAll('input[name="otherHealth"]:checked').forEach(el => parts.push(el.value || _labelOf_(el)));
+    return parts.join('; ');
+}
+
+function syncDD02FromModules_() {
+    const setIfEmpty = (id, val) => {
+        const el = document.getElementById(id);
+        if (!el || el.dataset.userTouched === '1') return;
+        if (!String(el.value || '').trim() && val) el.value = val;
+    };
+    setIfEmpty('dd02_benh_su', _gatherMod2BenhSuText_());
+    setIfEmpty('dd02_tien_su', _gatherMod2HistoryText_());
+    const dx = (typeof selectedDiagnosisList !== 'undefined' && selectedDiagnosisList.length)
+        ? selectedDiagnosisList.map(d => `${d.code} — ${d.name}`).join('; ')
+        : '';
+    setIfEmpty('dd02_chan_doan', dx);
+    setIfEmpty('dd02_ls_da_niem', document.getElementById('micro_suggestion_result')?.innerText || '');
+    const sarc = document.getElementById('m2_sarcopenia_summary')?.value || '';
+    const grip = document.getElementById('m2_grip_class')?.value || '';
+    setIfEmpty('dd02_ls_khoi_co', [sarc, grip].filter(Boolean).join('\n'));
+    const diets = Array.from(document.querySelectorAll('.risk-diet:checked')).map(cb => _labelOf_(cb)).join('; ');
+    setIfEmpty('dd02_khau_phan', diets);
+    const mustRisk = document.getElementById('must_risk')?.innerText || '';
+    const nrsRisk = document.getElementById('nrs_risk')?.innerText || '';
+    setIfEmpty('dd02_chan_doan_dd', [mustRisk, nrsRisk, document.getElementById('m2_bmi_class_nl')?.value, document.getElementById('m2_bmi_class_te')?.value].filter(Boolean).join('\n'));
+    const kcal = document.getElementById('final_kcal')?.innerText || '';
+    const p = document.getElementById('macro_p_g')?.innerText || '';
+    const l = document.getElementById('macro_l_g')?.innerText || '';
+    const g = document.getElementById('macro_g_g')?.innerText || '';
+    const pp = document.getElementById('macro_p_pct')?.value || '';
+    const lp = document.getElementById('macro_l_pct')?.value || '';
+    const gp = document.getElementById('macro_g_pct')?.value || '';
+    setIfEmpty('dd02_muc_tieu', document.getElementById('weight_goal_summary')?.innerText || document.querySelector('input[name="weight_goal_mode"]:checked')?.value || '');
+    setIfEmpty('dd02_nang_luong', kcal ? `${kcal} kcal/ngày` : '');
+    setIfEmpty('dd02_protid', p ? `${p} g (${pp}%)` : '');
+    setIfEmpty('dd02_glucid', g ? `${g} g (${gp}%)` : '');
+    setIfEmpty('dd02_lipid', l ? `${l} g (${lp}%)` : '');
+    setIfEmpty('dd02_nen_an', document.getElementById('kitchen_note')?.value || '');
+    const dietKey = document.getElementById('diet_code_select')?.value || '';
+    const dietName = (typeof DIET_CODE_DB !== 'undefined' && DIET_CODE_DB[dietKey]) ? DIET_CODE_DB[dietKey].name : '';
+    setIfEmpty('dd02_lua_chon_tp', dietKey ? `${dietKey} — ${dietName}` : '');
+    setIfEmpty('dd02_tap_luyen', document.getElementById('life_sport_plan')?.value || '');
+    setIfEmpty('dd02_hen_kham', String(_suggestFollowUpDays_()));
+    const doc = getSelectedDoctor();
+    setIfEmpty('dd02_nguoi_thuc_hien', doc?.name || (CURRENT_USER?.name || ''));
+    const today = new Date().toISOString().slice(0, 10);
+    setIfEmpty('dd02_ngay', today);
+}
+
+function prefillDD02Form_() {
+    const setHidden = (id, srcId) => {
+        const el = document.getElementById(id);
+        const src = document.getElementById(srcId);
+        if (el && src) el.value = src.value || '';
+    };
+    setHidden('dd02_ma_bn', 'cccd');
+    document.getElementById('dd02_ho_ten').value = document.getElementById('hoTen')?.value || '';
+    document.getElementById('dd02_tuoi').value = document.getElementById('hienThiTuoi')?.value || '';
+    const gioi = document.getElementById('gioiTinh')?.value || 'Nam';
+    document.getElementById('dd02_gioi_nam').checked = gioi === 'Nam';
+    document.getElementById('dd02_gioi_nu').checked = gioi === 'Nu' || gioi === 'Nữ';
+    document.getElementById('dd02_can_nang').value = document.getElementById('m2_canNang')?.value || '';
+    document.getElementById('dd02_chieu_cao').value = document.getElementById('m2_chieuCao')?.value || '';
+    document.getElementById('dd02_bmi').value = document.getElementById('m2_bmi')?.value || '';
+    document.getElementById('dd02_cn_z').value = document.getElementById('dd06_cn_z_sd')?.value || document.getElementById('ped519_z_wa')?.value || '';
+    document.getElementById('dd02_cc_z').value = document.getElementById('dd06_cc_z_sd')?.value || document.getElementById('ped519_z_ha')?.value || '';
+    document.getElementById('dd02_so_vao_vien').value = document.getElementById('dd06_so_vao_vien')?.value || '';
+    syncDD02FromModules_();
+}
+
+function ensureDD02DataReady_() {
+    prefillDD02Form_();
+}
+
+function getDD02PrintCss_(scoped) {
+    return getPcBytPrintBaseCss_(scoped, '.dd02-inner');
+}
+
+function buildDD02PrintBodyHtml_() {
+    const v = _dd02Val_;
+    const isNam = document.getElementById('dd02_gioi_nam')?.checked;
+    const gioi = `${isNam ? '☑' : '☐'} Nam &nbsp;&nbsp; ${isNam ? '☐' : '☑'} Nữ`;
+    const menuCo = document.getElementById('dd02_menu_co')?.checked;
+    const menuKhong = document.getElementById('dd02_menu_khong')?.checked;
+    const menuLine = `${menuKhong ? '☑' : '☐'} Không &nbsp;&nbsp; ${menuCo ? '☑' : '☐'} Có`;
+    const hCm = parseFloat(document.getElementById('dd02_chieu_cao')?.value || '0');
+    const hM = hCm > 0 ? (hCm / 100).toFixed(2) : '';
+    const isPed = currentPatient.type === 'PED' || currentPatient.type === 'PED_WHO';
+    const p = [];
+    p.push('<div class="pc-byt-doc">');
+    p.push('<div class="csyt" style="text-align:left">Cơ sở KB, CB: ', v('dd02_csyt'), '</div>');
+    p.push('<div class="pc-byt-title-block">');
+    p.push('<div class="byt-title">Phiếu khám và tư vấn</div>');
+    p.push('<div class="byt-subtitle">Dinh dưỡng cho người bệnh ngoại trú</div>');
+    p.push('</div>');
+    p.push('<div class="ms-row"><b>MS: DD-02</b></div>');
+    p.push('<div class="pc-byt-info">');
+    p.push('<div class="row-line">Số vào viện <span class="dots">', v('dd02_so_vao_vien') || '&nbsp;', '</span>');
+    p.push('&nbsp;&nbsp;&nbsp; Mã người bệnh <span class="dots">', v('dd02_ma_bn') || '&nbsp;', '</span>');
+    p.push('&nbsp;&nbsp;&nbsp; <b>MS: PK-001</b></div>');
+    p.push('<div class="row-line">Họ và tên người bệnh: <b>', v('dd02_ho_ten'), '</b>');
+    p.push('&nbsp;&nbsp; Tuổi: <b>', v('dd02_tuoi'), '</b> &nbsp;&nbsp; ', gioi, '</div>');
+    p.push('<div class="row-line"><b>Bệnh sử:</b> ', _dd02TextOrDots_('dd02_benh_su', 2), '</div>');
+    p.push('<div class="row-line"><b>Chẩn đoán:</b> ', v('dd02_chan_doan') || '........................................................................', '</div>');
+    p.push('<div class="row-line"><b>Tiền sử:</b> ', _dd02TextOrDots_('dd02_tien_su', 2), '</div>');
+
+    if (isPed) {
+        p.push('<div class="row-line">Cân nặng (CN): <b>', v('dd02_can_nang'), '</b> kg &nbsp;&nbsp;');
+        p.push('Chiều cao/chiều dài: <b>', v('dd02_chieu_cao'), '</b> cm &nbsp;&nbsp;');
+        p.push('CN/CC hoặc BMI: <b>', v('dd02_bmi'), '</b></div>');
+    } else {
+        p.push('<div class="row-line">Cân nặng (CN): <b>', v('dd02_can_nang'), '</b> kg &nbsp;&nbsp;');
+        p.push('Chiều cao (CC): <b>', hM || v('dd02_chieu_cao'), '</b> m &nbsp;&nbsp;');
+        p.push('BMI: <b>', v('dd02_bmi'), '</b> kg/m²</div>');
+    }
+    p.push('<div class="row-line">CN chuẩn so với tuổi: <b>', v('dd02_cn_z'), '</b> SD &nbsp;&nbsp;');
+    p.push('Chiều cao chuẩn so với tuổi: <b>', v('dd02_cc_z'), '</b> SD ');
+    p.push('<span style="font-style:italic;font-size:10pt">(Theo hướng dẫn của Tổ chức Y tế Thế giới)</span></div>');
+    p.push('</div>');
+
+    p.push('<div class="part-h">1. Khám, đánh giá tình trạng dinh dưỡng:</div>');
+    p.push('<table class="dd02-tbl"><thead><tr>');
+    p.push('<th style="width:34%">Lâm sàng</th><th style="width:33%">Cận lâm sàng</th><th style="width:33%">Điều tra khẩu phần/<br>thói quen ăn uống</th>');
+    p.push('</tr></thead><tbody><tr>');
+    p.push('<td><b>Da niêm mạc</b><br>', _dd02TextOrDots_('dd02_ls_da_niem', 3), '<br><br>');
+    p.push('<b>Khối cơ, mỡ</b><br>', _dd02TextOrDots_('dd02_ls_khoi_co', 2), '<br><br>');
+    p.push('<b>Khác (phù, lưỡi…)</b><br>', _dd02TextOrDots_('dd02_ls_khac', 2), '</td>');
+    p.push('<td>', _dd02TextOrDots_('dd02_cls', 8), '</td>');
+    p.push('<td>', _dd02TextOrDots_('dd02_khau_phan', 8), '</td>');
+    p.push('</tr></tbody></table>');
+
+    p.push('<div class="part-h">2. Tư vấn dinh dưỡng cho người bệnh:</div>');
+    p.push('<table class="dd02-tbl"><thead><tr>');
+    p.push('<th>Chẩn đoán DD</th><th>Lựa chọn thực phẩm</th><th>Thuốc liên quan DD</th><th>Dặn dò khác</th>');
+    p.push('</tr></thead><tbody><tr>');
+    p.push('<td>', _dd02TextOrDots_('dd02_chan_doan_dd', 1), '<br><br>');
+    p.push('<b>Mục tiêu:</b> ', v('dd02_muc_tieu') || '............................', '<br>');
+    p.push('Cân nặng <b>', v('dd02_can_nang_muc_tieu') || v('dd02_can_nang'), '</b> kg<br>');
+    p.push('Năng lượng: <b>', v('dd02_nang_luong'), '</b><br>');
+    p.push('Protid: <b>', v('dd02_protid'), '</b><br>');
+    p.push('Glucid: <b>', v('dd02_glucid'), '</b><br>');
+    p.push('Khác: ', v('dd02_khac_dd') || '…………………………..', '</td>');
+    p.push('<td><b>Nên</b><br>', _dd02TextOrDots_('dd02_nen_an', 4), '<br><b>Hạn chế/tránh:</b><br>', _dd02TextOrDots_('dd02_han_che', 3), '<br><b>Thực phẩm bổ sung:</b><br>', _dd02TextOrDots_('dd02_tps', 2), '</td>');
+    p.push('<td>', _dd02TextOrDots_('dd02_thuoc_dd', 1), '<br><b>Vitamin:</b><br>', _dd02TextOrDots_('dd02_vitamin', 3), '<br><b>Khoáng chất:</b><br>', _dd02TextOrDots_('dd02_khoang_chat', 3), '<br><b>Khác:</b> ', v('dd02_khac_thuoc') || '........................................', '</td>');
+    p.push('<td>', _dd02TextOrDots_('dd02_dan_do', 1), '<br><b>Cung cấp thực đơn mẫu:</b> ', menuLine, '<br><b>Tập luyện:</b><br>', _dd02TextOrDots_('dd02_tap_luyen', 4), '</td>');
+    p.push('</tr></tbody></table>');
+
+    p.push('<div class="part-h">3. Hẹn khám lại: sau <b>', v('dd02_hen_kham') || '………..', '</b> ngày hoặc nếu có bất thường tái khám ngay để điều chỉnh chế độ dinh dưỡng</div>');
+    p.push('<div class="pc-byt-footer-note">(Những lần sau tái khám mang theo thực đơn cũ).</div>');
+
+    const rawDate = document.getElementById('dd02_ngay')?.value || '';
+    let dateLine = 'Ngày......... tháng.......... năm 20...........';
+    if (rawDate) {
+        const dp = rawDate.split('-');
+        if (dp.length === 3) dateLine = `Ngày ${dp[2]} tháng ${dp[1]} năm ${dp[0]}`;
+    }
+    p.push('<div class="pc-byt-sign-end"><div class="sign-box">', dateLine, '<div class="sign-space"></div><b>Người thực hiện khám</b><br>(Ký, ghi rõ họ tên)<br>', v('dd02_nguoi_thuc_hien'), '</div></div>');
+    p.push('</div>');
+
+    return p.join('');
+}
+
+function buildDD02PrintHtml_() {
+    const parts = [];
+    parts.push('<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><title>Phiếu DD-02 — Khám tư vấn DD ngoại trú</title>');
+    parts.push('<style>', getDD02PrintCss_(false), '</style></head><body>');
+    parts.push(buildDD02PrintBodyHtml_());
+    parts.push('</body></html>');
+    return parts.join('');
+}
+
+function renderDD02ToArea() {
+    ensureDD02DataReady_();
+    const area = document.getElementById('print_area');
+    if (!area) return;
+    area.classList.add('dd02-print-mode', 'pc-byt-print-mode');
+    area.setAttribute('data-print-doc', 'DD02');
+    const parts = [];
+    parts.push('<style>', getDD02PrintCss_(true), '</style>');
+    parts.push('<div class="dd02-inner">', buildDD02PrintBodyHtml_(), '</div>');
+    area.innerHTML = parts.join('');
+}
+
+function printDD02OutpatientForm() {
+    ensureDD02DataReady_();
+    const html = buildDD02PrintHtml_();
+    const w = window.open('', '_blank', 'width=920,height=820');
+    if (!w) {
+        alert('Trình duyệt chặn cửa sổ in. Vui lòng cho phép popup và thử lại.');
+        return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    w.onload = function () { w.focus(); w.print(); };
+}
+
+document.getElementById('dd02_mod2_card')?.addEventListener('input', (e) => {
+    if (e.target?.id?.startsWith('dd02_')) e.target.dataset.userTouched = '1';
+});
 
 function calcWHR() {
     const eoEl = document.getElementById('m2_vongEo');
@@ -2081,7 +2980,8 @@ function getNutritionScreeningRiskSummary_() {
     if (tool === 'STRONG_KIDS') {
         const s = document.getElementById('strongkids_total')?.innerText || '0';
         const r = document.getElementById('strongkids_risk')?.innerText || 'Chưa đánh giá';
-        return `STRONG-kids: ${r} (${s} điểm)`;
+        const dd06 = getDD06PediatricSummary_();
+        return `STRONG-kids: ${r} (${s} điểm)${dd06 ? ' · ' + dd06 : ''}`;
     }
     return 'Chưa đánh giá';
 }
@@ -2721,6 +3621,69 @@ function _setListHtml_(id, items) {
     ul.innerHTML = (items || []).map(t => `<li>${t}</li>`).join('') || '<li class="text-muted fst-italic">--</li>';
 }
 
+/** Quy tắc tương tác thuốc – thực phẩm / dinh dưỡng (quét từ MME.5 Bước 2). keywords: không dấu, chữ thường. */
+const DRUG_NUTRI_INTERACTION_RULES = [
+    { kw: ['warfarin', 'coumadin', 'kháng đông', 'acenocoumarol', 'marcoumar', 'rivaroxaban', 'apixaban', 'dabigatran', 'edoxaban'], label: 'Rau xanh đậm · gan · đậu nành (vitamin K)', reason: 'Kháng đông — dao động INR / tác dụng chống đông', level: 'danger', drug: 'Kháng đông' },
+    { kw: ['maoi', 'phenelzine', 'tranylcypromine', 'moclobemide', 'isocarboxazid', 'ức chế mao'], label: 'Phô mai cứng · dưa muối · nước mắm · xúc xích (tyramine)', reason: 'MAOI — khủng hoảng tăng huyết áp', level: 'danger', drug: 'MAOI' },
+    { kw: ['grapefruit', 'bưởi chùm', 'bưởi'], label: 'Bưởi / nước bưởi', reason: 'Ức chế CYP3A4 — tăng nồng độ thuốc (statine, amlodipine, cyclosporine…)', level: 'danger', drug: 'Tương tác bưởi' },
+    { kw: ['simvastatin', 'atorvastatin', 'lovastatin', 'rosuvastatin', 'statin'], label: 'Bưởi / nước bưởi', reason: 'Statin — nguy cơ tiêu cơ vân', level: 'danger', drug: 'Statin' },
+    { kw: ['levothyrox', 'euthyrox', 'thyroxine', 'hormone tuyến giáp', 'l-thyroxine'], label: 'Sữa · canxi · sắt · đậu nành — cách ≥4 giờ', reason: 'Levothyroxine — giảm hấp thu', level: 'warn', drug: 'Levothyroxine' },
+    { kw: ['metformin', 'glucophage'], label: 'Rượu bia', reason: 'Metformin — nguy cơ acid lactic', level: 'danger', drug: 'Metformin' },
+    { kw: ['lithium', 'lithi'], label: 'Thay đổi muối / chế độ mặn đột ngột', reason: 'Lithium — dao động nồng độ máu', level: 'danger', drug: 'Lithium' },
+    { kw: ['methotrexate', 'mtx'], label: 'Rượu bia', reason: 'Methotrexate — độc gan', level: 'danger', drug: 'Methotrexate' },
+    { kw: ['tetracyclin', 'doxycyclin', 'ciprofloxacin', 'levofloxacin', 'moxifloxacin', 'fluoroquinolon', 'quinolon'], label: 'Sữa · sữa chua · canxi · sắt — cách ≥2 giờ', reason: 'Kháng sinh nhóm tetracycline/quinolone — giảm hấp thu', level: 'warn', drug: 'Tetracycline/Quinolone' },
+    { kw: ['digoxin', 'lanoxin'], label: 'Chế độ xơ / bran cao đột ngột', reason: 'Digoxin — giảm hấp thu', level: 'warn', drug: 'Digoxin' },
+    { kw: ['insulin', 'glimepirid', 'glibenclamid', 'gliclazid', 'glipizid', 'sulfonylurea', 'repaglinid', 'nateglinid'], label: 'Bỏ bữa / nhịn ăn kéo dài', reason: 'Thuốc hạ đường huyết — nguy cơ hạ đường huyết', level: 'danger', drug: 'Hạ đường huyết' },
+    { kw: ['captopril', 'enalapril', 'lisinopril', 'perindopril', 'ramipril', 'losartan', 'valsartan', 'candesartan', 'olmesartan', 'telmisartan', 'ace inhibitor', 'arb', 'ức chế men chuyển'], label: 'Chuối · cam · khoai tây · nước dừa (kali cao)', reason: 'ACEi/ARB — nguy cơ tăng kali máu', level: 'warn', drug: 'ACEi/ARB' },
+    { kw: ['spironolacton', 'eplerenon', 'amilorid', 'triamteren', 'lợi tiểu giữ kali'], label: 'Chuối · cam · khoai tây (kali cao)', reason: 'Lợi tiểu giữ kali — tăng kali máu', level: 'warn', drug: 'Lợi tiểu giữ K' },
+    { kw: ['metronidazol', 'tinidazol', 'disulfiram'], label: 'Rượu bia · thực phẩm có cồn', reason: 'Disulfiram-like — buồn nôn, tăng huyết áp', level: 'danger', drug: 'Metronidazol/Disulfiram' },
+    { kw: ['levodopa', 'madopar', 'sinemet'], label: 'Bữa giàu đạm lớn (cách 30–60 phút)', reason: 'Levodopa — cạnh tranh hấp thu với acid amin', level: 'warn', drug: 'Levodopa' },
+    { kw: ['sắt', 'ferrous', 'ferograd', 'iron supplement'], label: 'Trà · cà phê · sữa — cách ≥2 giờ', reason: 'Sắt — giảm hấp thu', level: 'warn', drug: 'Bổ sung sắt' },
+    { kw: ['ppi', 'omeprazol', 'esomeprazol', 'pantoprazol', 'lansoprazol', 'rabeprazol'], label: 'Theo dõi B12 · canxi · magie (dùng kéo dài)', reason: 'PPI — giảm hấp thu vi chất', level: 'warn', drug: 'PPI' },
+    { kw: ['corticosteroid', 'prednisolon', 'prednison', 'methylprednisolon', 'dexamethason', 'hydrocortison'], label: 'Đường / muối ẩn — theo dõi đường huyết & huyết áp', reason: 'Corticosteroid — tăng đường huyết, giữ natri', level: 'warn', drug: 'Corticosteroid' },
+    { kw: ['theophyllin', 'aminophyllin'], label: 'Cà phê · trà đặc · sô cô la', reason: 'Theophylline — tăng tác dụng phụ (caffeine)', level: 'warn', drug: 'Theophylline' },
+    { kw: ['isoniazid', 'inh'], label: 'Phô mai · cá hun khói · rượu (tyramine/histamine)', reason: 'Isoniazid — phản ứng giống MAOI nhẹ', level: 'warn', drug: 'Isoniazid' }
+];
+
+function normalizeMedText_(s) {
+    return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function getMedicationTextBlob_() {
+    const ids = ['m2_med_group_metabolic', 'm2_med_group_gi', 'm2_med_group_interaction', 'm2_med_supp_tcm', 'm2_med_full_reconciliation'];
+    return normalizeMedText_(ids.map(id => document.getElementById(id)?.value || '').join('\n'));
+}
+
+function scanDrugNutriInteractions_() {
+    const blob = getMedicationTextBlob_();
+    if (!blob.trim()) return [];
+    const seen = new Set();
+    const out = [];
+    DRUG_NUTRI_INTERACTION_RULES.forEach(rule => {
+        const hit = rule.kw.find(k => blob.includes(normalizeMedText_(k)));
+        if (!hit || seen.has(rule.id || rule.drug + rule.label)) return;
+        seen.add(rule.id || rule.drug + rule.label);
+        out.push({
+            label: rule.label,
+            reason: `${rule.reason} — phát hiện: ${rule.drug || hit}`,
+            level: rule.level || 'warn',
+            drug: rule.drug || hit
+        });
+    });
+    return out;
+}
+
+function getCollectedFoodAllergies_() {
+    const out = [];
+    document.querySelectorAll('.allergy-cb:checked').forEach(cb => {
+        const v = String(cb.value || '').trim();
+        if (v) out.push(v);
+    });
+    const other = String(document.getElementById('allergyOther')?.value || '').trim();
+    if (other) out.push(other);
+    return out;
+}
+
 function getAvoidanceList_() {
     const list = [];
     const dxCodes = (Array.isArray(selectedDiagnosisList) ? selectedDiagnosisList : []).map(d => String(d.code || '').toUpperCase());
@@ -2729,11 +3692,7 @@ function getAvoidanceList_() {
     const ageY = months / 12;
     const dietPref = (document.getElementById('diet_preference')?.value || 'NONE').toUpperCase();
 
-    const allergies = [];
-    document.querySelectorAll('.allergy-check:checked, #m1_drug_allergy_list input[type="checkbox"]:checked').forEach(cb => {
-        const lbl = cb.closest('label')?.innerText || cb.value || '';
-        if (lbl) allergies.push(lbl.trim());
-    });
+    const allergies = getCollectedFoodAllergies_();
 
     const push = (label, reason, level = 'warn') => list.push({ label, reason, level });
 
@@ -2821,8 +3780,19 @@ function getAvoidanceList_() {
         push('Rượu bia &amp; thực phẩm chứa cồn', 'Theo tôn giáo Halal', 'info');
     }
 
-    // ----- Theo dị ứng -----
-    allergies.forEach(a => push(`Dị ứng: ${a}`, 'Đã ghi nhận tiền sử dị ứng', 'danger'));
+    // ----- Theo dị ứng thực phẩm -----
+    allergies.forEach(a => push(`Dị ứng: ${a}`, 'Đã ghi nhận tiền sử dị ứng thực phẩm', 'danger'));
+
+    // ----- Theo dị ứng thuốc (MME.6) -----
+    (currentDrugAllergies || []).forEach(d => {
+        const name = String(d.name || '').trim();
+        if (!name) return;
+        const extra = [d.severity, d.type].filter(Boolean).join(' · ');
+        push(`Dị ứng thuốc: ${name}`, `MME.6${extra ? ' — ' + extra.replaceAll('_', ' ') : ''}`, 'danger');
+    });
+
+    // ----- Theo thuốc đang dùng (MME.5 — quét từ khóa) -----
+    scanDrugNutriInteractions_().forEach(it => push(it.label, it.reason, it.level));
 
     // Khử trùng lặp
     const seen = new Set();
@@ -3672,12 +4642,9 @@ function getInterventionContext_() {
     const pregTri = pickPrefix('PREGNANT_T');           // PREGNANT_T1/2/3
     const pregWeek = parseInt(document.getElementById('preg_week')?.value, 10);
 
-    // Dị ứng đã ghi nhận
-    const allergies = [];
-    document.querySelectorAll('.allergy-check:checked, #m1_drug_allergy_list input[type="checkbox"]:checked').forEach(cb => {
-        const lbl = cb.closest('label')?.innerText || cb.value || '';
-        if (lbl) allergies.push(lbl.trim());
-    });
+    const allergies = getCollectedFoodAllergies_();
+    const medBlob = getMedicationTextBlob_();
+    const medInteractions = scanDrugNutriInteractions_();
 
     return {
         dxList, dxCodes, dxGroups, conditions,
@@ -3687,7 +4654,9 @@ function getInterventionContext_() {
         icuResp, icuHemo, icuRoute,
         hdType, hdFreq, hdK, hdP,
         pregTri, pregWeek,
-        allergies
+        allergies,
+        medBlob, medInteractions,
+        drugAllergies: (currentDrugAllergies || []).slice()
     };
 }
 
@@ -3717,7 +4686,12 @@ function _scanFeatures_(ctx) {
     }
     if (ctx.edemaPresent) add(`Phù dinh dưỡng${ctx.edemaGrade ? ' ' + ctx.edemaGrade : ''}`, 'danger', 'Yếu tố tăng nặng - cao đạm');
     if (/Marasmus|Kwashiorkor|nặng/i.test(ctx.nutritionClassif)) add(`SDD: ${ctx.nutritionClassif}`, 'danger');
-    ctx.allergies.forEach(a => add(`Dị ứng: ${a}`, 'danger'));
+    ctx.allergies.forEach(a => add(`Dị ứng TP: ${a}`, 'danger'));
+    (ctx.drugAllergies || []).forEach(d => {
+        const name = String(d.name || '').trim();
+        if (name) add(`Dị ứng thuốc: ${name}`, 'danger', 'MME.6');
+    });
+    (ctx.medInteractions || []).forEach(it => add(`Tương tác: ${it.label}`, it.level || 'warn', it.reason));
 
     // Module 3 - Bước 4 (chẩn đoán)
     ctx.dxList.forEach(d => add(`${d.code} ${d.name || ''}`.trim(), 'warn'));
@@ -4565,21 +5539,36 @@ function analyzeMicronutrients() {
 // ============================================
 
 // --- BIẾN TOÀN CỤC CHO IN ẤN ---
-let currentPrintMode = 'RECORD'; // 'RECORD' hoặc 'GUIDE'
+let currentPrintMode = 'RECORD'; // 'RECORD' | 'GUIDE' | 'DD06' | 'DD02'
+
+function _setPrintModeButtonActive_(mode) {
+    const rec = document.getElementById('btnModeRecord');
+    const guide = document.getElementById('btnModeGuide');
+    const dd06 = document.getElementById('btnModeDD06');
+    const dd02 = document.getElementById('btnModeDD02');
+    if (rec) rec.className = mode === 'RECORD' ? 'btn btn-primary active' : 'btn btn-outline-primary';
+    if (guide) guide.className = mode === 'GUIDE' ? 'btn btn-primary active' : 'btn btn-outline-primary';
+    if (dd06) dd06.className = mode === 'DD06' ? 'btn btn-success active fw-bold text-start' : 'btn btn-outline-success fw-bold text-start';
+    if (dd02) dd02.className = mode === 'DD02' ? 'btn btn-info active fw-bold text-start text-white' : 'btn btn-outline-info fw-bold text-start';
+}
 
 // Hàm chuyển đổi chế độ xem trước
 function switchPrintMode(mode) {
     currentPrintMode = mode;
-    
-    // Đổi màu nút active
-    document.getElementById('btnModeRecord').className = mode === 'RECORD' ? 'btn btn-primary active' : 'btn btn-outline-primary';
-    document.getElementById('btnModeGuide').className = mode === 'GUIDE' ? 'btn btn-primary active' : 'btn btn-outline-primary';
-    
-    // Render lại nội dung
+    const area = document.getElementById('print_area');
+    if (area) {
+        area.classList.remove('dd06-print-mode', 'dd02-print-mode', 'pc-byt-print-mode');
+        area.removeAttribute('data-print-doc');
+    }
+    _setPrintModeButtonActive_(mode);
     if (mode === 'RECORD') {
         renderMedicalRecordToArea();
-    } else {
+    } else if (mode === 'GUIDE') {
         renderPatientGuideToArea();
+    } else if (mode === 'DD06') {
+        renderDD06ScreeningToArea();
+    } else if (mode === 'DD02') {
+        renderDD02ToArea();
     }
 }
 
@@ -4885,7 +5874,6 @@ function renderMedicalRecordToArea() {
     const pName = document.getElementById('hoTen').value || ".............................";
     const pDob = document.getElementById('ngaySinh').value || "..../..../........";
     const pAge = document.getElementById('hienThiTuoi').value || "...";
-    const pId = document.getElementById('cccd').value || "................";
     const pGenderRaw = document.getElementById('gioiTinh').value || "...";
     const pGender = pGenderRaw === 'Nu' ? 'Nữ' : pGenderRaw;
     
@@ -4971,20 +5959,6 @@ function renderMedicalRecordToArea() {
     // HTML Template cho Phiếu Hội Chẩn
     const html = `
         <div style="position: relative;">
-            <div class="d-flex align-items-start border-bottom pb-2 mb-3" style="border-bottom: 2px solid #E6007E !important;">
-                <div style="width: 150px; padding-right: 15px;">
-                    <img src="https://i.ibb.co/fVSDg8v1/lo-dd.png" alt="CDSS" style="width: 100%; height: auto;">
-                </div>
-                <div class="flex-grow-1 text-center pt-1">
-                    <h5 class="fw-bold m-0 text-uppercase" style="color: #E6007E; font-size: 11pt;">ỨNG DỤNG HỖ TRỢ RA QUYẾT ĐỊNH LÂM SÀNG (CDSS)</h5>                
-                    <div class="fw-bold text-uppercase mt-1" style="color: #E6007E; font-size: 9pt;">KHOA DINH DƯỠNG TIẾT CHẾ</div>
-                </div>
-                <div style="width: 120px; text-align: right; font-size: 10pt;" class="text-muted">
-                    <div>ID: <b class="text-dark">${pId}</b></div>
-                    <div>BA: <b class="text-dark">.........</b></div>
-                </div>
-            </div>
-
             <div class="text-center mb-4">
                 <h3 class="fw-bold text-uppercase m-0" style="color: #E6007E;">PHIẾU TƯ VẤN & CHĂM SÓC DINH DƯỠNG</h3>
             </div>
@@ -5233,6 +6207,896 @@ function getMenuSummaryString() {
     return text || "Theo thực đơn mẫu chi tiết đính kèm.";
 }
 
+// ===== THU THẬP SỐ LIỆU NGHIÊN CỨU =====
+const RESEARCH_NC_PSQI_Q5 = [
+    { code: 'nc_psqi_q5a', label: 'a. Không thể chìm vào giấc ngủ trong 30 phút' },
+    { code: 'nc_psqi_q5b', label: 'b. Thức giấc giữa đêm hoặc dậy quá sớm' },
+    { code: 'nc_psqi_q5c', label: 'c. Phải thức dậy để đi vệ sinh' },
+    { code: 'nc_psqi_q5d', label: 'd. Cảm thấy khó thở' },
+    { code: 'nc_psqi_q5e', label: 'e. Ho hoặc ngáy to' },
+    { code: 'nc_psqi_q5f', label: 'f. Cảm thấy quá lạnh' },
+    { code: 'nc_psqi_q5g', label: 'g. Cảm thấy quá nóng' },
+    { code: 'nc_psqi_q5h', label: 'h. Gặp ác mộng' },
+    { code: 'nc_psqi_q5i', label: 'i. Đau nhức, tê bì, rát bỏng ở bàn chân' },
+    { code: 'nc_psqi_q5j', label: 'j. Lý do khác' }
+];
+const RESEARCH_NC_RADIO_NAMES = [
+    'nc_dong_thuan', 'nc_gioi_tinh', 'nc_hoc_van', 'nc_bmi_nhom', 'nc_tha_nhom', 'nc_hba1c_dat_muc_tieu',
+    'nc_stop_bang_nhom', 'nc_phq9_nhom',
+    'nc_phq9_1', 'nc_phq9_2', 'nc_phq9_3', 'nc_phq9_4', 'nc_phq9_5', 'nc_phq9_6', 'nc_phq9_7', 'nc_phq9_8', 'nc_phq9_9',
+    'nc_psqi_q6', 'nc_psqi_q7', 'nc_psqi_q8', 'nc_psqi_q9', 'nc_psqi_ket_luan'
+];
+const RESEARCH_NC_CHECKBOX_IDS = [
+    'nc_tx_oad', 'nc_tx_oad_su', 'nc_tx_oad_met', 'nc_tx_oad_dpp4', 'nc_tx_oad_glp1_uong', 'nc_tx_oad_glp1_tiem', 'nc_tx_oad_sglt2', 'nc_tx_oad_acarbose',
+    'nc_tx_insulin', 'nc_tx_ins_nen', 'nc_tx_ins_tron', 'nc_tx_ins_basal_bolus', 'nc_tx_phoi_hop',
+    'nc_bc_than_man', 'nc_bc_vong_mac', 'nc_bc_than_kinh', 'nc_bc_tim_mach', 'nc_bc_chua_ghi_nhan',
+    'nc_stop_s', 'nc_stop_t', 'nc_stop_o', 'nc_stop_p', 'nc_stop_b', 'nc_stop_a', 'nc_stop_n', 'nc_stop_g'
+];
+const RESEARCH_NC_TEXT_IDS = [
+    'nc_id_nghien_cuu', 'nc_ngay_thu_thap', 'nc_nguoi_thu_thap', 'nc_ho_ten_viet_tat', 'nc_nam_sinh', 'nc_nghe_nghiep',
+    'nc_mach', 'nc_ha_tam_thu', 'nc_ha_tam_truong',
+    'nc_chieu_cao_cm', 'nc_can_nang_kg', 'nc_bmi', 'nc_thoi_gian_pt_dtd2_y',
+    'nc_fpg_mmol', 'nc_hba1c_pct', 'nc_cholesterol', 'nc_triglyceride', 'nc_hdl_c', 'nc_ldl_c',
+    'nc_stop_bang_tong', 'nc_phq9_tong',
+    'nc_psqi_q1_gio_len_giuong', 'nc_psqi_q2_phut_chim_ngu', 'nc_psqi_q3_gio_thuc_day', 'nc_psqi_q4_gio_ngu', 'nc_psqi_q5j_ly_do',
+    'nc_psqi_c1', 'nc_psqi_c2', 'nc_psqi_c3', 'nc_psqi_c4', 'nc_psqi_c5', 'nc_psqi_c6', 'nc_psqi_c7', 'nc_psqi_tong', 'nc_psqi_hieu_suat', 'nc_record_id'
+];
+const RESEARCH_NC_COLLECTORS = ['Hồ Tấn Thịnh', 'Bành Mỹ Hoa', 'Vương Ngọc Thắng'];
+
+function buildResearchNcPsqiQ5Table_() {
+    const body = document.getElementById('researchNcPsqiQ5Body');
+    if (!body || body.dataset.built === '1') return;
+    body.innerHTML = RESEARCH_NC_PSQI_Q5.map((row) => {
+        const cells = [0, 1, 2, 3].map((v) =>
+            `<td class="text-center"><input type="radio" class="form-check-input nc-psqi-src" name="${row.code}" value="${v}" aria-label="${v}"></td>`
+        ).join('');
+        return `<tr><td>${row.label}</td>${cells}</tr>`;
+    }).join('');
+    body.dataset.built = '1';
+}
+
+function _ncRadVal_(name) {
+    return document.querySelector(`input[name="${name}"]:checked`)?.value || '';
+}
+
+function _ncSetRad_(name, val) {
+    if (val == null || val === '') return;
+    const el = document.querySelector(`input[name="${name}"][value="${val}"]`);
+    if (el) el.checked = true;
+}
+
+function collectResearchNcFlat_() {
+    const row = {};
+    RESEARCH_NC_TEXT_IDS.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) row[id] = el.value == null ? '' : String(el.value);
+    });
+    RESEARCH_NC_CHECKBOX_IDS.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) row[id] = el.checked ? '1' : '0';
+    });
+    RESEARCH_NC_RADIO_NAMES.forEach((name) => { row[name] = _ncRadVal_(name); });
+    RESEARCH_NC_PSQI_Q5.forEach((q) => { row[q.code] = _ncRadVal_(q.code); });
+    if (typeof CURRENT_USER !== 'undefined' && CURRENT_USER) {
+        row.SavedBy = CURRENT_USER.name || '';
+        row.SavedByEmail = CURRENT_USER.email || '';
+    }
+    row.RecordID = document.getElementById('nc_record_id')?.value || '';
+    return row;
+}
+
+function applyResearchNcFlat_(data) {
+    if (!data) return;
+    RESEARCH_NC_TEXT_IDS.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el && data[id] != null) el.value = data[id];
+    });
+    RESEARCH_NC_CHECKBOX_IDS.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.checked = data[id] === '1' || data[id] === 1 || data[id] === true;
+    });
+    RESEARCH_NC_RADIO_NAMES.forEach((name) => _ncSetRad_(name, data[name]));
+    RESEARCH_NC_PSQI_Q5.forEach((q) => _ncSetRad_(q.code, data[q.code]));
+}
+
+function researchNcCalcBmi_() {
+    const h = parseFloat(document.getElementById('nc_chieu_cao_cm')?.value);
+    const w = parseFloat(document.getElementById('nc_can_nang_kg')?.value);
+    const bmiEl = document.getElementById('nc_bmi');
+    if (!bmiEl) return;
+    if (!(h > 0) || !(w > 0)) { bmiEl.value = ''; return; }
+    const bmi = w / Math.pow(h / 100, 2);
+    bmiEl.value = bmi.toFixed(1);
+    // WHO Asia / IDI & WPRO
+    if (bmi < 18.5) _ncSetRad_('nc_bmi_nhom', 'thieu_can');
+    else if (bmi <= 22.9) _ncSetRad_('nc_bmi_nhom', 'binh_thuong');
+    else if (bmi <= 24.9) _ncSetRad_('nc_bmi_nhom', 'thua_can');
+    else if (bmi <= 29.9) _ncSetRad_('nc_bmi_nhom', 'beo_phi_1');
+    else _ncSetRad_('nc_bmi_nhom', 'beo_phi_2');
+    const stopB = document.getElementById('nc_stop_b');
+    if (stopB && !stopB.dataset.manual) stopB.checked = bmi > 35;
+}
+
+function researchNcCalcTha_() {
+    const sbp = parseFloat(document.getElementById('nc_ha_tam_thu')?.value);
+    const dbp = parseFloat(document.getElementById('nc_ha_tam_truong')?.value);
+    if (isNaN(sbp) || isNaN(dbp)) return;
+    if (sbp >= 180 || dbp >= 120) { _ncSetRad_('nc_tha_nhom', 'hon_hop'); return; }
+    if (sbp >= 160 || dbp >= 100) { _ncSetRad_('nc_tha_nhom', 'do2'); return; }
+    if (sbp >= 140 || dbp >= 90) { _ncSetRad_('nc_tha_nhom', 'do1'); return; }
+    if (sbp >= 120 || dbp >= 80) { _ncSetRad_('nc_tha_nhom', 'cao_binh_thuong'); return; }
+    _ncSetRad_('nc_tha_nhom', 'binh_thuong');
+}
+
+function researchNcSyncTxParents_() {
+    const anyOad = !!document.querySelector('.nc-tx-oad-child:checked');
+    const anyIns = !!document.querySelector('.nc-tx-ins-child:checked');
+    const oad = document.getElementById('nc_tx_oad');
+    const ins = document.getElementById('nc_tx_insulin');
+    if (oad && anyOad) oad.checked = true;
+    if (ins && anyIns) ins.checked = true;
+}
+
+function researchNcOnDongThuanChange_() {
+    if (_ncRadVal_('nc_dong_thuan') === '1') openResearchNcConsentModal_();
+}
+
+function openResearchNcConsentModal_() {
+    const modalEl = document.getElementById('researchNcConsentModal');
+    if (!modalEl || !window.bootstrap) return;
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+}
+
+function researchNcConfirmConsent_() {
+    _ncSetRad_('nc_dong_thuan', '1');
+    const modalEl = document.getElementById('researchNcConsentModal');
+    if (modalEl && window.bootstrap) bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+}
+
+function printResearchNcConsent_() {
+    const area = document.getElementById('researchNcConsentPrintArea');
+    if (!area) return;
+    const html = '<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><title>Giấy đồng thuận nghiên cứu</title>' +
+        '<style>body{font-family:"Times New Roman",serif;font-size:13px;padding:24px;line-height:1.45} ol{padding-left:1.25rem}</style></head><body>' +
+        area.innerHTML + '</body></html>';
+    const w = window.open('', '_blank', 'width=820,height=900');
+    if (!w) { alert('Trình duyệt chặn cửa sổ in. Vui lòng cho phép popup.'); return; }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    w.onload = function () { w.focus(); w.print(); };
+}
+
+function openResearchNcStopBangModal_() {
+    researchNcCalcStopBang_();
+    const modalEl = document.getElementById('researchNcStopBangModal');
+    if (!modalEl || !window.bootstrap) return;
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+}
+
+function researchNcCalcStopBang_() {
+    let sum = 0;
+    ['nc_stop_s', 'nc_stop_t', 'nc_stop_o', 'nc_stop_p', 'nc_stop_b', 'nc_stop_a', 'nc_stop_n', 'nc_stop_g'].forEach((id) => {
+        if (document.getElementById(id)?.checked) sum += 1;
+    });
+    const box = document.getElementById('nc_stop_bang_modal_sum');
+    if (box) box.textContent = String(sum);
+    return sum;
+}
+
+function researchNcApplyStopBang_() {
+    const sum = researchNcCalcStopBang_();
+    const tot = document.getElementById('nc_stop_bang_tong');
+    if (tot) tot.value = sum;
+    _ncSetRad_('nc_stop_bang_nhom', sum >= 3 ? 'high' : 'low');
+    const modalEl = document.getElementById('researchNcStopBangModal');
+    if (modalEl && window.bootstrap) bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+}
+
+function openResearchNcPhq9Modal_() {
+    researchNcCalcPhq9_();
+    const modalEl = document.getElementById('researchNcPhq9Modal');
+    if (!modalEl || !window.bootstrap) return;
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+}
+
+function researchNcCalcPhq9_() {
+    let sum = 0;
+    let answered = 0;
+    for (let i = 1; i <= 9; i++) {
+        const v = _ncRadVal_('nc_phq9_' + i);
+        if (v !== '') { sum += parseInt(v, 10) || 0; answered += 1; }
+    }
+    const box = document.getElementById('nc_phq9_modal_sum');
+    const lab = document.getElementById('nc_phq9_modal_label');
+    if (box) box.textContent = String(sum);
+    if (lab) {
+        if (answered === 0) lab.textContent = '—';
+        else if (sum < 5) lab.textContent = 'Tối thiểu';
+        else if (sum < 10) lab.textContent = 'Nhẹ';
+        else if (sum < 15) lab.textContent = 'Trung bình';
+        else if (sum < 20) lab.textContent = 'Trung bình–nặng';
+        else lab.textContent = 'Nặng';
+    }
+    return sum;
+}
+
+function researchNcApplyPhq9_() {
+    const sum = researchNcCalcPhq9_();
+    const tot = document.getElementById('nc_phq9_tong');
+    if (tot) tot.value = sum;
+    _ncSetRad_('nc_phq9_nhom', sum >= 10 ? 'high' : 'low');
+    const modalEl = document.getElementById('researchNcPhq9Modal');
+    if (modalEl && window.bootstrap) bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+}
+
+function _ncPsqiScoreQ2_(mins) {
+    const m = parseFloat(mins);
+    if (isNaN(m)) return '';
+    if (m <= 15) return 0;
+    if (m <= 30) return 1;
+    if (m <= 60) return 2;
+    return 3;
+}
+
+function _ncPsqiScoreQ4_(hours) {
+    const h = parseFloat(hours);
+    if (isNaN(h)) return '';
+    if (h > 7) return 0;
+    if (h >= 6) return 1;
+    if (h >= 5) return 2;
+    return 3;
+}
+
+/** C2 Sleep latency: (điểm Q2 + điểm Q5a) → 0 / 1–2 / 3–4 / 5–6 */
+function _ncPsqiScoreC2_(q2mins, q5a) {
+    const s2 = _ncPsqiScoreQ2_(q2mins);
+    const a = parseInt(q5a, 10);
+    if (s2 === '' || isNaN(a)) return '';
+    const sum = s2 + a;
+    if (sum <= 0) return 0;
+    if (sum <= 2) return 1;
+    if (sum <= 4) return 2;
+    return 3;
+}
+
+/** C5 Sleep disturbance: tổng Q5b–Q5j → 0 / 1–9 / 10–18 / 19–27 */
+function _ncPsqiSumQ5bJ_() {
+    let sum = 0;
+    let answered = 0;
+    RESEARCH_NC_PSQI_Q5.forEach((q, i) => {
+        if (i === 0) return;
+        const v = parseInt(_ncRadVal_(q.code), 10);
+        if (!isNaN(v)) { sum += v; answered += 1; }
+    });
+    if (answered === 0) return '';
+    if (sum === 0) return 0;
+    if (sum <= 9) return 1;
+    if (sum <= 18) return 2;
+    return 3;
+}
+
+/** C7 Daytime dysfunction: (Q8 + Q9) → 0 / 1–2 / 3–4 / 5–6 */
+function _ncPsqiScoreC7_(q8, q9) {
+    if (q8 === '' || q9 === '') return '';
+    const sum = (parseInt(q8, 10) || 0) + (parseInt(q9, 10) || 0);
+    if (sum <= 0) return 0;
+    if (sum <= 2) return 1;
+    if (sum <= 4) return 2;
+    return 3;
+}
+
+function _ncPsqiParseTimeToHours_(t) {
+    if (!t || String(t).indexOf(':') < 0) return NaN;
+    const parts = String(t).split(':');
+    const h = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) || 0;
+    if (isNaN(h)) return NaN;
+    return h + m / 60;
+}
+
+/** Thời gian trên giường (giờ), hỗ trợ ngủ qua đêm */
+function _ncPsqiTimeInBedHours_(bed, wake) {
+    const b = _ncPsqiParseTimeToHours_(bed);
+    const w = _ncPsqiParseTimeToHours_(wake);
+    if (isNaN(b) || isNaN(w)) return NaN;
+    let dur = w - b;
+    if (dur <= 0) dur += 24;
+    return dur;
+}
+
+/** C4 Habitual sleep efficiency + % */
+function _ncPsqiScoreC4_(bed, wake, sleepHours) {
+    const tib = _ncPsqiTimeInBedHours_(bed, wake);
+    const slept = parseFloat(sleepHours);
+    if (!(tib > 0) || isNaN(slept) || slept < 0) return { score: '', pct: '' };
+    const pct = Math.min(100, (slept / tib) * 100);
+    let score;
+    if (pct > 85) score = 0;
+    else if (pct >= 75) score = 1;
+    else if (pct >= 65) score = 2;
+    else score = 3;
+    return { score, pct: pct.toFixed(1) };
+}
+
+function _ncPsqiUpdateResultUi_(sum, ok, effPct) {
+    const totLbl = document.getElementById('nc_psqi_tong_lbl');
+    const klLbl = document.getElementById('nc_psqi_ket_luan_lbl');
+    const effLbl = document.getElementById('nc_psqi_hieu_suat_lbl');
+    const banner = document.getElementById('nc_psqi_result_banner');
+    if (effLbl) effLbl.textContent = effPct !== '' ? (effPct + '%') : '—';
+    if (!ok) {
+        if (totLbl) totLbl.textContent = '—';
+        if (klLbl) klLbl.textContent = 'Đang nhập số liệu thô…';
+        if (banner) {
+            banner.classList.remove('alert-success', 'alert-warning');
+            banner.classList.add('alert-secondary');
+        }
+        return;
+    }
+    if (totLbl) totLbl.textContent = String(sum);
+    if (sum <= 5) {
+        if (klLbl) klLbl.textContent = 'PSQI ≤ 5 — Chất lượng giấc ngủ TỐT';
+        if (banner) {
+            banner.classList.remove('alert-secondary', 'alert-warning');
+            banner.classList.add('alert-success');
+        }
+    } else {
+        if (klLbl) klLbl.textContent = 'PSQI > 5 — RỐI LOẠN GIẤC NGỦ';
+        if (banner) {
+            banner.classList.remove('alert-secondary', 'alert-success');
+            banner.classList.add('alert-warning');
+        }
+    }
+}
+
+/**
+ * Tự động tính C1–C7, tổng PSQI và phân loại từ số liệu thô (Q1–Q9).
+ * Gọi mỗi khi bác sĩ nhập / đổi đáp án.
+ */
+function researchNcCalcPsqi_() {
+    const q1 = document.getElementById('nc_psqi_q1_gio_len_giuong')?.value || '';
+    const q2 = document.getElementById('nc_psqi_q2_phut_chim_ngu')?.value;
+    const q3 = document.getElementById('nc_psqi_q3_gio_thuc_day')?.value || '';
+    const q4 = document.getElementById('nc_psqi_q4_gio_ngu')?.value;
+    const q5a = _ncRadVal_('nc_psqi_q5a');
+    const q6 = _ncRadVal_('nc_psqi_q6');
+    const q7 = _ncRadVal_('nc_psqi_q7');
+    const q8 = _ncRadVal_('nc_psqi_q8');
+    const q9 = _ncRadVal_('nc_psqi_q9');
+
+    const setC = (id, v) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.value = (v === '' || v == null) ? '' : v;
+    };
+
+    // C1 Subjective sleep quality = Q6
+    setC('nc_psqi_c1', q6 !== '' ? q6 : '');
+
+    // C2 Sleep latency
+    setC('nc_psqi_c2', _ncPsqiScoreC2_(q2, q5a));
+
+    // C3 Sleep duration = Q4
+    setC('nc_psqi_c3', _ncPsqiScoreQ4_(q4));
+
+    // C4 Sleep efficiency
+    const c4 = _ncPsqiScoreC4_(q1, q3, q4);
+    setC('nc_psqi_c4', c4.score);
+    const effEl = document.getElementById('nc_psqi_hieu_suat');
+    if (effEl) effEl.value = c4.pct;
+
+    // C5 Sleep disturbances = Q5b–j
+    setC('nc_psqi_c5', _ncPsqiSumQ5bJ_());
+
+    // C6 Sleep medication = Q7
+    setC('nc_psqi_c6', q7 !== '' ? q7 : '');
+
+    // C7 Daytime dysfunction = Q8+Q9
+    setC('nc_psqi_c7', _ncPsqiScoreC7_(q8, q9));
+
+    researchNcSumPsqi_();
+}
+
+function researchNcSumPsqi_() {
+    let sum = 0;
+    let ok = true;
+    ['nc_psqi_c1', 'nc_psqi_c2', 'nc_psqi_c3', 'nc_psqi_c4', 'nc_psqi_c5', 'nc_psqi_c6', 'nc_psqi_c7'].forEach((id) => {
+        const v = parseInt(document.getElementById(id)?.value, 10);
+        if (isNaN(v)) ok = false;
+        else sum += v;
+    });
+    const totEl = document.getElementById('nc_psqi_tong');
+    const effPct = document.getElementById('nc_psqi_hieu_suat')?.value || '';
+    if (totEl) totEl.value = ok ? sum : '';
+    if (ok) {
+        if (sum <= 5) _ncSetRad_('nc_psqi_ket_luan', 'tot');
+        else _ncSetRad_('nc_psqi_ket_luan', 'roi_loan');
+    } else {
+        document.querySelectorAll('input[name="nc_psqi_ket_luan"]').forEach((el) => { el.checked = false; });
+    }
+    _ncPsqiUpdateResultUi_(sum, ok, effPct);
+}
+
+/** Event delegation: mọi thay đổi số liệu thô PSQI → tự tính lại */
+function bindResearchNcPsqiAuto_() {
+    const root = document.getElementById('researchNcFormCard') || document.getElementById('researchNcFormRoot');
+    if (!root || root.dataset.psqiAutoBound === '1') return;
+    const onChange = (e) => {
+        const t = e.target;
+        if (!t) return;
+        const id = t.id || '';
+        const name = t.name || '';
+        const isPsqi =
+            t.classList.contains('nc-psqi-src') ||
+            id.indexOf('nc_psqi_q') === 0 ||
+            name.indexOf('nc_psqi_q') === 0 ||
+            id === 'nc_psqi_q1_gio_len_giuong' ||
+            id === 'nc_psqi_q3_gio_thuc_day';
+        if (isPsqi) researchNcCalcPsqi_();
+    };
+    root.addEventListener('input', onChange);
+    root.addEventListener('change', onChange);
+    root.dataset.psqiAutoBound = '1';
+}
+
+function prefillResearchNcFromPatient_() {
+    const id = document.getElementById('cccd')?.value || document.getElementById('sticky_id')?.textContent || '';
+    const hoTen = document.getElementById('hoTen')?.value || '';
+    if (id && id !== '---') document.getElementById('nc_id_nghien_cuu').value = id.replace(/'/g, '');
+    if (hoTen) {
+        const parts = hoTen.trim().split(/\s+/);
+        const initials = parts.map((p) => p.charAt(0).toUpperCase()).join('.');
+        document.getElementById('nc_ho_ten_viet_tat').value = initials;
+    }
+    const ns = document.getElementById('ngaySinh')?.value || '';
+    if (ns) {
+        const y = ns.split('-')[0];
+        if (y) document.getElementById('nc_nam_sinh').value = y;
+    }
+    const gt = document.getElementById('gioiTinh')?.value || '';
+    if (gt.toLowerCase().startsWith('n')) _ncSetRad_('nc_gioi_tinh', 'Nu');
+    else if (gt) _ncSetRad_('nc_gioi_tinh', 'Nam');
+    const stopG = document.getElementById('nc_stop_g');
+    if (stopG) stopG.checked = !gt.toLowerCase().startsWith('n') && !!gt;
+    const year = parseInt(document.getElementById('nc_nam_sinh')?.value, 10);
+    const stopA = document.getElementById('nc_stop_a');
+    if (stopA && year > 1900) stopA.checked = (new Date().getFullYear() - year) > 50;
+    const cc = document.getElementById('chieuCao')?.value || document.getElementById('m2_chieuCao')?.value;
+    const cn = document.getElementById('canNang')?.value || document.getElementById('m2_canNang')?.value;
+    if (cc) document.getElementById('nc_chieu_cao_cm').value = cc;
+    if (cn) document.getElementById('nc_can_nang_kg').value = cn;
+    researchNcCalcBmi_();
+    const sel = document.getElementById('nc_nguoi_thu_thap');
+    if (sel && typeof CURRENT_USER !== 'undefined' && CURRENT_USER?.name) {
+        const match = RESEARCH_NC_COLLECTORS.find((n) => CURRENT_USER.name.includes(n) || n.includes(CURRENT_USER.name));
+        if (match) sel.value = match;
+    }
+    if (!document.getElementById('nc_ngay_thu_thap').value) {
+        document.getElementById('nc_ngay_thu_thap').value = new Date().toISOString().slice(0, 10);
+    }
+}
+
+function resetResearchNcForm() {
+    const keepCollector = document.getElementById('nc_nguoi_thu_thap')?.value || '';
+    document.getElementById('researchNcFormRoot')?.querySelectorAll('input[type="text"], input[type="number"], input[type="date"], input[type="time"]').forEach((el) => {
+        el.value = '';
+    });
+    document.getElementById('researchNcFormRoot')?.querySelectorAll('input[type="checkbox"]').forEach((el) => { el.checked = false; });
+    document.getElementById('researchNcFormRoot')?.querySelectorAll('input[type="radio"]').forEach((el) => { el.checked = false; });
+    document.querySelectorAll('#researchNcStopBangModal input[type="checkbox"], #researchNcPhq9Modal input[type="radio"]').forEach((el) => {
+        if (el.type === 'checkbox') el.checked = false;
+        else el.checked = false;
+    });
+    document.getElementById('nc_record_id').value = '';
+    const sel = document.getElementById('nc_nguoi_thu_thap');
+    if (sel) sel.value = keepCollector;
+    prefillResearchNcFromPatient_();
+}
+
+function saveResearchNcForm() {
+    const flat = collectResearchNcFlat_();
+    if (!flat.nc_id_nghien_cuu && !flat.nc_ho_ten_viet_tat) {
+        alert('Vui lòng nhập Mã ID nghiên cứu hoặc họ tên viết tắt.');
+        return;
+    }
+    const msg = document.getElementById('researchNcSaveMsg');
+    if (msg) { msg.classList.add('d-none'); msg.classList.remove('alert-danger'); msg.classList.add('alert-success'); }
+    if (typeof google === 'undefined' || !google.script) {
+        alert('Không có kết nối máy chủ.');
+        return;
+    }
+    google.script.run.withSuccessHandler((res) => {
+        res = normalizeServerResult(res);
+        if (res.error) {
+            if (msg) { msg.textContent = res.error; msg.classList.remove('d-none', 'alert-success'); msg.classList.add('alert-danger'); }
+            return;
+        }
+        if (res.recordId) document.getElementById('nc_record_id').value = res.recordId;
+        if (msg) { msg.textContent = 'Đã lưu phiếu NC · Mã bản ghi: ' + (res.recordId || ''); msg.classList.remove('d-none'); }
+        researchInitModule_();
+    }).withFailureHandler((err) => {
+        if (msg) { msg.textContent = err?.message || String(err); msg.classList.remove('d-none', 'alert-success'); msg.classList.add('alert-danger'); }
+    }).saveResearchNcForm(JSON.stringify(flat));
+}
+
+function _ncFmtDateVi_(iso) {
+    if (!iso) return '…… / …… / 202……';
+    const p = String(iso).split('-');
+    if (p.length !== 3) return iso;
+    return `${p[2]} / ${p[1]} / ${p[0]}`;
+}
+
+function _ncLbl_(code, labels) {
+    const v = _ncRadVal_(code);
+    return labels.map((x) => `${x.v === v ? '☑' : '☐'} ${x.t}`).join(' &nbsp; ');
+}
+
+function buildResearchNcPrintBodyHtml_() {
+    const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const v = (id) => esc(document.getElementById(id)?.value || '');
+    const chk = (id) => (document.getElementById(id)?.checked ? '☑' : '☐');
+    const p = [];
+    p.push('<div class="pc-byt-doc nc-inner">');
+    p.push('<div class="pc-byt-title-block"><div class="byt-title">Phiếu thu thập số liệu lâm sàng và sinh hóa nội tiết</div>');
+    p.push('<div class="byt-subtitle">(ĐTĐ type 2 ngoại trú · AOP.01.01)</div></div>');
+    p.push('<div class="row-line">Mã định danh bệnh nhân (ID Nghiên cứu): <span class="dots">', v('nc_id_nghien_cuu'), '</span></div>');
+    p.push('<div class="row-line">Ngày thu thập dữ liệu: <span class="dots">', _ncFmtDateVi_(document.getElementById('nc_ngay_thu_thap')?.value), '</span></div>');
+    p.push('<div class="row-line">Người thu thập (ký, ghi rõ họ tên): <span class="dots">', v('nc_nguoi_thu_thap'), '</span></div>');
+    p.push('<div class="row-line">Bệnh nhân đã ký Giấy đồng thuận: ', _ncLbl_('nc_dong_thuan', [{ v: '1', t: 'Có' }, { v: '0', t: 'Không' }]), '</div>');
+
+    p.push('<div class="part-title">I. THÔNG TIN HÀNH CHÍNH VÀ NHÂN TRẮC HỌC</div>');
+    p.push('<div class="row-line">1. Họ tên (viết tắt): <span class="dots">', v('nc_ho_ten_viet_tat'), '</span></div>');
+    p.push('<div class="row-line">2. Tuổi (năm sinh): <span class="dots">', v('nc_nam_sinh'), '</span></div>');
+    p.push('<div class="row-line">3. Giới tính: ', _ncLbl_('nc_gioi_tinh', [{ v: 'Nam', t: 'Nam' }, { v: 'Nu', t: 'Nữ' }]), '</div>');
+    p.push('<div class="row-line">4. Trình độ học vấn: ', _ncLbl_('nc_hoc_van', [{ v: 'cap12', t: 'Cấp 1,2' }, { v: 'cap3', t: 'Cấp 3' }, { v: 'tc_cd_dh', t: 'TC/CĐ/ĐH+' }]), '</div>');
+    p.push('<div class="row-line">5. Nghề nghiệp: <span class="dots">', v('nc_nghe_nghiep'), '</span></div>');
+    p.push('<div class="row-line">6. Dấu hiệu sinh tồn — Mạch: <span class="dots">', v('nc_mach'), '</span> lần/phút; HA: <span class="dots">', v('nc_ha_tam_thu'), '</span>/<span class="dots">', v('nc_ha_tam_truong'), '</span> mmHg</div>');
+    p.push('<div class="row-line">Phân loại THA: ', _ncLbl_('nc_tha_nhom', [{ v: 'binh_thuong', t: 'BT' }, { v: 'cao_binh_thuong', t: 'Cao BT' }, { v: 'do1', t: 'Độ 1' }, { v: 'do2', t: 'Độ 2' }, { v: 'hon_hop', t: 'Hỗn hợp/khẩn' }]), '</div>');
+    p.push('<div class="row-line">Chiều cao: <span class="dots">', v('nc_chieu_cao_cm'), '</span> cm; Cân nặng: <span class="dots">', v('nc_can_nang_kg'), '</span> kg; BMI: <span class="dots">', v('nc_bmi'), '</span> kg/m²</div>');
+    p.push('<div class="row-line">BMI châu Á: ', _ncLbl_('nc_bmi_nhom', [{ v: 'thieu_can', t: '<18,5' }, { v: 'binh_thuong', t: '18,5–22,9' }, { v: 'thua_can', t: '23–24,9' }, { v: 'beo_phi_1', t: '25–29,9' }, { v: 'beo_phi_2', t: '≥30' }]), '</div>');
+
+    p.push('<div class="part-title">II. ĐÁNH GIÁ LÂM SÀNG VÀ BỆNH SỬ ĐÁI THÁO ĐƯỜNG</div>');
+    p.push('<div class="row-line">7. Thời gian phát hiện ĐTĐ type 2: <span class="dots">', v('nc_thoi_gian_pt_dtd2_y'), '</span> năm</div>');
+    p.push('<div class="row-line">8. Phác đồ — Thuốc uống: ', chk('nc_tx_oad'),
+        ' (', chk('nc_tx_oad_su'), ' SU ', chk('nc_tx_oad_met'), ' Metformin ', chk('nc_tx_oad_dpp4'), ' DPP-4 ',
+        chk('nc_tx_oad_glp1_uong'), ' GLP-1 uống ', chk('nc_tx_oad_glp1_tiem'), ' GLP-1 tiêm ',
+        chk('nc_tx_oad_sglt2'), ' SGLT-2 ', chk('nc_tx_oad_acarbose'), ' Acarbose)</div>');
+    p.push('<div class="row-line">Thuốc tiêm: ', chk('nc_tx_insulin'),
+        ' (', chk('nc_tx_ins_nen'), ' Nền ', chk('nc_tx_ins_tron'), ' Trộn ', chk('nc_tx_ins_basal_bolus'), ' Basal–Bolus) &nbsp; ',
+        chk('nc_tx_phoi_hop'), ' Phối hợp đa trị liệu</div>');
+    p.push('<div class="row-line">9. Biến chứng: ', chk('nc_bc_than_man'), ' Thận mạn ', chk('nc_bc_vong_mac'), ' Võng mạc ', chk('nc_bc_than_kinh'), ' TK ngoại biên ', chk('nc_bc_tim_mach'), ' Tim mạch ', chk('nc_bc_chua_ghi_nhan'), ' Chưa ghi nhận</div>');
+
+    p.push('<div class="part-title">III. KẾT QUẢ CẬN LÂM SÀNG <span class="pc-byt-sec-note">(trong 30 ngày)</span></div>');
+    p.push('<div class="row-line">10. FPG: <span class="dots">', v('nc_fpg_mmol'), '</span> mmol/L &nbsp; 11. HbA1c: <span class="dots">', v('nc_hba1c_pct'), '</span> %</div>');
+    p.push('<div class="row-line">12. Lipid: Chol <span class="dots">', v('nc_cholesterol'), '</span>; TG <span class="dots">', v('nc_triglyceride'), '</span>; HDL <span class="dots">', v('nc_hdl_c'), '</span>; LDL <span class="dots">', v('nc_ldl_c'), '</span> (mmol/L)</div>');
+    p.push('<div class="row-line">Đạt mục tiêu HbA1c: ', _ncLbl_('nc_hba1c_dat_muc_tieu', [{ v: 'dat', t: 'Đạt' }, { v: 'khong_dat', t: 'Không đạt' }]), '</div>');
+
+    p.push('<div class="part-title">IV. SÀNG LỌC BỔ SUNG</div>');
+    p.push('<div class="row-line">14. STOP-Bang: <span class="dots">', v('nc_stop_bang_tong'), '</span>/8 (',
+        chk('nc_stop_s'), 'S ', chk('nc_stop_t'), 'T ', chk('nc_stop_o'), 'O ', chk('nc_stop_p'), 'P ',
+        chk('nc_stop_b'), 'B ', chk('nc_stop_a'), 'A ', chk('nc_stop_n'), 'N ', chk('nc_stop_g'), 'G) → ',
+        _ncLbl_('nc_stop_bang_nhom', [{ v: 'low', t: '<3 thấp' }, { v: 'high', t: '≥3 TB–cao' }]), '</div>');
+    p.push('<div class="row-line">15. PHQ-9: <span class="dots">', v('nc_phq9_tong'), '</span>/27 → ', _ncLbl_('nc_phq9_nhom', [{ v: 'low', t: '<10' }, { v: 'high', t: '≥10' }]), '</div>');
+
+    p.push('<div class="part-title" style="page-break-before:always">Phụ lục 2: PSQI — Pittsburgh Sleep Quality Index</div>');
+    p.push('<p class="pc-byt-footer-note">Hướng dẫn: thói quen ngủ TRONG VÒNG 1 THÁNG QUA.</p>');
+    p.push('<div class="row-line">Q1. Giờ lên giường: <span class="dots">', v('nc_psqi_q1_gio_len_giuong'), '</span></div>');
+    p.push('<div class="row-line">Q2. Phút chìm ngủ: <span class="dots">', v('nc_psqi_q2_phut_chim_ngu'), '</span></div>');
+    p.push('<div class="row-line">Q3. Giờ thức dậy: <span class="dots">', v('nc_psqi_q3_gio_thuc_day'), '</span></div>');
+    p.push('<div class="row-line">Q4. Giờ ngủ thực tế: <span class="dots">', v('nc_psqi_q4_gio_ngu'), '</span></div>');
+
+    p.push('<table class="pc-byt-tbl"><thead><tr><th>Vấn đề Q5</th><th>0</th><th>1</th><th>2</th><th>3</th></tr></thead><tbody>');
+    RESEARCH_NC_PSQI_Q5.forEach((row) => {
+        const sel = _ncRadVal_(row.code);
+        const cells = [0, 1, 2, 3].map((n) => `<td class="text-center">${sel === String(n) ? '☑' : '☐'}</td>`).join('');
+        p.push('<tr><td>', esc(row.label), '</td>', cells, '</tr>');
+    });
+    p.push('</tbody></table>');
+    p.push('<div class="row-line">Q5j. Lý do khác: <span class="dots">', v('nc_psqi_q5j_ly_do'), '</span></div>');
+    p.push('<div class="row-line">Q6: ', _ncLbl_('nc_psqi_q6', [{ v: '0', t: 'Rất tốt' }, { v: '1', t: 'Khá tốt' }, { v: '2', t: 'Khá tệ' }, { v: '3', t: 'Rất tệ' }]), '</div>');
+    p.push('<div class="row-line">Q7 thuốc ngủ: ', _ncLbl_('nc_psqi_q7', [{ v: '0', t: 'Không' }, { v: '1', t: '<1/tuần' }, { v: '2', t: '1–2/tuần' }, { v: '3', t: '≥3/tuần' }]), '</div>');
+    p.push('<div class="row-line">Q8 buồn ngủ: ', _ncLbl_('nc_psqi_q8', [{ v: '0', t: 'Không' }, { v: '1', t: '<1/tuần' }, { v: '2', t: '1–2/tuần' }, { v: '3', t: '≥3/tuần' }]), '</div>');
+    p.push('<div class="row-line">Q9 khó khăn: ', _ncLbl_('nc_psqi_q9', [{ v: '0', t: 'Không' }, { v: '1', t: 'Đôi chút' }, { v: '2', t: 'TĐ' }, { v: '3', t: 'Rất khó' }]), '</div>');
+
+    p.push('<div class="result-box"><b>Bảng tính PSQI:</b> C1=', v('nc_psqi_c1'), ' C2=', v('nc_psqi_c2'), ' C3=', v('nc_psqi_c3'), ' C4=', v('nc_psqi_c4'), ' C5=', v('nc_psqi_c5'), ' C6=', v('nc_psqi_c6'), ' C7=', v('nc_psqi_c7'));
+    p.push(' → Hiệu suất ngủ: <span class="dots">', v('nc_psqi_hieu_suat'), '</span>%');
+    p.push(' → <b>Tổng PSQI = <span class="pc-byt-score">', v('nc_psqi_tong'), '</span></b> điểm (0–21)</div>');
+    p.push('<div class="row-line"><b>KẾT LUẬN:</b> ', _ncLbl_('nc_psqi_ket_luan', [{ v: 'tot', t: 'PSQI ≤5: TỐT' }, { v: 'roi_loan', t: 'PSQI >5: RỐI LOẠN GIẤC NGỦ' }]), '</div>');
+    p.push('<div class="pc-byt-sign-end"><div class="sign-box">Ngày ', _ncFmtDateVi_(document.getElementById('nc_ngay_thu_thap')?.value), '<div class="sign-space"></div><b>Người thu thập</b><br>(Ký, ghi rõ họ tên)<br>', v('nc_nguoi_thu_thap'), '</div></div>');
+    p.push('</div>');
+    return p.join('');
+}
+
+function getResearchNcPrintCss_(scoped) {
+    return getPcBytPrintBaseCss_(scoped, '.nc-inner');
+}
+
+function buildResearchNcPrintHtml_() {
+    const parts = [];
+    parts.push('<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><title>Phiếu thu thập số liệu NC</title>');
+    parts.push('<style>', getResearchNcPrintCss_(false), '</style></head><body>');
+    parts.push(buildResearchNcPrintBodyHtml_());
+    parts.push('</body></html>');
+    return parts.join('');
+}
+
+function printResearchNcForm() {
+    const html = buildResearchNcPrintHtml_();
+    const w = window.open('', '_blank', 'width=920,height=900');
+    if (!w) {
+        alert('Trình duyệt chặn cửa sổ in. Vui lòng cho phép popup.');
+        return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    w.onload = function () { w.focus(); w.print(); };
+}
+
+function buildResearchNcShareSummary_() {
+    const v = (id) => (document.getElementById(id)?.value || '').toString().trim();
+    const rad = (name) => _ncRadVal_(name);
+    const lines = [];
+    lines.push('Phiếu thu thập số liệu NC — BVQT Phương Châu');
+    lines.push('Mã ID NC: ' + (v('nc_id_nghien_cuu') || '—'));
+    lines.push('Họ tên (viết tắt): ' + (v('nc_ho_ten_viet_tat') || '—'));
+    lines.push('Ngày thu thập: ' + (v('nc_ngay_thu_thap') || '—'));
+    lines.push('Người thu thập: ' + (v('nc_nguoi_thu_thap') || '—'));
+    lines.push('BMI: ' + (v('nc_bmi') || '—') + ' (' + (rad('nc_bmi_nhom') || '—') + ')');
+    lines.push('HA: ' + (v('nc_ha_tam_thu') || '—') + '/' + (v('nc_ha_tam_truong') || '—') + ' · ' + (rad('nc_tha_nhom') || '—'));
+    lines.push('HbA1c: ' + (v('nc_hba1c_pct') || '—') + '% · FPG: ' + (v('nc_fpg_mmol') || '—') + ' mmol/L');
+    lines.push('STOP-Bang: ' + (v('nc_stop_bang_tong') || '—') + '/8 · PHQ-9: ' + (v('nc_phq9_tong') || '—') + '/27');
+    lines.push('PSQI: ' + (v('nc_psqi_tong') || '—') + '/21 · Hiệu suất ngủ: ' + (v('nc_psqi_hieu_suat') || '—') + '%');
+    const kl = rad('nc_psqi_ket_luan');
+    if (kl === 'tot') lines.push('Kết luận PSQI: Tốt (≤5)');
+    else if (kl === 'roi_loan') lines.push('Kết luận PSQI: Rối loạn giấc ngủ (>5)');
+    return lines.join('\n');
+}
+
+function _ncShareFlash_(msg, isErr) {
+    const el = document.getElementById('researchNcShareMsg');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.remove('d-none', 'text-success', 'text-danger');
+    el.classList.add(isErr ? 'text-danger' : 'text-success');
+    setTimeout(() => el.classList.add('d-none'), 3500);
+}
+
+function _ncOpenShareUrl_(url) {
+    const w = window.open(url, '_blank', 'noopener,noreferrer,width=720,height=640');
+    if (!w) {
+        _ncShareFlash_('Trình duyệt chặn popup. Cho phép popup để chia sẻ.', true);
+        return false;
+    }
+    return true;
+}
+
+async function shareResearchNc_(platform) {
+    const text = buildResearchNcShareSummary_();
+    const title = 'Phiếu thu thập số liệu NC — Phương Châu';
+    let pageUrl = '';
+    try {
+        pageUrl = (typeof google !== 'undefined' && google.script && google.script.run)
+            ? (document.getElementById('cdssWebAppLink')?.href || '')
+            : (window.location.href || '');
+    } catch (e) { pageUrl = ''; }
+    if (!pageUrl || pageUrl === '#') pageUrl = 'https://script.google.com/';
+
+    if (platform === 'native' && navigator.share) {
+        try {
+            await navigator.share({ title, text, url: pageUrl });
+            _ncShareFlash_('Đã mở chia sẻ hệ thống.');
+            return;
+        } catch (e) {
+            if (e && e.name === 'AbortError') return;
+        }
+    }
+
+    if (platform === 'copy' || (platform === 'native' && !navigator.share)) {
+        const payload = text + '\n' + pageUrl;
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(payload);
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = payload;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                ta.remove();
+            }
+            _ncShareFlash_('Đã sao chép tóm tắt vào clipboard.');
+        } catch (e) {
+            _ncShareFlash_('Không sao chép được. Hãy chọn thủ công.', true);
+        }
+        return;
+    }
+
+    const enc = encodeURIComponent;
+    if (platform === 'email') {
+        const mailto = 'mailto:?subject=' + enc(title) + '&body=' + enc(text + '\n\n' + pageUrl);
+        window.location.href = mailto;
+        _ncShareFlash_('Đã mở ứng dụng email.');
+        return;
+    }
+    if (platform === 'facebook') {
+        _ncOpenShareUrl_('https://www.facebook.com/sharer/sharer.php?u=' + enc(pageUrl) + '&quote=' + enc(text));
+        return;
+    }
+    if (platform === 'zalo') {
+        _ncOpenShareUrl_('https://zalo.me/share?url=' + enc(pageUrl) + '&title=' + enc(title));
+        return;
+    }
+    if (platform === 'telegram') {
+        _ncOpenShareUrl_('https://t.me/share/url?url=' + enc(pageUrl) + '&text=' + enc(text));
+        return;
+    }
+    if (platform === 'whatsapp') {
+        _ncOpenShareUrl_('https://wa.me/?text=' + enc(text + '\n' + pageUrl));
+        return;
+    }
+    if (platform === 'twitter') {
+        _ncOpenShareUrl_('https://twitter.com/intent/tweet?text=' + enc(text) + '&url=' + enc(pageUrl));
+        return;
+    }
+    _ncShareFlash_('Nền tảng chưa hỗ trợ.', true);
+}
+
+function buildResearchFlatRow_(snapshot, extra) {
+    const row = Object.assign({}, extra || {});
+    row['Thời gian'] = snapshot?.savedAt || new Date().toISOString();
+    if (snapshot?.currentUser) {
+        row['Người nhập'] = snapshot.currentUser.name || '';
+        row['Email nhập'] = snapshot.currentUser.email || '';
+    }
+    const fields = snapshot?.fields || {};
+    Object.keys(fields).forEach((k) => {
+        const v = fields[k];
+        row[k] = (typeof v === 'boolean') ? (v ? '1' : '0') : v;
+    });
+    const computed = snapshot?.computedIndicators || {};
+    Object.keys(computed).forEach((k) => { row['calc_' + k] = computed[k]; });
+    if (snapshot?.selectedDiagnosisList?.length) {
+        row['ICD10'] = snapshot.selectedDiagnosisList.map((d) => `${d.code} — ${d.name}`).join('; ');
+    }
+    row['printMode'] = snapshot?.printMode || '';
+    return row;
+}
+
+function _researchSafeFileName_(s) {
+    return String(s || 'export').replace(/[\\/:*?"<>|]/g, '_').replace(/\s+/g, '_').slice(0, 40);
+}
+
+function _downloadResearchXlsx_(rows, sheetName, fileName) {
+    if (typeof XLSX === 'undefined') {
+        alert('Thư viện Excel chưa tải. Vui lòng tải lại trang.');
+        return;
+    }
+    if (!rows || !rows.length) {
+        alert('Không có dữ liệu để xuất.');
+        return;
+    }
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, sheetName || 'Data');
+    XLSX.writeFile(wb, fileName || `NghienCuu_${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+
+function exportForResearch() {
+    const snapshot = collectFullModulesSnapshot_();
+    const row = buildResearchFlatRow_(snapshot, {
+        'Mã BN': document.getElementById('cccd')?.value || '',
+        'Họ tên': document.getElementById('hoTen')?.value || ''
+    });
+    const fname = `NghienCuu_${_researchSafeFileName_(row['Họ tên'] || row.hoTen)}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    _downloadResearchXlsx_([row], 'Ca_hien_tai', fname);
+}
+
+function researchInitModule_() {
+    buildResearchNcPsqiQ5Table_();
+    bindResearchNcPsqiAuto_();
+    document.querySelectorAll('.nc-bmi-src').forEach((el) => {
+        if (el.dataset.ncBound === '1') return;
+        el.addEventListener('input', researchNcCalcBmi_);
+        el.dataset.ncBound = '1';
+    });
+    document.querySelectorAll('.nc-vital-src').forEach((el) => {
+        if (el.dataset.ncBound === '1') return;
+        el.addEventListener('input', researchNcCalcTha_);
+        el.dataset.ncBound = '1';
+    });
+    researchNcCalcPsqi_();
+    if (!document.getElementById('nc_ngay_thu_thap')?.value) {
+        const d = document.getElementById('nc_ngay_thu_thap');
+        if (d) d.value = new Date().toISOString().slice(0, 10);
+    }
+    const badge = document.getElementById('research_db_count_badge');
+    if (badge) badge.textContent = 'Đang tải…';
+    if (typeof google === 'undefined' || !google.script) {
+        if (badge) badge.textContent = 'Chế độ offline';
+        return;
+    }
+    google.script.run.withSuccessHandler((res) => {
+        res = normalizeServerResult(res);
+        if (badge) {
+            badge.textContent = (res && res.total != null) ? `${res.total} hồ sơ` : 'CSDL sẵn sàng';
+        }
+    }).withFailureHandler(() => {
+        if (badge) badge.textContent = 'Không đọc được CSDL';
+    }).getResearchRecordsStats();
+}
+
+function researchLoadPreview() {
+    const meta = document.getElementById('research_preview_meta');
+    const btn = document.getElementById('research_export_btn');
+    const head = document.getElementById('research_preview_head');
+    const body = document.getElementById('research_preview_body');
+    if (meta) meta.textContent = 'Đang tải…';
+    if (btn) btn.disabled = true;
+
+    const payload = JSON.stringify({
+        fromDate: document.getElementById('research_from_date')?.value || '',
+        toDate: document.getElementById('research_to_date')?.value || '',
+        keyword: document.getElementById('research_keyword')?.value || '',
+        limit: document.getElementById('research_limit')?.value || '500'
+    });
+
+    if (typeof google === 'undefined' || !google.script) {
+        RESEARCH_BATCH_ROWS = [];
+        if (body) body.innerHTML = '<tr><td class="text-center text-muted py-3">Không có kết nối máy chủ.</td></tr>';
+        if (meta) meta.textContent = 'Lỗi kết nối';
+        return;
+    }
+
+    google.script.run.withSuccessHandler((res) => {
+        res = normalizeServerResult(res);
+        if (res.error) {
+            if (meta) meta.textContent = res.error;
+            if (body) body.innerHTML = `<tr><td class="text-danger text-center py-3">${res.error}</td></tr>`;
+            return;
+        }
+        RESEARCH_BATCH_ROWS = Array.isArray(res.rows) ? res.rows : [];
+        researchRenderPreviewTable_(RESEARCH_BATCH_ROWS);
+        if (meta) meta.textContent = `Hiển thị ${RESEARCH_BATCH_ROWS.length} / ${res.total || RESEARCH_BATCH_ROWS.length} hồ sơ`;
+        if (btn) btn.disabled = RESEARCH_BATCH_ROWS.length === 0;
+        const badge = document.getElementById('research_db_count_badge');
+        if (badge && res.total != null) badge.textContent = `${res.total} hồ sơ`;
+    }).withFailureHandler((err) => {
+        if (meta) meta.textContent = 'Lỗi tải dữ liệu';
+        if (body) body.innerHTML = `<tr><td class="text-danger text-center py-3">${err?.message || err}</td></tr>`;
+    }).getResearchRecordsForExport(payload);
+}
+
+function researchRenderPreviewTable_(rows) {
+    const head = document.getElementById('research_preview_head');
+    const body = document.getElementById('research_preview_body');
+    if (!head || !body) return;
+    if (!rows.length) {
+        head.innerHTML = '<th class="text-center text-muted">Không có dữ liệu</th>';
+        body.innerHTML = '<tr><td class="text-center text-muted py-4">Không tìm thấy hồ sơ phù hợp bộ lọc.</td></tr>';
+        return;
+    }
+    const previewCols = ['Timestamp', 'nc_id_nghien_cuu', 'nc_ho_ten_viet_tat', 'nc_gioi_tinh', 'nc_bmi', 'nc_hba1c_pct', 'nc_psqi_tong', 'nc_nguoi_thu_thap'];
+    head.innerHTML = previewCols.map((c) => `<th>${c}</th>`).join('');
+    const maxShow = 80;
+    body.innerHTML = rows.slice(0, maxShow).map((r) => {
+        return `<tr>${previewCols.map((c) => `<td>${String(r[c] ?? '').replace(/</g, '&lt;')}</td>`).join('')}</tr>`;
+    }).join('');
+    if (rows.length > maxShow) {
+        body.innerHTML += `<tr><td colspan="${previewCols.length}" class="text-center text-muted small py-2">… và ${rows.length - maxShow} dòng nữa (xuất Excel để xem đủ).</td></tr>`;
+    }
+}
+
+function researchExportBatchExcel() {
+    if (!RESEARCH_BATCH_ROWS.length) {
+        alert('Chưa có dữ liệu. Bấm "Tải dữ liệu" trước.');
+        return;
+    }
+    const fname = `NghienCuu_Batch_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    _downloadResearchXlsx_(RESEARCH_BATCH_ROWS, 'Ho_so', fname);
+}
+
 function collectFullModulesSnapshot_() {
     const fields = {};
     document.querySelectorAll('#mod1 input, #mod1 select, #mod1 textarea, #mod2 input, #mod2 select, #mod2 textarea, #mod3 input, #mod3 select, #mod3 textarea, #mod4 input, #mod4 select, #mod4 textarea, #mod5 input, #mod5 select, #mod5 textarea')
@@ -5261,6 +7125,7 @@ function collectFullModulesSnapshot_() {
       'm2_calf_class', 'm2_muac_class',
       'm2_grip_class', 'm2_sarcopenia_summary', 'ped_2460_summary', 'ped_5to19_summary',
       'must_total', 'must_risk', 'micro_suggestion_result',
+      'dd06_total', 'dd06_risk_result',
       'final_kcal', 'macro_p_g', 'macro_l_g', 'macro_g_g',
       'final_water_ml', 'final_fiber_g', 'kitchen_note',
       'life_move_daily', 'life_sport_plan', 'life_rest_plan', 'life_note_plan'
@@ -5872,69 +7737,277 @@ function formatAIMarkdown(text) {
 // 13. KHỞI TẠO ỨNG DỤNG (INITIALIZATION)
 // Hàm này được gọi sau khi Login thành công
 function initApp() {
-    // Tự động load cấu hình hệ thống
     if(typeof google !== 'undefined' && google.script) {
         google.script.run.withSuccessHandler(config => {
-            // Cập nhật tên BV
-            if(config.HOSPITAL_NAME) {
-                 // document.querySelector('.hospital-name-display').innerText = config.HOSPITAL_NAME;
-            }
-            // Ẩn module nếu config tắt
-            if(config.MODULE_1_ACTIVE === 'FALSE') {
+            if(config && config.MODULE_1_ACTIVE === 'FALSE') {
                 const t1 = document.getElementById('tab1');
                 if (t1) t1.style.display = 'none';
             }
-        }).getSystemConfig();
+        }).withFailureHandler(() => {}).getSystemConfig();
     }
-    loadDoctorList();
-    initClinicalWorkflowNav();
-    setStaffRootNav('dd');
+    try { loadDoctorList(); } catch (e) { console.warn('loadDoctorList', e); }
+    try { initClinicalWorkflowNav(); } catch (e) { console.warn('initClinicalWorkflowNav', e); }
+    try { initSidebarPin_(); } catch (e) { console.warn('initSidebarPin_', e); }
+    try {
+      restoreLastNav_();
+    } catch (e) {
+      console.error('restoreLastNav_', e);
+      try { setStaffRootNav('dd', { clinicalStep: 0 }); } catch (_) {}
+    }
     setTimeout(() => {
-        updateIycfReferencePanel();
-        updateMicroNutrientsFootnote();
+        try { updateIycfReferencePanel(); } catch (_) {}
+        try { updateMicroNutrientsFootnote(); } catch (_) {}
+        try { showAppChangelogIfNew_(); } catch (_) {}
     }, 0);
 }
 
 let THU_VIEN_EMBED_URL = '';
-/** URL host thư viện — tải iframe ngay, không chờ google.script.run (tránh log warden BUSY/IDLE). */
+/** URL host thư viện — CDN gh-pages (không cần bật GitHub Pages) rồi github.io. */
 const THU_VIEN_DEFAULT_URLS = [
-  'https://htthinh28.github.io/dinh_duong_lam_sang/',
-  'https://cdn.jsdelivr.net/gh/htthinh28/dinh_duong_lam_sang@main/thu-vien/index.html'
+  'https://cdn.statically.io/gh/htthinh28/dinh_duong_lam_sang@gh-pages/index.html',
+  'https://htthinh28.github.io/dinh_duong_lam_sang/'
 ];
+const THU_VIEN_LOAD_TIMEOUT_MS = 120000;
+const THU_VIEN_READY_TIMEOUT_MS = 120000;
+let thuVienPendingReady = null;
 
-/** Sidebar: Dinh dưỡng / Quản trị / Thư viện */
-function setStaffRootNav(root) {
+window.addEventListener('message', (ev) => {
+  if (!ev.data || ev.data.type !== 'thuVienAppReady') return;
+  const frame = document.getElementById('thuVienFrame');
+  if (!frame || !frame.contentWindow || ev.source !== frame.contentWindow) return;
+  frame.dataset.appReady = '1';
+  if (thuVienPendingReady) {
+    clearTimeout(thuVienPendingReady.timer);
+    thuVienPendingReady.resolve();
+    thuVienPendingReady = null;
+  }
+});
+
+function mergeThuVienUrlList(serverUrls) {
+  const out = [];
+  (Array.isArray(serverUrls) ? serverUrls : []).concat(THU_VIEN_DEFAULT_URLS).forEach((u) => {
+    const url = String(u || '').trim();
+    if (url && out.indexOf(url) < 0) out.push(url);
+  });
+  return out;
+}
+
+function fetchThuVienUrlsFromServer() {
+  return new Promise((resolve) => {
+    if (typeof google === 'undefined' || !google.script || !google.script.run) {
+      resolve(THU_VIEN_DEFAULT_URLS);
+      return;
+    }
+    google.script.run
+      .withSuccessHandler((urls) => resolve(mergeThuVienUrlList(urls)))
+      .withFailureHandler(() => resolve(THU_VIEN_DEFAULT_URLS))
+      .getThuVienEmbedUrls();
+  });
+}
+
+function setThuVienStatus(html) {
+  const box = document.getElementById('thuVienStatusBox');
+  if (box) box.innerHTML = html;
+}
+
+function showThuVienOverlay() {
+  document.getElementById('thuVienFrameLoading')?.classList.remove('d-none');
+  document.getElementById('thuVienFrame')?.classList.add('d-none');
+}
+
+function hideThuVienOverlay() {
+  document.getElementById('thuVienFrameLoading')?.classList.add('d-none');
+}
+
+/** Sidebar: Dinh dưỡng / Quản trị / Thư viện / Nghiên cứu */
+const STAFF_SIDEBAR_IDS = ['sidebarNavDd', 'sidebarNavQt', 'sidebarNavTv', 'sidebarNavNc'];
+let RESEARCH_BATCH_ROWS = [];
+
+function _clearStaffSidebarActive_() {
+  STAFF_SIDEBAR_IDS.forEach((id) => document.getElementById(id)?.classList.remove('active'));
+}
+
+/** Bật đúng 1 panel: dd | tv | nc */
+function _activateStaffPanel_(panel) {
+  const displayByKey = { dd: 'block', tv: 'flex', nc: 'block' };
+  const map = {
+    dd: document.getElementById('section-dd-pack'),
+    tv: document.getElementById('section-thu-vien-pack'),
+    nc: document.getElementById('section-research-pack')
+  };
+  Object.keys(map).forEach((key) => {
+    const el = map[key];
+    if (!el) return;
+    const on = key === panel;
+    el.classList.toggle('staff-panel-active', on);
+    el.removeAttribute('hidden');
+    el.classList.remove('d-none');
+    if (on) {
+      el.style.setProperty('display', displayByKey[key] || 'block', 'important');
+      el.style.setProperty('visibility', 'visible', 'important');
+      el.setAttribute('aria-hidden', 'false');
+    } else {
+      el.style.setProperty('display', 'none', 'important');
+      el.setAttribute('aria-hidden', 'true');
+    }
+  });
+}
+
+function _hideStaffOverlaySections_() {
+  _activateStaffPanel_('dd');
+}
+
+function researchPackShowView_(view) {
+  const formView = document.getElementById('researchNcFormView');
+  const exportView = document.getElementById('researchExportView');
+  const btnForm = document.getElementById('researchViewFormBtn');
+  const btnExport = document.getElementById('researchViewExportBtn');
+  const showForm = view !== 'export';
+  formView?.classList.toggle('d-none', !showForm);
+  exportView?.classList.toggle('d-none', showForm);
+  btnForm?.classList.toggle('active', showForm);
+  btnForm?.classList.toggle('btn-primary', showForm);
+  btnForm?.classList.toggle('btn-outline-primary', !showForm);
+  btnExport?.classList.toggle('active', !showForm);
+  btnExport?.classList.toggle('btn-primary', !showForm);
+  btnExport?.classList.toggle('btn-outline-primary', showForm);
+  if (!showForm) researchLoadPreview();
+  saveLastNav_({ root: 'nc', researchView: showForm ? 'form' : 'export' });
+}
+
+const PC_NAV_KEY = 'PC_LAST_NAV';
+const PC_SIDEBAR_PIN_KEY = 'PC_SIDEBAR_PINNED';
+
+function loadLastNav_() {
+  try {
+    return JSON.parse(localStorage.getItem(PC_NAV_KEY) || '{}') || {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveLastNav_(patch) {
+  try {
+    const cur = loadLastNav_();
+    Object.assign(cur, patch || {});
+    localStorage.setItem(PC_NAV_KEY, JSON.stringify(cur));
+  } catch (e) { /* ignore quota */ }
+}
+
+function isSidebarPinned_() {
+  return localStorage.getItem(PC_SIDEBAR_PIN_KEY) === '1';
+}
+
+function applySidebarPinUi_(pinned) {
+  document.body.classList.toggle('sidebar-pinned', !!pinned);
+  const label = document.getElementById('sidebarPinLabel');
+  const btn = document.getElementById('sidebarPinBtn');
+  if (label) label.textContent = pinned ? 'Bỏ ghim' : 'Ghim sidebar';
+  if (btn) btn.title = pinned ? 'Bỏ ghim — thu gọn khi rời chuột' : 'Ghim sidebar luôn mở rộng';
+}
+
+function initSidebarPin_() {
+  applySidebarPinUi_(isSidebarPinned_());
+}
+
+function toggleSidebarPin_() {
+  const next = !isSidebarPinned_();
+  try { localStorage.setItem(PC_SIDEBAR_PIN_KEY, next ? '1' : '0'); } catch (e) {}
+  applySidebarPinUi_(next);
+}
+
+/** Khôi phục khu vực đang xem sau refresh / đăng nhập lại */
+function restoreLastNav_() {
+  let nav = {};
+  try { nav = loadLastNav_(); } catch (_) { nav = {}; }
+  const root = ['dd', 'qt', 'tv', 'nc'].includes(nav.root) ? nav.root : 'dd';
+  try {
+    if (root === 'dd') {
+      const step = Number.isInteger(nav.clinicalStep) ? nav.clinicalStep : 0;
+      setStaffRootNav('dd', { clinicalStep: Math.max(0, Math.min(5, step)) });
+      return;
+    }
+    if (root === 'qt') {
+      setStaffRootNav('qt');
+      return;
+    }
+    if (root === 'tv') {
+      setStaffRootNav('tv');
+      return;
+    }
+    if (root === 'nc') {
+      setStaffRootNav('nc', { researchView: nav.researchView === 'export' ? 'export' : 'form' });
+      return;
+    }
+  } catch (e) {
+    console.error('restoreLastNav_ path failed, fallback dd', e);
+    setStaffRootNav('dd', { clinicalStep: 0 });
+  }
+}
+
+function setStaffRootNav(root, opts) {
+  opts = opts || {};
   const hasStoredSession = !!sessionStorage.getItem('PC_USER_SESSION');
   const hasCurrentUser = typeof CURRENT_USER !== 'undefined' && CURRENT_USER && CURRENT_USER.email;
   if (!hasStoredSession && !hasCurrentUser) return;
-  const dd = document.getElementById('section-dd-pack');
-  const tv = document.getElementById('section-thu-vien-pack');
-  ['sidebarNavDd', 'sidebarNavQt', 'sidebarNavTv'].forEach((id) => document.getElementById(id)?.classList.remove('active'));
 
-  dd?.classList.remove('d-none');
-  tv?.classList.add('d-none');
+  _clearStaffSidebarActive_();
+  document.body.classList.remove('clinical-workflow-active');
+  document.body.removeAttribute('data-clinical-step');
+  document.body.setAttribute('data-staff-root', root);
 
   if (root === 'dd') {
-    document.body.setAttribute('data-staff-root', 'dd');
     document.getElementById('sidebarNavDd')?.classList.add('active');
-    const cur = getClinicalWorkflowIndex();
-    showClinicalWorkflowStep(cur >= 0 ? cur : 0);
+    _activateStaffPanel_('dd');
+    let step = opts.clinicalStep;
+    if (step == null || Number.isNaN(step)) {
+      const saved = loadLastNav_();
+      step = Number.isInteger(saved.clinicalStep) ? saved.clinicalStep : getClinicalWorkflowIndex();
+    }
+    showClinicalWorkflowStep(step >= 0 ? step : 0);
+    saveLastNav_({ root: 'dd' });
     return;
   }
 
   if (root === 'qt') {
-    document.body.setAttribute('data-staff-root', 'qt');
     document.getElementById('sidebarNavQt')?.classList.add('active');
+    _activateStaffPanel_('dd');
     showAppModule(7);
+    saveLastNav_({ root: 'qt' });
     return;
   }
 
   if (root === 'tv') {
-    document.body.setAttribute('data-staff-root', 'tv');
+    const tv = document.getElementById('section-thu-vien-pack');
+    if (!tv) {
+      alert('Module Thư viện chưa có trong phiên bản này. Nhấn Ctrl+F5 hoặc Deploy lại web app.');
+      setStaffRootNav('dd');
+      return;
+    }
     document.getElementById('sidebarNavTv')?.classList.add('active');
-    dd?.classList.add('d-none');
-    tv?.classList.remove('d-none');
+    _activateStaffPanel_('tv');
+    showThuVienOverlay();
     loadThuVienFrame();
+    saveLastNav_({ root: 'tv' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+
+  if (root === 'nc') {
+    const nc = document.getElementById('section-research-pack');
+    if (!nc) {
+      alert('Module Thu thập số liệu chưa có trong phiên bản này. Nhấn Ctrl+F5 hoặc Deploy lại web app.');
+      setStaffRootNav('dd');
+      return;
+    }
+    document.getElementById('sidebarNavNc')?.classList.add('active');
+    _activateStaffPanel_('nc');
+    const view = opts.researchView || loadLastNav_().researchView || 'form';
+    researchPackShowView_(view);
+    researchInitModule_();
+    saveLastNav_({ root: 'nc', researchView: view === 'export' ? 'export' : 'form' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
   }
 }
 
@@ -5949,16 +8022,37 @@ function loadThuVienFrame(forceReload) {
   if (!frame) return;
 
   const showLoadError = (tried) => {
-    if (!loading) return;
-    loading.classList.remove('d-none');
-    loading.innerHTML =
-      '<i class="fas fa-triangle-exclamation fa-2x mb-3 d-block text-danger"></i>' +
-      '<p class="mb-2">Không tải được thư viện từ máy chủ.</p>' +
-      '<p class="small text-muted mb-3">Đã thử: ' + (tried || []).map((u) => '<code class="d-block text-break">' + u + '</code>').join('') + '</p>' +
-      '<button type="button" class="btn btn-sm btn-primary me-2" onclick="reloadThuVienFrame(true)"><i class="fas fa-rotate-right"></i> Thử lại</button>' +
-      '<button type="button" class="btn btn-sm btn-outline-primary" onclick="openThuVienInNewTab()"><i class="fas fa-up-right-from-square"></i> Mở tab mới</button>';
+    THU_VIEN_EMBED_URL = '';
+    frame.removeAttribute('data-loaded');
+    frame.removeAttribute('data-app-ready');
+    try { frame.removeAttribute('src'); } catch (e) { frame.src = 'about:blank'; }
     frame.classList.add('d-none');
+    showThuVienOverlay();
+    setThuVienStatus(
+      '<i class="fas fa-triangle-exclamation text-danger me-1"></i> ' +
+      '<strong>Chưa tải được thư viện.</strong> Bấm <strong>Mở tab mới</strong> bên dưới để tra cứu trực tiếp.' +
+      ((tried && tried.length) ? '<br><span class="text-muted">Đã thử ' + tried.length + ' URL.</span>' : '')
+    );
   };
+
+  const waitThuVienAppReady = () => new Promise((resolve, reject) => {
+    if (frame.dataset.appReady === '1') {
+      resolve();
+      return;
+    }
+    const timer = setTimeout(() => {
+      thuVienPendingReady = null;
+      reject(new Error('ready-timeout'));
+    }, THU_VIEN_READY_TIMEOUT_MS);
+    thuVienPendingReady = {
+      timer,
+      resolve: () => {
+        clearTimeout(timer);
+        thuVienPendingReady = null;
+        resolve();
+      }
+    };
+  });
 
   const tryUrlAt = (urls, index, bust) => {
     if (!urls || index >= urls.length) {
@@ -5967,28 +8061,42 @@ function loadThuVienFrame(forceReload) {
     }
     const url = urls[index];
     let settled = false;
-    if (loading) {
-      loading.classList.remove('d-none');
-      loading.innerHTML =
-        '<i class="fas fa-spinner fa-spin fa-2x mb-3 d-block text-primary"></i>' +
-        'Đang tải thư viện (' + (index + 1) + '/' + urls.length + ')...';
-    }
+    showThuVienOverlay();
+    setThuVienStatus(
+      '<i class="fas fa-spinner fa-spin me-1 text-primary"></i> ' +
+      'Đang tải thư viện (' + (index + 1) + '/' + urls.length + ')…'
+    );
     frame.classList.add('d-none');
+    frame.removeAttribute('data-app-ready');
     const timer = setTimeout(() => {
       if (settled) return;
       settled = true;
       frame.onload = null;
       tryUrlAt(urls, index + 1, bust);
-    }, 25000);
+    }, THU_VIEN_LOAD_TIMEOUT_MS);
 
     frame.onload = () => {
       if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      THU_VIEN_EMBED_URL = url;
-      frame.dataset.loaded = '1';
-      frame.classList.remove('d-none');
-      loading?.classList.add('d-none');
+      setThuVienStatus(
+        '<i class="fas fa-spinner fa-spin me-1 text-primary"></i> ' +
+        'Đang mở dữ liệu (~30MB, có thể mất 1–2 phút)…'
+      );
+      waitThuVienAppReady().then(() => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        THU_VIEN_EMBED_URL = url;
+        frame.dataset.loaded = '1';
+        frame.classList.remove('d-none');
+        hideThuVienOverlay();
+      }).catch(() => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        frame.removeAttribute('data-app-ready');
+        frame.onload = null;
+        tryUrlAt(urls, index + 1, bust);
+      });
     };
     frame.onerror = () => {
       if (settled) return;
@@ -6005,22 +8113,26 @@ function loadThuVienFrame(forceReload) {
       showLoadError([]);
       return;
     }
-    if (forceReload) frame.removeAttribute('data-loaded');
-    if (frame.dataset.loaded === '1' && THU_VIEN_EMBED_URL && !forceReload) {
+    if (forceReload) {
+      frame.removeAttribute('data-loaded');
+      frame.removeAttribute('data-app-ready');
+      THU_VIEN_EMBED_URL = '';
+    }
+    if (frame.dataset.loaded === '1' && frame.dataset.appReady === '1' && THU_VIEN_EMBED_URL && !forceReload) {
       frame.classList.remove('d-none');
-      loading?.classList.add('d-none');
+      hideThuVienOverlay();
       return;
     }
     const bust = forceReload ? ((list[0].indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now()) : '';
     tryUrlAt(list, 0, bust);
   };
 
-  if (THU_VIEN_EMBED_URL && !forceReload) {
-    start([THU_VIEN_EMBED_URL]);
-    return;
-  }
-  // Tải iframe ngay bằng URL mặc định; không chặn chờ server (log warden IDLE/BUSY là bình thường).
-  start(THU_VIEN_DEFAULT_URLS);
+  showThuVienOverlay();
+  setThuVienStatus('<i class="fas fa-spinner fa-spin me-1 text-primary"></i> Đang kết nối máy chủ thư viện…');
+
+  fetchThuVienUrlsFromServer().then((urls) => {
+    start(urls);
+  });
 }
 
 function reloadThuVienFrame(force) {
@@ -6103,11 +8215,9 @@ function getClinicalWorkflowIndex() {
 function showClinicalWorkflowStep(index) {
   if (index < 0 || index >= WORKFLOW_TAB_IDS.length) return;
   document.body.setAttribute('data-staff-root', 'dd');
-  document.getElementById('section-dd-pack')?.classList.remove('d-none');
-  document.getElementById('section-thu-vien-pack')?.classList.add('d-none');
+  _activateStaffPanel_('dd');
+  _clearStaffSidebarActive_();
   document.getElementById('sidebarNavDd')?.classList.add('active');
-  document.getElementById('sidebarNavQt')?.classList.remove('active');
-  document.getElementById('sidebarNavTv')?.classList.remove('active');
 
   const btn = document.getElementById(WORKFLOW_TAB_IDS[index]);
   if (!btn || btn.classList.contains('d-none')) return;
@@ -6121,17 +8231,17 @@ function showClinicalWorkflowStep(index) {
   toggleClinicalSummaryUI_(index <= 4);
   runClinicalStepHooks(index);
   updateClinicalWorkflowChrome();
+  saveLastNav_({ root: 'dd', clinicalStep: index });
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function showAppModule(moduleNumber) {
   if (moduleNumber === 7) {
     document.body.setAttribute('data-staff-root', 'qt');
-    document.getElementById('section-dd-pack')?.classList.remove('d-none');
-    document.getElementById('section-thu-vien-pack')?.classList.add('d-none');
-    document.getElementById('sidebarNavDd')?.classList.remove('active');
+    _activateStaffPanel_('dd');
+    _clearStaffSidebarActive_();
     document.getElementById('sidebarNavQt')?.classList.add('active');
-    document.getElementById('sidebarNavTv')?.classList.remove('active');
+    saveLastNav_({ root: 'qt' });
   }
 
   if (moduleNumber >= 1 && moduleNumber <= WORKFLOW_TAB_IDS.length) {
@@ -6422,16 +8532,21 @@ function initClinicalWorkflowNav() {
 
 // Gọi khi khởi động: Check Login + Theme
 document.addEventListener('DOMContentLoaded', () => {
-    const savedTheme = localStorage.getItem('PC_THEME') || 'PC_STANDARD';
-    applyTheme(savedTheme);
-    renderDrugAllergyList();
-    toggleLegalRepRequiredHint();
-    checkLoginSession();
+    try {
+      const savedTheme = localStorage.getItem('PC_THEME') || 'PC_STANDARD';
+      applyTheme(savedTheme);
+    } catch (e) { console.warn('applyTheme', e); }
+    try { initSidebarPin_(); } catch (e) { console.warn('initSidebarPin_', e); }
+    try { renderDrugAllergyList(); } catch (e) { console.warn('renderDrugAllergyList', e); }
+    try { toggleLegalRepRequiredHint(); } catch (e) { console.warn('toggleLegalRepRequiredHint', e); }
+    try { bindLoginUi_(); } catch (e) { console.error('bindLoginUi_', e); }
+    try { checkLoginSession(); } catch (e) { console.error('checkLoginSession', e); }
+    try { pingAuthStatus_(); } catch (e) { console.error('pingAuthStatus_', e); }
     if (typeof google !== 'undefined' && google.script) {
       google.script.run.withSuccessHandler((url) => {
         const a = document.getElementById('cdssWebAppLink');
         if (a && url) { a.href = url; }
-      }).getPublicWebAppUrl();
+      }).withFailureHandler(() => {}).getPublicWebAppUrl();
     }
     document.getElementById('gioiTinh')?.addEventListener('change', () => {
       calcWHR();

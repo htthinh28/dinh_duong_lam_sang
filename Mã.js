@@ -11,11 +11,17 @@
 // ============================================================================
 
 function doGet() {
-  return HtmlService.createTemplateFromFile('index')
-    .evaluate()
+  var tpl = HtmlService.createTemplateFromFile('index');
+  tpl.THU_VIEN_CDN_URL = getThuVienCdnUrl_();
+  return tpl.evaluate()
     .setTitle('CDSS — Hỗ trợ ra quyết định lâm sàng')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/** URL CDN thư viện (nhánh gh-pages — không cần bật GitHub Pages). */
+function getThuVienCdnUrl_() {
+  return "https://cdn.statically.io/gh/htthinh28/dinh_duong_lam_sang@gh-pages/index.html";
 }
 
 function include(filename) {
@@ -32,11 +38,29 @@ function getPublicWebAppUrl() {
   }
 }
 
+/** Tự thêm THU_VIEN_URL vào SYS_CONFIG nếu sheet cũ chưa có dòng này. */
+function ensureThuVienUrlInSheet_() {
+  try {
+    var ss = getDatabase();
+    var sheet = ss.getSheetByName("SYS_CONFIG");
+    if (!sheet) return;
+    var data = sheet.getDataRange().getValues();
+    var i;
+    for (i = 1; i < data.length; i++) {
+      if (String(data[i][0]).trim() === "THU_VIEN_URL") return;
+    }
+    sheet.appendRow(["THU_VIEN_URL", getThuVienCdnUrl_(), "URL nhúng thư viện tra cứu", "TEXT"]);
+  } catch (e) {
+    Logger.log("ensureThuVienUrlInSheet_: " + e);
+  }
+}
+
 /** Danh sách URL host thư viện (thử lần lượt nếu iframe lỗi). */
 function getThuVienEmbedUrls() {
+  ensureThuVienUrlInSheet_();
   var defaults = [
-    "https://htthinh28.github.io/dinh_duong_lam_sang/",
-    "https://cdn.jsdelivr.net/gh/htthinh28/dinh_duong_lam_sang@main/thu-vien/index.html"
+    getThuVienCdnUrl_(),
+    "https://htthinh28.github.io/dinh_duong_lam_sang/"
   ];
   var urls = [];
   var custom = "";
@@ -71,7 +95,7 @@ function getThuVienEmbedUrls() {
 /** URL trang thư viện (tương thích cũ). */
 function getThuVienEmbedUrl() {
   var list = getThuVienEmbedUrls();
-  return list.length ? list[0] : "https://htthinh28.github.io/dinh_duong_lam_sang/";
+  return list.length ? list[0] : getThuVienCdnUrl_();
 }
 
 /**
@@ -135,6 +159,26 @@ function resolveSpreadsheetDbId_() {
 }
 
 /**
+ * Mở spreadsheet trung tâm — KHÔNG migrate schema.
+ * Dùng cho đăng nhập / ping để tránh timeout hoặc lỗi RESEARCH_NC chặn auth.
+ */
+function openCentralSpreadsheet_() {
+  var id = resolveSpreadsheetDbId_();
+  if (id) {
+    try {
+      return SpreadsheetApp.openById(id);
+    } catch (e) {
+      throw new Error("Không mở được Google Sheet ID đã cấu hình. Kiểm tra quyền tài khoản chạy web app. " + (e.message || e));
+    }
+  }
+  var dbName = "DB_DinhDuong_PhuongChau";
+  var files = DriveApp.getFilesByName(dbName);
+  if (files.hasNext()) return SpreadsheetApp.open(files.next());
+  // Chưa có DB → khởi tạo đầy đủ một lần
+  return getDatabase();
+}
+
+/**
  * Kết nối đến File Google Sheet trung tâm.
  * Khi DEFAULT_DB_SPREADSHEET_ID (hoặc DB_SPREADSHEET_ID) được đặt: mọi API (lưu hồ sơ, đăng nhập, CRUD, cấu hình…)
  * đều đọc/ghi trên đúng file đó — có thể coi là cập nhật thẳng lên sheet đã chia sẻ.
@@ -172,8 +216,18 @@ function getDatabase() {
 }
 
 function migrateDatabaseIfNeeded(ss) {
-  var rec = ss.getSheetByName("RECORDS");
-  if (rec) ensureRecordsSchema_(rec);
+  try {
+    var rec = ss.getSheetByName("RECORDS");
+    if (rec) ensureRecordsSchema_(rec);
+  } catch (e) {
+    Logger.log("migrate RECORDS: " + e);
+  }
+  try {
+    ensureResearchNcSheet_(ss);
+  } catch (e) {
+    // Không để migrate RESEARCH_NC chặn đăng nhập / API khác
+    Logger.log("migrate RESEARCH_NC: " + e);
+  }
 }
 
 /**
@@ -257,7 +311,7 @@ function setupDatabaseStructure(ss, options) {
     let s = ss.insertSheet("SYS_CONFIG");
     s.appendRow(["Key", "Value", "Description", "Type"]);
     s.appendRow(["HOSPITAL_NAME", "ỨNG DỤNG HỖ TRỢ RA QUYẾT ĐỊNH LÂM SÀNG (CDSS)", "Tên hiển thị", "TEXT"]);
-    s.appendRow(["THU_VIEN_URL", "https://htthinh28.github.io/dinh_duong_lam_sang/", "URL nhúng thư viện tra cứu", "TEXT"]);
+    s.appendRow(["THU_VIEN_URL", getThuVienCdnUrl_(), "URL nhúng thư viện tra cứu", "TEXT"]);
     s.appendRow(["MODULE_1_ACTIVE", "TRUE", "Bật module Tiếp nhận", "BOOLEAN"]);
     s.setFrozenRows(1);
   }
@@ -290,6 +344,13 @@ function setupDatabaseStructure(ss, options) {
     let s = ss.insertSheet("RECORDS_AUDIT_ALL");
     s.appendRow(["Timestamp", "PatientID", "PatientName", "Doctor", "DietCode", "Snapshot_JSON"]);
     s.setFrozenRows(1);
+  }
+
+  // 10. Sheet RESEARCH_NC — Phiếu thu thập số liệu nghiên cứu (mã phẳng)
+  if (!ss.getSheetByName("RESEARCH_NC")) {
+    var sNc = ss.insertSheet("RESEARCH_NC");
+    sNc.appendRow(getResearchNcHeaders_());
+    sNc.setFrozenRows(1);
   }
 
   if (!preserveSheet1) {
@@ -357,59 +418,266 @@ function ensureUsersSchema_(sheet) {
     "CreatedAt", "UpdatedAt", "ResetCode", "ResetCodeExpireAt"
   ];
   var lc = sheet.getLastColumn();
-  if (lc < 1) return;
+  if (lc < 1) {
+    sheet.appendRow(requiredHeaders);
+    try { sheet.getRange(1, 2, Math.max(2, sheet.getMaxRows()), 2).setNumberFormat("@"); } catch (_) {}
+    return;
+  }
   var headers = sheet.getRange(1, 1, 1, lc).getValues()[0].map(function (h) { return String(h).trim(); });
-  // Sửa các header cũ/lệch phổ biến theo vị trí chuẩn để đảm bảo map dữ liệu ổn định.
-  if (headers[8] === "Phone") sheet.getRange(1, 9).setValue("PracticeCertificate");
-  if (headers[9] && headers[9].toLowerCase() === "practicescope") sheet.getRange(1, 10).setValue("PracticeScope");
+  // Chỉ sửa header lệch phổ biến khi đúng vị trí cột 9–10 (index 8–9) và giá trị rõ ràng sai.
+  if (headers[7] === "JobTitle" && headers[8] === "Phone" && headers[9] === "Phone") {
+    sheet.getRange(1, 10).setValue("PracticeScope");
+  }
   requiredHeaders.forEach(function (header) {
     if (headers.indexOf(header) === -1) {
       sheet.getRange(1, sheet.getLastColumn() + 1).setValue(header);
+      headers.push(header);
     }
   });
+  try {
+    var passIdx = headers.indexOf("Password");
+    if (passIdx >= 0) sheet.getRange(1, passIdx + 1, Math.max(2, sheet.getMaxRows()), passIdx + 1).setNumberFormat("@");
+  } catch (_) {}
 }
 
-// ============================================================================
-// --- 3. SECURITY: QUẢN LÝ NGƯỜI DÙNG (USER MANAGEMENT) ---
-// ============================================================================
+/** Chuẩn hóa mật khẩu đọc từ ô Sheets (số / ngày / chuỗi). */
+function normalizePasswordValue_(value, displayOpt) {
+  var disp = displayOpt != null ? String(displayOpt).trim() : "";
+  if (value == null || value === "") return disp;
+  if (Object.prototype.toString.call(value) === "[object Date]") {
+    return disp || Utilities.formatDate(value, Session.getScriptTimeZone(), "yyyyMMdd");
+  }
+  if (typeof value === "number") {
+    if (!isFinite(value)) return disp;
+    // Tránh 1.23456E+10 — dùng display nếu có và hợp lý
+    if (disp && disp.indexOf("E") < 0 && disp.indexOf("e") < 0) return disp;
+    if (Math.abs(value - Math.round(value)) < 1e-9) return String(Math.round(value));
+    return String(value);
+  }
+  var s = String(value).trim();
+  // Sheets đôi khi thêm dấu ' đầu chuỗi văn bản
+  if (s.charAt(0) === "'") s = s.substring(1);
+  return s;
+}
 
-/**
- * API Đăng nhập hệ thống
- */
-function loginUser(email, password) {
-  const ss = getDatabase();
-  const sheet = ss.getSheetByName("USERS");
-  // Tự động sửa lỗi nếu sheet bị xóa
-  if (!sheet) { setupDatabaseStructure(ss); return { error: "Hệ thống đang bảo trì DB. Thử lại sau 1 phút." }; }
+function normalizeEmailValue_(value) {
+  return String(value == null ? "" : value).trim().toLowerCase();
+}
 
-  const data = sheet.getDataRange().getValues();
-  
-  // Duyệt qua danh sách (Bỏ header dòng 0)
-  for (let i = 1; i < data.length; i++) {
-    // So sánh chuỗi (String comparison) để tránh lỗi format
-    if (String(data[i][0]).trim() == String(email).trim() && String(data[i][1]).trim() == String(password).trim()) {
-      
-      if (String(data[i][4]).trim() === "PENDING_APPROVAL") {
-        writeAppLog_("AUTH", "LOGIN", email, email, { reason: "PENDING_APPROVAL" }, "FAILED", ss);
-        return { error: "Tài khoản đang chờ quản trị duyệt. Vui lòng liên hệ quản trị hoặc đợi phản hồi email." };
-      }
-      if (data[i][4] !== 'ACTIVE') {
-        writeAppLog_("AUTH", "LOGIN", email, email, { reason: "LOCKED_OR_INACTIVE" }, "FAILED", ss);
-        return { error: "Tài khoản đã bị KHÓA hoặc chưa kích hoạt." };
-      }
-      
-      // Cập nhật LastLogin (Cột 6 - index 5)
-      sheet.getRange(i + 1, 6).setValue(new Date());
-      writeAppLog_("AUTH", "LOGIN", email, email, { role: data[i][3] }, "SUCCESS", ss);
-      
-      return { 
-        success: true, 
-        user: { email: data[i][0], name: data[i][2], role: data[i][3] } 
-      };
+function normalizeHeaderKey_(value) {
+  return String(value == null ? "" : value)
+    .replace(/^\uFEFF/, "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "");
+}
+
+function normalizeUserStatus_(value) {
+  var status = String(value == null ? "" : value).trim().toUpperCase();
+  if (!status) return "ACTIVE";
+  if (status === "1" || status === "YES" || status === "Y" || status === "OK" || status === "ENABLED") return "ACTIVE";
+  return status;
+}
+
+/** So khớp mật khẩu — thử mọi biến thể Sheets hay gặp (số, display, dấu '). */
+function passwordsMatch_(rawValue, displayValue, inputPass) {
+  var passIn = String(inputPass == null ? "" : inputPass).trim();
+  if (!passIn) return false;
+
+  var candidates = [];
+  function pushCandidate(v) {
+    if (v == null || v === "") return;
+    var s = String(v).trim();
+    if (!s) return;
+    if (candidates.indexOf(s) < 0) candidates.push(s);
+    if (s.charAt(0) === "'") {
+      var stripped = s.substring(1);
+      if (stripped && candidates.indexOf(stripped) < 0) candidates.push(stripped);
     }
   }
-  writeAppLog_("AUTH", "LOGIN", email, email, { reason: "INVALID_CREDENTIALS" }, "FAILED", ss);
-  return { error: "Sai Email hoặc Mật khẩu!" };
+
+  pushCandidate(normalizePasswordValue_(rawValue, displayValue));
+  pushCandidate(displayValue);
+  pushCandidate(rawValue);
+  if (typeof rawValue === "number" && isFinite(rawValue)) {
+    pushCandidate(String(rawValue));
+    if (Math.abs(rawValue - Math.round(rawValue)) < 1e-9) pushCandidate(String(Math.round(rawValue)));
+  }
+
+  for (var i = 0; i < candidates.length; i++) {
+    if (candidates[i] === passIn) return true;
+  }
+  return false;
+}
+
+/** Ghi log auth nhẹ — không tạo sheet / migrate khi đăng nhập. */
+function writeAuthLogLite_(ss, eventType, action, actor, target, details, status) {
+  try {
+    if (!ss) return;
+    var sheet = ss.getSheetByName("APP_LOGS");
+    if (!sheet) return;
+    var detailsJson = "";
+    try { detailsJson = JSON.stringify(details || {}); } catch (_) { detailsJson = String(details || ""); }
+    sheet.appendRow([
+      new Date(),
+      String(eventType || "AUTH"),
+      String(action || ""),
+      String(actor || ""),
+      String(target || ""),
+      String(status || "INFO"),
+      detailsJson
+    ]);
+  } catch (e) {
+    Logger.log("writeAuthLogLite_ failed: " + e);
+  }
+}
+
+/**
+ * RPC siêu nhẹ — không đụng Spreadsheet.
+ * Dùng để phân biệt: google.script.run bị treo vs lỗi Database.
+ */
+function rpcEcho() {
+  return {
+    ok: true,
+    echo: true,
+    t: Date.now(),
+    release: "5.8.7"
+  };
+}
+
+/**
+ * API Đăng nhập hệ thống — read-only, không migrate/format sheet (tránh timeout).
+ */
+function loginUser(email, password) {
+  try {
+    var emailIn = normalizeEmailValue_(email);
+    var passIn = String(password == null ? "" : password).trim();
+    if (!emailIn || !passIn) return { error: "Vui lòng nhập email và mật khẩu.", code: "MISSING_INPUT" };
+
+    var ss = openCentralSpreadsheet_();
+    var sheet = ss.getSheetByName("USERS");
+    if (!sheet) return { error: "Không tìm thấy bảng USERS trong Database.", code: "NO_USERS_SHEET" };
+
+    var lastCol = sheet.getLastColumn();
+    var lastRow = sheet.getLastRow();
+    if (lastRow < 2 || lastCol < 1) return { error: "Chưa có tài khoản trong hệ thống.", code: "NO_USERS" };
+
+    var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    var idxMap = getUsersColumnIndexMap_(headers);
+    var cEmail = resolveUsersColumnIndex_(headers, idxMap, "Email", 0);
+    var cPass = resolveUsersColumnIndex_(headers, idxMap, "Password", 1);
+    var cName = resolveUsersColumnIndex_(headers, idxMap, "FullName", 2);
+    var cRole = resolveUsersColumnIndex_(headers, idxMap, "Role", 3);
+    var cStatus = resolveUsersColumnIndex_(headers, idxMap, "Status", 4);
+    var cLast = resolveUsersColumnIndex_(headers, idxMap, "LastLogin", 5);
+
+    if (cEmail < 0 || cPass < 0) {
+      return {
+        error: "Bảng USERS thiếu cột Email hoặc Password. Header dòng 1: " + headers.join(" | "),
+        code: "BAD_HEADERS"
+      };
+    }
+
+    var values = sheet.getRange(2, 1, lastRow, lastCol).getValues();
+    var displays = sheet.getRange(2, 1, lastRow, lastCol).getDisplayValues();
+
+    for (var i = 0; i < values.length; i++) {
+      var rowEmail = normalizeEmailValue_(values[i][cEmail]);
+      if (!rowEmail) continue;
+      if (rowEmail !== emailIn) continue;
+
+      if (!passwordsMatch_(values[i][cPass], displays[i][cPass], passIn)) continue;
+
+      var status = normalizeUserStatus_(getCellSafe_(values[i], cStatus));
+
+      if (status === "PENDING_APPROVAL") {
+        writeAuthLogLite_(ss, "AUTH", "LOGIN", emailIn, emailIn, { reason: "PENDING_APPROVAL" }, "FAILED");
+        return { error: "Tài khoản đang chờ quản trị duyệt. Vui lòng liên hệ quản trị.", code: "PENDING" };
+      }
+      if (status !== "ACTIVE") {
+        writeAuthLogLite_(ss, "AUTH", "LOGIN", emailIn, emailIn, { reason: "INACTIVE", status: status }, "FAILED");
+        return { error: "Tài khoản đã bị KHÓA hoặc chưa kích hoạt (Status=" + status + ").", code: "INACTIVE" };
+      }
+
+      try {
+        if (cLast >= 0) sheet.getRange(i + 2, cLast + 1).setValue(new Date());
+      } catch (_) {}
+      writeAuthLogLite_(ss, "AUTH", "LOGIN", emailIn, emailIn, { role: getCellSafe_(values[i], cRole) }, "SUCCESS");
+
+      return {
+        success: true,
+        user: {
+          email: String(getCellSafe_(values[i], cEmail)).trim(),
+          name: String(getCellSafe_(values[i], cName) || "").trim(),
+          role: String(getCellSafe_(values[i], cRole) || "USER").trim()
+        }
+      };
+    }
+
+    writeAuthLogLite_(ss, "AUTH", "LOGIN", emailIn, emailIn, { reason: "INVALID_CREDENTIALS" }, "FAILED");
+    return { error: "Sai Email hoặc Mật khẩu!", code: "BAD_CREDENTIALS" };
+  } catch (e) {
+    Logger.log("loginUser error: " + e);
+    return { error: "Lỗi đăng nhập: " + (e.message || String(e)), code: "SERVER_ERROR" };
+  }
+}
+
+/**
+ * Kiểm tra nhanh đường ống auth (gọi từ màn login).
+ * Giữ nhẹ: chỉ đọc header + đếm dòng, không migrate.
+ */
+function pingAuth() {
+  try {
+    var ss = openCentralSpreadsheet_();
+    var sheet = ss.getSheetByName("USERS");
+    var userCount = 0;
+    var activeCount = 0;
+    var headers = [];
+    var columns = { email: -1, password: -1, status: -1 };
+    if (sheet) {
+      var lastCol = sheet.getLastColumn();
+      var lastRow = sheet.getLastRow();
+      if (lastCol > 0 && lastRow > 0) {
+        headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function (h) {
+          return String(h || "").replace(/^\uFEFF/, "").trim();
+        });
+        var idxMap = getUsersColumnIndexMap_(headers);
+        columns.email = resolveUsersColumnIndex_(headers, idxMap, "Email", 0);
+        columns.password = resolveUsersColumnIndex_(headers, idxMap, "Password", 1);
+        columns.status = resolveUsersColumnIndex_(headers, idxMap, "Status", 4);
+        if (lastRow >= 2) {
+          userCount = lastRow - 1;
+          // Đếm ACTIVE tối đa 200 dòng đầu để tránh chậm
+          var scanTo = Math.min(lastRow, 201);
+          var statusCol = columns.status;
+          if (statusCol >= 0) {
+            var statuses = sheet.getRange(2, statusCol + 1, scanTo, statusCol + 1).getValues();
+            for (var i = 0; i < statuses.length; i++) {
+              if (normalizeUserStatus_(statuses[i][0]) === "ACTIVE") activeCount++;
+            }
+          } else {
+            activeCount = userCount;
+          }
+        }
+      }
+    }
+    var eff = "";
+    try { eff = Session.getEffectiveUser().getEmail() || ""; } catch (_) {}
+    return {
+      ok: true,
+      spreadsheetId: ss.getId(),
+      spreadsheetName: ss.getName(),
+      usersSheet: !!sheet,
+      userCount: userCount,
+      activeCount: activeCount,
+      columns: columns,
+      headers: headers.slice(0, 10),
+      effectiveUser: eff,
+      release: "5.8.7"
+    };
+  } catch (e) {
+    return { ok: false, error: e.message || String(e), release: "5.8.7" };
+  }
 }
 
 /**
@@ -455,20 +723,43 @@ function createNewUser(data) {
  * API Đổi mật khẩu
  */
 function changeUserPassword(email, oldPass, newPass) {
-  const ss = getDatabase();
-  const sheet = ss.getSheetByName("USERS");
-  const data = sheet.getDataRange().getValues();
-  
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]) == String(email)) {
-      if (String(data[i][1]) != String(oldPass)) return { error: "Mật khẩu cũ không đúng!" };
-      sheet.getRange(i + 1, 2).setValue(newPass);
-      writeAppLog_("USER", "CHANGE_PASSWORD", email, email, {}, "SUCCESS", ss);
+  try {
+    var ss = openCentralSpreadsheet_();
+    var sheet = ss.getSheetByName("USERS");
+    if (!sheet) return { error: "Không tìm thấy bảng USERS." };
+
+    var lastCol = sheet.getLastColumn();
+    var lastRow = sheet.getLastRow();
+    if (lastRow < 2) return { error: "Chưa có tài khoản." };
+
+    var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    var idxMap = getUsersColumnIndexMap_(headers);
+    var cEmail = resolveUsersColumnIndex_(headers, idxMap, "Email", 0);
+    var cPass = resolveUsersColumnIndex_(headers, idxMap, "Password", 1);
+    if (cEmail < 0 || cPass < 0) return { error: "Sheet USERS thiếu cột Email hoặc Password." };
+
+    var emailIn = normalizeEmailValue_(email);
+    var oldIn = String(oldPass == null ? "" : oldPass).trim();
+    var newIn = String(newPass == null ? "" : newPass).trim();
+    if (!emailIn || !oldIn || !newIn) return { error: "Thiếu thông tin đổi mật khẩu." };
+
+    var values = sheet.getRange(2, 1, lastRow, lastCol).getValues();
+    var displays = sheet.getRange(2, 1, lastRow, lastCol).getDisplayValues();
+
+    for (var i = 0; i < values.length; i++) {
+      if (normalizeEmailValue_(values[i][cEmail]) !== emailIn) continue;
+      if (!passwordsMatch_(values[i][cPass], displays[i][cPass], oldIn)) {
+        return { error: "Mật khẩu cũ không đúng!" };
+      }
+      sheet.getRange(i + 2, cPass + 1).setValue(newIn);
+      writeAuthLogLite_(ss, "USER", "CHANGE_PASSWORD", emailIn, emailIn, {}, "SUCCESS");
       return { success: true, message: "Đổi mật khẩu thành công!" };
     }
+    writeAuthLogLite_(ss, "USER", "CHANGE_PASSWORD", emailIn, emailIn, { reason: "ACCOUNT_NOT_FOUND" }, "FAILED");
+    return { error: "Không tìm thấy tài khoản." };
+  } catch (e) {
+    return { error: "Lỗi đổi mật khẩu: " + (e.message || String(e)) };
   }
-  writeAppLog_("USER", "CHANGE_PASSWORD", email, email, { reason: "ACCOUNT_NOT_FOUND" }, "FAILED", ss);
-  return { error: "Không tìm thấy tài khoản." };
 }
 
 /**
@@ -498,20 +789,25 @@ function adminUserAction(targetEmail, action) {
 
 function getUsersColumnIndexMap_(headers) {
   var map = {};
-  headers.forEach(function (h, i) { map[String(h).trim()] = i; });
+  headers.forEach(function (h, i) {
+    var raw = String(h == null ? "" : h).replace(/^\uFEFF/, "").trim();
+    if (raw) map[raw] = i;
+    var nk = normalizeHeaderKey_(h);
+    if (nk) map[nk] = i;
+  });
   return map;
 }
 
 function resolveUsersColumnIndex_(headers, map, key, fallbackIndex) {
   var aliases = {
-    Email: ["Email"],
-    Password: ["Password"],
-    FullName: ["FullName", "Full Name", "HoTen"],
-    Role: ["Role"],
-    Status: ["Status"],
-    LastLogin: ["LastLogin", "Last Login"],
-    JobTitle: ["JobTitle", "Job Title", "ChucDanh"],
-    Phone: ["Phone", "PhoneNumber", "SoDienThoai"],
+    Email: ["Email", "E-mail", "Mail", "Username", "TaiKhoan", "User"],
+    Password: ["Password", "Pass", "MatKhau", "Mat khau"],
+    FullName: ["FullName", "Full Name", "HoTen", "Ho ten", "Name"],
+    Role: ["Role", "VaiTro", "Quyen"],
+    Status: ["Status", "TrangThai", "Trang thai", "State"],
+    LastLogin: ["LastLogin", "Last Login", "DangNhapCuoi"],
+    JobTitle: ["JobTitle", "Job Title", "ChucDanh", "Chuc danh"],
+    Phone: ["Phone", "PhoneNumber", "SoDienThoai", "So dien thoai", "SDT"],
     PracticeCertificate: ["PracticeCertificate", "PracticeCertifica", "Certificate", "ChungChiHanhNghe"],
     PracticeScope: ["PracticeScope", "Practice Scope", "PhamViHanhNghe"],
     CreatedAt: ["CreatedAt", "Created At"],
@@ -522,6 +818,8 @@ function resolveUsersColumnIndex_(headers, map, key, fallbackIndex) {
   var names = aliases[key] || [key];
   for (var i = 0; i < names.length; i++) {
     if (map[names[i]] != null) return map[names[i]];
+    var nk = normalizeHeaderKey_(names[i]);
+    if (map[nk] != null) return map[nk];
   }
   // Fallback theo vị trí chuẩn khi header bị lỗi.
   if (fallbackIndex != null && fallbackIndex < headers.length) return fallbackIndex;
@@ -910,6 +1208,212 @@ function searchPatientHistory(keyword) {
       fullSnapshotJson: row[idx.FullSnapshot_JSON != null ? idx.FullSnapshot_JSON : -1] || ""
     };
   });
+}
+
+/**
+ * Danh sách cột phẳng sheet RESEARCH_NC (mã trường = header).
+ */
+function getResearchNcHeaders_() {
+  return [
+    "Timestamp", "RecordID", "SavedBy", "SavedByEmail",
+    "nc_id_nghien_cuu", "nc_ngay_thu_thap", "nc_nguoi_thu_thap", "nc_dong_thuan",
+    "nc_ho_ten_viet_tat", "nc_nam_sinh", "nc_gioi_tinh", "nc_hoc_van", "nc_nghe_nghiep",
+    "nc_mach", "nc_ha_tam_thu", "nc_ha_tam_truong", "nc_tha_nhom",
+    "nc_chieu_cao_cm", "nc_can_nang_kg", "nc_bmi", "nc_bmi_nhom",
+    "nc_thoi_gian_pt_dtd2_y",
+    "nc_tx_oad", "nc_tx_oad_su", "nc_tx_oad_met", "nc_tx_oad_dpp4", "nc_tx_oad_glp1_uong", "nc_tx_oad_glp1_tiem", "nc_tx_oad_sglt2", "nc_tx_oad_acarbose",
+    "nc_tx_insulin", "nc_tx_ins_nen", "nc_tx_ins_tron", "nc_tx_ins_basal_bolus", "nc_tx_phoi_hop",
+    "nc_bc_than_man", "nc_bc_vong_mac", "nc_bc_than_kinh", "nc_bc_tim_mach", "nc_bc_chua_ghi_nhan",
+    "nc_fpg_mmol", "nc_hba1c_pct",
+    "nc_cholesterol", "nc_triglyceride", "nc_hdl_c", "nc_ldl_c", "nc_hba1c_dat_muc_tieu",
+    "nc_stop_bang_tong", "nc_stop_bang_nhom",
+    "nc_stop_s", "nc_stop_t", "nc_stop_o", "nc_stop_p", "nc_stop_b", "nc_stop_a", "nc_stop_n", "nc_stop_g",
+    "nc_phq9_tong", "nc_phq9_nhom",
+    "nc_phq9_1", "nc_phq9_2", "nc_phq9_3", "nc_phq9_4", "nc_phq9_5", "nc_phq9_6", "nc_phq9_7", "nc_phq9_8", "nc_phq9_9",
+    "nc_psqi_q1_gio_len_giuong", "nc_psqi_q2_phut_chim_ngu", "nc_psqi_q3_gio_thuc_day", "nc_psqi_q4_gio_ngu",
+    "nc_psqi_q5a", "nc_psqi_q5b", "nc_psqi_q5c", "nc_psqi_q5d", "nc_psqi_q5e",
+    "nc_psqi_q5f", "nc_psqi_q5g", "nc_psqi_q5h", "nc_psqi_q5i", "nc_psqi_q5j", "nc_psqi_q5j_ly_do",
+    "nc_psqi_q6", "nc_psqi_q7", "nc_psqi_q8", "nc_psqi_q9",
+    "nc_psqi_c1", "nc_psqi_c2", "nc_psqi_c3", "nc_psqi_c4", "nc_psqi_c5", "nc_psqi_c6", "nc_psqi_c7",
+    "nc_psqi_tong", "nc_psqi_hieu_suat", "nc_psqi_ket_luan"
+  ];
+}
+
+function ensureResearchNcSheet_(ssOpt) {
+  var ss = ssOpt || getDatabase();
+  var sheet = ss.getSheetByName("RESEARCH_NC");
+  var headers = getResearchNcHeaders_();
+  if (!sheet) {
+    sheet = ss.insertSheet("RESEARCH_NC");
+    sheet.appendRow(headers);
+    sheet.setFrozenRows(1);
+    return sheet;
+  }
+  var lastCol = sheet.getLastColumn();
+  var cur = lastCol > 0
+    ? sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function (h) { return String(h).trim(); })
+    : [];
+  var missing = [];
+  headers.forEach(function (h) {
+    if (cur.indexOf(h) === -1) missing.push(h);
+  });
+  if (missing.length) {
+    // Ghi một lần thay vì từng cột — tránh timeout khi đăng nhập
+    var startCol = Math.max(1, sheet.getLastColumn() + 1);
+    sheet.getRange(1, startCol, 1, startCol + missing.length - 1).setValues([missing]);
+  }
+  return sheet;
+}
+
+/**
+ * Lưu phiếu thu thập NC — 1 dòng phẳng trên RESEARCH_NC.
+ * @param {string} flatJson object mã phẳng nc_*
+ */
+function saveResearchNcForm(flatJson) {
+  try {
+    var data = {};
+    try { data = JSON.parse(flatJson || "{}"); } catch (_) { return { error: "Dữ liệu không hợp lệ." }; }
+    if (!data.nc_id_nghien_cuu && !data.nc_ho_ten_viet_tat) {
+      return { error: "Thiếu Mã ID nghiên cứu hoặc họ tên." };
+    }
+    var ss = getDatabase();
+    var sheet = ensureResearchNcSheet_(ss);
+    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(function (h) { return String(h).trim(); });
+    var recordId = data.RecordID || data.nc_record_id || ("NC" + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyyMMddHHmmss"));
+    var row = headers.map(function (h) {
+      if (h === "Timestamp") return new Date();
+      if (h === "RecordID") return recordId;
+      if (h === "SavedBy") return data.SavedBy || "";
+      if (h === "SavedByEmail") return data.SavedByEmail || "";
+      if (h === "nc_id_nghien_cuu" && data[h]) return "'" + String(data[h]).replace(/'/g, "");
+      return data[h] != null ? data[h] : "";
+    });
+    sheet.appendRow(row);
+    writeAppLog_("RESEARCH", "SAVE_NC_FORM", data.SavedBy || "System", data.nc_id_nghien_cuu || "", { recordId: recordId }, "SUCCESS", ss);
+    return { ok: true, recordId: recordId };
+  } catch (e) {
+    writeAppLog_("RESEARCH", "SAVE_NC_FORM", "System", "", { error: e.toString() }, "FAILED");
+    return { error: e.toString() };
+  }
+}
+
+/**
+ * Thống kê nhanh sheet RECORDS (màn Thu thập số liệu nghiên cứu).
+ */
+function getResearchRecordsStats() {
+  try {
+    const ss = getDatabase();
+    ensureResearchNcSheet_(ss);
+    const sheet = ss.getSheetByName("RESEARCH_NC");
+    if (!sheet) return { total: 0 };
+    const last = sheet.getLastRow();
+    return { total: Math.max(0, last - 1) };
+  } catch (e) {
+    return { error: e.toString(), total: 0 };
+  }
+}
+
+/**
+ * Truy vấn hồ sơ RECORDS để xuất nghiên cứu (lọc ngày / từ khóa / giới hạn dòng).
+ * @param {string} optionsJson { fromDate, toDate, keyword, limit }
+ */
+function getResearchRecordsForExport(optionsJson) {
+  try {
+    var opts = {};
+    try { opts = JSON.parse(optionsJson || "{}"); } catch (_) {}
+    var fromDate = opts.fromDate ? new Date(String(opts.fromDate) + "T00:00:00") : null;
+    var toDate = opts.toDate ? new Date(String(opts.toDate) + "T23:59:59.999") : null;
+    var keyword = String(opts.keyword || "").trim().toLowerCase();
+    var limit = Math.min(Math.max(parseInt(opts.limit, 10) || 500, 1), 2000);
+
+    const ss = getDatabase();
+    ensureResearchNcSheet_(ss);
+    const sheet = ss.getSheetByName("RESEARCH_NC");
+    if (!sheet) return { error: "Không tìm thấy bảng RESEARCH_NC.", rows: [], total: 0 };
+
+    const data = sheet.getDataRange().getValues();
+    if (!data || data.length < 2) return { rows: [], total: 0 };
+
+    const headers = data[0].map(function (h) { return String(h).trim(); });
+    const idx = {};
+    headers.forEach(function (h, i) { idx[h] = i; });
+
+    var matched = data.slice(1).filter(function (row) {
+      var ts = row[idx.Timestamp != null ? idx.Timestamp : 0];
+      var d = ts ? new Date(ts) : null;
+      if (fromDate && d && !isNaN(d.getTime()) && d < fromDate) return false;
+      if (toDate && d && !isNaN(d.getTime()) && d > toDate) return false;
+      if (keyword) {
+        var id = String(row[idx.nc_id_nghien_cuu != null ? idx.nc_id_nghien_cuu : 4]).replace(/'/g, "").toLowerCase();
+        var name = String(row[idx.nc_ho_ten_viet_tat != null ? idx.nc_ho_ten_viet_tat : 8] || "").toLowerCase();
+        if (id.indexOf(keyword) === -1 && name.indexOf(keyword) === -1) return false;
+      }
+      return true;
+    });
+
+    matched.sort(function (a, b) {
+      var da = new Date(a[idx.Timestamp != null ? idx.Timestamp : 0]);
+      var db = new Date(b[idx.Timestamp != null ? idx.Timestamp : 0]);
+      return db - da;
+    });
+
+    var total = matched.length;
+    matched = matched.slice(0, limit);
+    var rows = matched.map(function (row) { return researchNcRowToExportObject_(headers, row, idx); });
+    return { rows: rows, total: total };
+  } catch (e) {
+    return { error: e.toString(), rows: [], total: 0 };
+  }
+}
+
+function researchNcRowToExportObject_(headers, row, idx) {
+  var obj = {};
+  headers.forEach(function (h, i) {
+    var v = row[i];
+    if (h === "nc_id_nghien_cuu") v = String(v).replace(/'/g, "");
+    if (h === "Timestamp" && v) {
+      try { v = new Date(v).toISOString(); } catch (_) {}
+    }
+    obj[h] = v == null ? "" : v;
+  });
+  return obj;
+}
+
+function researchRowToExportObject_(headers, row, idx) {
+  var obj = {};
+  headers.forEach(function (h, i) {
+    if (h === "FullSnapshot_JSON") return;
+    var v = row[i];
+    if (h === "PatientID") v = String(v).replace(/'/g, "");
+    if (h === "Timestamp" && v) {
+      try { v = new Date(v).toISOString(); } catch (_) {}
+    }
+    obj[h] = v == null ? "" : v;
+  });
+
+  var snapCol = idx["FullSnapshot_JSON"];
+  if (snapCol != null && row[snapCol]) {
+    try {
+      var snap = JSON.parse(String(row[snapCol]));
+      if (snap.fields) {
+        Object.keys(snap.fields).forEach(function (k) {
+          var fv = snap.fields[k];
+          obj[k] = (typeof fv === "boolean") ? (fv ? "1" : "0") : fv;
+        });
+      }
+      if (snap.computedIndicators) {
+        Object.keys(snap.computedIndicators).forEach(function (k) {
+          obj["calc_" + k] = snap.computedIndicators[k];
+        });
+      }
+      if (snap.selectedDiagnosisList && snap.selectedDiagnosisList.length) {
+        obj["ICD10_snapshot"] = snap.selectedDiagnosisList.map(function (d) {
+          return (d.code || "") + " — " + (d.name || "");
+        }).join("; ");
+      }
+    } catch (_) {}
+  }
+  return obj;
 }
 
 function getLatestPatientIntakeById(patientId) {
@@ -1843,6 +2347,27 @@ function quanTriLayQuyenCuaToi(email) {
   } catch (e) {
     return { error: "Không lấy được quyền: " + (e && e.message ? e.message : e) };
   }
+}
+
+/** Chạy 1 lần trong Trình chỉnh sửa Apps Script: cập nhật THU_VIEN_URL sang CDN gh-pages. */
+function fixThuVienUrlConfig() {
+  var ss = getDatabase();
+  var sheet = ss.getSheetByName("SYS_CONFIG");
+  if (!sheet) throw new Error("Không có sheet SYS_CONFIG");
+  var data = sheet.getDataRange().getValues();
+  var url = getThuVienCdnUrl_();
+  var found = false;
+  var i;
+  for (i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === "THU_VIEN_URL") {
+      sheet.getRange(i + 1, 2).setValue(url);
+      found = true;
+      break;
+    }
+  }
+  if (!found) sheet.appendRow(["THU_VIEN_URL", url, "URL nhúng thư viện tra cứu", "TEXT"]);
+  Logger.log("Đã đặt THU_VIEN_URL = " + url);
+  return url;
 }
 
 // sync 2026-06-09 thu-vien fix
