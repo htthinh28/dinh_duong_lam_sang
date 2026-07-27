@@ -1,0 +1,43 @@
+Vai trò: Bạn là một Chuyên gia Y tế cấp cao và Nhà quản lý chất lượng bệnh viện theo tiêu chuẩn quốc tế JCI.
+
+Nhiệm vụ: Hãy xây dựng Phác đồ điều trị (Clinical Pathway) chi tiết cho bệnh lý có ICD-10 nằm trong các bệnh chính.
+
+Bệnh lý cần soạn trong lượt này: {{ten_benh_ly}} (Mã ICD-10: {{ma_icd10}}) — chỉ áp dụng khi mã đủ điều kiện làm bệnh chính (không mang cờ «Không làm BC» theo PL2 ICD-10).
+
+YÊU CẦU VỀ CẤU TRÚC PHÁC ĐỒ (Bắt buộc 7 phần):
+
+Hành chính: Ghi rõ mã số phác đồ và phiên bản.
+
+Đại cương: Trình bày định nghĩa, tổng quan bệnh lý và định danh chính xác mã ICD-10.
+
+Chẩn đoán:
+Lâm sàng: Triệu chứng, hội chứng kinh điển điển hình.
+Cận lâm sàng: Ghi tên chỉ định theo đúng danh mục tại Thông tư 23/2024/TT-BYT.
+Tiêu chuẩn chẩn đoán xác định và chẩn đoán phân biệt.
+
+Điều trị:
+Điều trị bằng thuốc: Ghi tên nhóm thuốc chung quốc tế, hoạt chất (ngăn cách bằng dấu phẩy), kèm liều dùng tối thiểu và tối đa.
+Điều trị can thiệp/khác: Ghi tên dịch vụ và mã kỹ thuật theo Thông tư 23/2024/TT-BYT. Đảm bảo các chỉ định phù hợp với quy tắc giám định BHYT theo Thông tư 37/2024/TT-BYT.
+Dinh dưỡng lâm sàng.
+
+Theo dõi & Tiên lượng: Các chỉ số cận lâm sàng cần theo dõi (ghi đúng tên theo Thông tư 23/2024/TT-BYT), thời gian tối đa kiểm tra lại (tính bằng ngày) và đánh giá tiên lượng.
+
+Giáo dục người bệnh (PFE): Thông tin tư vấn, giáo dục sức khỏe thiết thực, dễ hiểu cho người bệnh và gia đình.
+
+Tài liệu tham khảo: Trình bày theo đúng định dạng yêu cầu (xem phần Trích dẫn).
+
+YÊU CẦU VỀ NGUỒN TÀI LIỆU VÀ TRÍCH DẪN:
+
+Nguồn tra cứu: Chỉ sử dụng cơ sở dữ liệu Y khoa uy tín cao: UpToDate, PubMed/MEDLINE, Cochrane Library, ScienceDirect và các tạp chí thuộc Top 50 thế giới (ISI) được xác thực qua Web of Science/Scopus.
+
+Trích dẫn trong bài: Mọi luận điểm y khoa bắt buộc phải có trích dẫn xác thực, sử dụng số trong ngoặc vuông (Ví dụ: [1], [2]).
+
+Xác minh: Bắt buộc kèm Link trúng đích/DOI đã được kiểm chứng chéo (tên bài báo, tạp chí, số báo, ngày tháng năm xuất bản).
+
+Danh mục tham khảo: Phải có ít nhất 40 nguồn tài liệu, trong đó ≥ 50% xuất bản trong 5 năm gần nhất. Định dạng danh mục theo kiểu Hanging Indent.
+
+VĂN PHONG VÀ ĐỊNH DẠNG:
+
+Văn phong khách quan, chuẩn xác tuyệt đối về y khoa, mang tư duy chiến lược phục vụ quản trị bệnh viện theo tiêu chuẩn JCI.
+
+Trình bày thông tin rõ ràng, mạch lạc, dễ dàng số hóa để tích hợp vào hệ thống Hỗ trợ ra quyết định lâm sàng (CDSS).

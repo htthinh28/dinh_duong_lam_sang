@@ -1,0 +1,54 @@
+{
+  "id": "jci-clinical-pathway-7-part",
+  "version": 1,
+  "title": "Mẫu Phác đồ điều trị (Clinical Pathway) JCI",
+  "sections": [
+    {
+      "id": "hanhchinh",
+      "label": "Hành chính",
+      "fields": ["pathwayId", "version", "effectiveDate", "owner", "reviewCycle"]
+    },
+    {
+      "id": "daicuong",
+      "label": "Đại cương",
+      "fields": ["definition", "overview", "icd10Code", "icd10Name"]
+    },
+    {
+      "id": "chandoan",
+      "label": "Chẩn đoán",
+      "subsections": [
+        { "id": "lamsang", "label": "Lâm sàng" },
+        { "id": "canlamsang", "label": "Cận lâm sàng", "ref": "Thông tư 23/2024/TT-BYT" },
+        { "id": "tieuchuan", "label": "Tiêu chuẩn chẩn đoán xác định và chẩn đoán phân biệt" }
+      ]
+    },
+    {
+      "id": "dieutri",
+      "label": "Điều trị",
+      "subsections": [
+        { "id": "thuoc", "label": "Điều trị bằng thuốc", "fields": ["drugClass", "activeIngredient", "doseMin", "doseMax"] },
+        { "id": "canthiep", "label": "Điều trị can thiệp/khác", "ref": "Thông tư 23/2024/TT-BYT", "bhytRef": "Thông tư 37/2024/TT-BYT" },
+        { "id": "dinhduong", "label": "Dinh dưỡng lâm sàng" }
+      ]
+    },
+    {
+      "id": "theodoi",
+      "label": "Theo dõi & Tiên lượng",
+      "fields": ["labTests", "recheckDaysMax", "prognosis"],
+      "ref": "Thông tư 23/2024/TT-BYT"
+    },
+    {
+      "id": "pfe",
+      "label": "Giáo dục người bệnh (PFE)"
+    },
+    {
+      "id": "thamkhao",
+      "label": "Tài liệu tham khảo",
+      "minSources": 40,
+      "recentRatio": 0.5,
+      "citationStyle": "bracket-number",
+      "format": "hanging-indent",
+      "allowedSources": ["UpToDate", "PubMed/MEDLINE", "Cochrane Library", "ScienceDirect", "ISI Top 50"]
+    }
+  ]
+}
