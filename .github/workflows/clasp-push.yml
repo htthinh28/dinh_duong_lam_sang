@@ -12,11 +12,18 @@ on:
       - 'thuVienShell.html'
       - 'logoB64.html'
       - 'appsscript.json'
+      - '.clasp.json'
       - '.claspignore'
+      - 'scripts/push-apps-script.sh'
+      - 'package.json'
       - '.github/workflows/clasp-push.yml'
 
 permissions:
   contents: read
+
+concurrency:
+  group: clasp-push-main
+  cancel-in-progress: true
 
 jobs:
   clasp-push:
@@ -27,19 +34,35 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
 
-      - name: Install clasp
-        run: npm install -g @google/clasp
+      - name: Install dependencies
+        run: npm ci
 
       - name: Configure clasp credentials
         env:
           CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
         run: |
           if [ -z "$CLASPRC_JSON" ]; then
-            echo "::error::Thiếu secret CLASPRC_JSON. Chạy clasp login trên máy local, copy nội dung ~/.clasprc.json vào GitHub Secrets."
+            echo "::error::Thiếu secret CLASPRC_JSON."
+            echo "Thiết lập 1 lần trên máy local:"
+            echo "  npx clasp login"
+            echo "  gh secret set CLASPRC_JSON < ~/.clasprc.json"
+            echo "Hoặc: GitHub → Settings → Secrets → Actions → New secret → CLASPRC_JSON"
             exit 1
           fi
           echo "$CLASPRC_JSON" > ~/.clasprc.json
+          chmod 600 ~/.clasprc.json
+
+      - name: Verify clasp auth
+        run: npx clasp show-authorized-user
 
       - name: Push to Apps Script
-        run: clasp push -f
+        run: npm run push:script
+
+      - name: Summary
+        run: |
+          echo "### Apps Script đã được đẩy" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Script ID: \`$(node -p "require('./.clasp.json').scriptId")\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- [Mở trên script.google.com](https://script.google.com/home/projects/$(node -p "require('./.clasp.json').scriptId")/edit)" >> "$GITHUB_STEP_SUMMARY"
