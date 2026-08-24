@@ -387,7 +387,7 @@ function setupDatabaseStructure(ss, options) {
     let s = ss.insertSheet("RESEARCH_COLLECT");
     s.appendRow([
       "Timestamp", "NguoiNhap", "PatientID", "PatientName", "NgayNhap",
-      "StopBang", "PHQ9", "PhacDoThuoc", "Form_JSON"
+      "StopBang", "PHQ9", "PhacDoThuoc", "Form_JSON", "PSQI"
     ]);
     s.setFrozenRows(1);
   }
@@ -1636,6 +1636,11 @@ function saveResearchCollectRecord(data) {
       sheet = ss.getSheetByName("RESEARCH_COLLECT");
     }
     if (!sheet) return { error: "Không tạo được sheet RESEARCH_COLLECT." };
+    // Bổ sung cột PSQI cho sheet cũ (thêm ở cuối, không phá vỡ dòng đã có).
+    var hdr = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(function (h) { return String(h).trim(); });
+    if (hdr.indexOf("PSQI") === -1) {
+      sheet.getRange(1, sheet.getLastColumn() + 1).setValue("PSQI");
+    }
     var rx = Array.isArray(data.phacDoThuoc) ? data.phacDoThuoc.join("; ") : String(data.phacDoThuoc || "");
     var json = "";
     try { json = JSON.stringify(data); } catch (e) { json = ""; }
@@ -1648,7 +1653,8 @@ function saveResearchCollectRecord(data) {
       data.stopBang != null ? String(data.stopBang) : "",
       data.phq9 != null ? String(data.phq9) : "",
       rx,
-      json
+      json,
+      data.psqi != null ? String(data.psqi) : ""
     ]);
     return { success: true };
   } catch (e) {

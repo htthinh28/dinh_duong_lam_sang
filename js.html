@@ -6252,6 +6252,8 @@ function initThuThapForm_() {
     ngay.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
   initPhq9ModalTable_();
+  buildThuThapPsqiQ5Table_();
+  bindThuThapPsqiAuto_();
   const saved = sessionStorage.getItem('TT_FORM_DRAFT');
   if (saved) {
     try { restoreThuThapFormDraft_(JSON.parse(saved)); } catch (e) { /* ignore */ }
@@ -6403,6 +6405,184 @@ function applyPhq9Score_() {
   persistThuThapDraft_();
 }
 
+// ================= PSQI cho phiếu Thu thập (tái dùng logic tính điểm phiếu NC) =================
+const TT_PSQI_Q5 = [
+  { code: 'tt_psqi_q5a', label: 'a. Không thể chìm vào giấc ngủ trong 30 phút' },
+  { code: 'tt_psqi_q5b', label: 'b. Thức giấc giữa đêm hoặc dậy quá sớm' },
+  { code: 'tt_psqi_q5c', label: 'c. Phải thức dậy để đi vệ sinh' },
+  { code: 'tt_psqi_q5d', label: 'd. Cảm thấy khó thở' },
+  { code: 'tt_psqi_q5e', label: 'e. Ho hoặc ngáy to' },
+  { code: 'tt_psqi_q5f', label: 'f. Cảm thấy quá lạnh' },
+  { code: 'tt_psqi_q5g', label: 'g. Cảm thấy quá nóng' },
+  { code: 'tt_psqi_q5h', label: 'h. Gặp ác mộng' },
+  { code: 'tt_psqi_q5i', label: 'i. Đau nhức, tê bì, rát bỏng ở bàn chân' },
+  { code: 'tt_psqi_q5j', label: 'j. Lý do khác' }
+];
+
+function buildThuThapPsqiQ5Table_() {
+  const body = document.getElementById('thuThapPsqiQ5Body');
+  if (!body || body.dataset.built === '1') return;
+  body.innerHTML = TT_PSQI_Q5.map((row) => {
+    const cells = [0, 1, 2, 3].map((v) =>
+      `<td class="text-center"><input type="radio" class="form-check-input tt-psqi-src" name="${row.code}" value="${v}" aria-label="${v}"></td>`
+    ).join('');
+    return `<tr><td>${row.label}</td>${cells}</tr>`;
+  }).join('');
+  body.dataset.built = '1';
+}
+
+/** C5 rối loạn giấc ngủ = tổng Q5b–Q5j (dùng chung ngưỡng với phiếu NC) */
+function _ttPsqiSumQ5bJ_() {
+  let sum = 0, answered = 0;
+  TT_PSQI_Q5.forEach((q, i) => {
+    if (i === 0) return;
+    const v = parseInt(_ncRadVal_(q.code), 10);
+    if (!isNaN(v)) { sum += v; answered += 1; }
+  });
+  if (answered === 0) return '';
+  if (sum === 0) return 0;
+  if (sum <= 9) return 1;
+  if (sum <= 18) return 2;
+  return 3;
+}
+
+function thuThapCalcPsqi_() {
+  const q1 = document.getElementById('tt_psqi_q1_gio_len_giuong')?.value || '';
+  const q2 = document.getElementById('tt_psqi_q2_phut_chim_ngu')?.value;
+  const q3 = document.getElementById('tt_psqi_q3_gio_thuc_day')?.value || '';
+  const q4 = document.getElementById('tt_psqi_q4_gio_ngu')?.value;
+  const q5a = _ncRadVal_('tt_psqi_q5a');
+  const q6 = _ncRadVal_('tt_psqi_q6');
+  const q7 = _ncRadVal_('tt_psqi_q7');
+  const q8 = _ncRadVal_('tt_psqi_q8');
+  const q9 = _ncRadVal_('tt_psqi_q9');
+  const setC = (id, v) => { const el = document.getElementById(id); if (el) el.value = (v === '' || v == null) ? '' : v; };
+  setC('tt_psqi_c1', q6 !== '' ? q6 : '');
+  setC('tt_psqi_c2', _ncPsqiScoreC2_(q2, q5a));
+  setC('tt_psqi_c3', _ncPsqiScoreQ4_(q4));
+  const c4 = _ncPsqiScoreC4_(q1, q3, q4);
+  setC('tt_psqi_c4', c4.score);
+  const effEl = document.getElementById('tt_psqi_hieu_suat');
+  if (effEl) effEl.value = c4.pct;
+  setC('tt_psqi_c5', _ttPsqiSumQ5bJ_());
+  setC('tt_psqi_c6', q7 !== '' ? q7 : '');
+  setC('tt_psqi_c7', _ncPsqiScoreC7_(q8, q9));
+  thuThapSumPsqi_();
+}
+
+function thuThapSumPsqi_() {
+  let sum = 0, ok = true;
+  ['tt_psqi_c1', 'tt_psqi_c2', 'tt_psqi_c3', 'tt_psqi_c4', 'tt_psqi_c5', 'tt_psqi_c6', 'tt_psqi_c7'].forEach((id) => {
+    const v = parseInt(document.getElementById(id)?.value, 10);
+    if (isNaN(v)) ok = false; else sum += v;
+  });
+  const totEl = document.getElementById('tt_psqi_tong');
+  const effPct = document.getElementById('tt_psqi_hieu_suat')?.value || '';
+  if (totEl) totEl.value = ok ? sum : '';
+  const sumBadge = document.getElementById('tt_psqi_modal_sum');
+  if (sumBadge) sumBadge.textContent = ok ? String(sum) : '0';
+  if (ok) {
+    if (sum <= 5) _ncSetRad_('tt_psqi_ket_luan', 'tot');
+    else _ncSetRad_('tt_psqi_ket_luan', 'roi_loan');
+  } else {
+    document.querySelectorAll('input[name="tt_psqi_ket_luan"]').forEach((el) => { el.checked = false; });
+  }
+  _ttPsqiUpdateResultUi_(sum, ok, effPct);
+}
+
+function _ttPsqiUpdateResultUi_(sum, ok, effPct) {
+  const totLbl = document.getElementById('tt_psqi_tong_lbl');
+  const klLbl = document.getElementById('tt_psqi_ket_luan_lbl');
+  const effLbl = document.getElementById('tt_psqi_hieu_suat_lbl');
+  const banner = document.getElementById('tt_psqi_result_banner');
+  if (effLbl) effLbl.textContent = effPct !== '' ? (effPct + '%') : '—';
+  if (!ok) {
+    if (totLbl) totLbl.textContent = '—';
+    if (klLbl) klLbl.textContent = 'Đang nhập số liệu thô…';
+    if (banner) { banner.classList.remove('alert-success', 'alert-warning'); banner.classList.add('alert-secondary'); }
+    return;
+  }
+  if (totLbl) totLbl.textContent = String(sum);
+  if (sum <= 5) {
+    if (klLbl) klLbl.textContent = 'PSQI ≤ 5 — Chất lượng giấc ngủ TỐT';
+    if (banner) { banner.classList.remove('alert-secondary', 'alert-warning'); banner.classList.add('alert-success'); }
+  } else {
+    if (klLbl) klLbl.textContent = 'PSQI > 5 — RỐI LOẠN GIẤC NGỦ';
+    if (banner) { banner.classList.remove('alert-secondary', 'alert-success'); banner.classList.add('alert-warning'); }
+  }
+}
+
+function bindThuThapPsqiAuto_() {
+  const root = document.getElementById('thuThapPsqiCard');
+  if (!root || root.dataset.psqiAutoBound === '1') return;
+  const onChange = (e) => {
+    const t = e.target; if (!t) return;
+    const id = t.id || '', name = t.name || '';
+    if (t.classList.contains('tt-psqi-src') || id.indexOf('tt_psqi_q') === 0 || name.indexOf('tt_psqi_q') === 0) thuThapCalcPsqi_();
+  };
+  root.addEventListener('input', onChange);
+  root.addEventListener('change', onChange);
+  root.dataset.psqiAutoBound = '1';
+}
+
+function openThuThapPsqiModal() {
+  buildThuThapPsqiQ5Table_();
+  bindThuThapPsqiAuto_();
+  thuThapCalcPsqi_();
+  const el = document.getElementById('thuThapPsqiModal');
+  if (!el || typeof bootstrap === 'undefined') return;
+  bootstrap.Modal.getOrCreateInstance(el).show();
+}
+
+function applyThuThapPsqi_() {
+  thuThapCalcPsqi_();
+  const tot = document.getElementById('tt_psqi_tong')?.value || '';
+  const inp = document.getElementById('tt_psqi_score');
+  const risk = document.getElementById('tt_psqi_risk');
+  if (inp) inp.value = tot;
+  if (risk) {
+    if (tot === '') risk.textContent = 'Chưa chấm điểm';
+    else risk.textContent = (parseInt(tot, 10) <= 5) ? 'PSQI ≤ 5 — giấc ngủ tốt' : 'PSQI > 5 — rối loạn giấc ngủ';
+  }
+  const el = document.getElementById('thuThapPsqiModal');
+  if (el && typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(el).hide();
+  try { persistThuThapDraft_(); } catch (_) { }
+  try { if (Autosave && Autosave.flush) Autosave.flush('tt_form'); } catch (_) { }
+}
+
+function collectThuThapPsqiDetail_() {
+  const v = (id) => document.getElementById(id)?.value || '';
+  const q5 = {};
+  TT_PSQI_Q5.forEach((q) => { q5[q.code] = _ncRadVal_(q.code); });
+  return {
+    q1: v('tt_psqi_q1_gio_len_giuong'), q2: v('tt_psqi_q2_phut_chim_ngu'),
+    q3: v('tt_psqi_q3_gio_thuc_day'), q4: v('tt_psqi_q4_gio_ngu'),
+    q5: q5, q5j_ly_do: v('tt_psqi_q5j_ly_do'),
+    q6: _ncRadVal_('tt_psqi_q6'), q7: _ncRadVal_('tt_psqi_q7'),
+    q8: _ncRadVal_('tt_psqi_q8'), q9: _ncRadVal_('tt_psqi_q9'),
+    tong: v('tt_psqi_tong'), hieu_suat: v('tt_psqi_hieu_suat'),
+    ket_luan: _ncRadVal_('tt_psqi_ket_luan')
+  };
+}
+
+function restoreThuThapPsqiDetail_(d) {
+  if (!d || typeof d !== 'object') return;
+  buildThuThapPsqiQ5Table_();
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = String(val); };
+  set('tt_psqi_q1_gio_len_giuong', d.q1); set('tt_psqi_q2_phut_chim_ngu', d.q2);
+  set('tt_psqi_q3_gio_thuc_day', d.q3); set('tt_psqi_q4_gio_ngu', d.q4);
+  set('tt_psqi_q5j_ly_do', d.q5j_ly_do);
+  if (d.q5) Object.keys(d.q5).forEach((code) => _ncSetRad_(code, d.q5[code]));
+  _ncSetRad_('tt_psqi_q6', d.q6); _ncSetRad_('tt_psqi_q7', d.q7);
+  _ncSetRad_('tt_psqi_q8', d.q8); _ncSetRad_('tt_psqi_q9', d.q9);
+  thuThapCalcPsqi_();
+  const tot = document.getElementById('tt_psqi_tong')?.value || '';
+  const inp = document.getElementById('tt_psqi_score');
+  if (inp) inp.value = tot;
+  const risk = document.getElementById('tt_psqi_risk');
+  if (risk && tot !== '') risk.textContent = (parseInt(tot, 10) <= 5) ? 'PSQI ≤ 5 — giấc ngủ tốt' : 'PSQI > 5 — rối loạn giấc ngủ';
+}
+
 function collectThuThapFormData_() {
   const rx = [];
   document.querySelectorAll('input[name="tt_rx_group"]:checked').forEach((el) => rx.push(el.value));
@@ -6433,7 +6613,9 @@ function collectThuThapFormData_() {
     stopBang: document.getElementById('tt_stopbang_score')?.value || '',
     stopBangDetail: stopBangDetail,
     phq9: document.getElementById('tt_phq9_score')?.value || '',
-    phq9Detail: phq9Detail
+    phq9Detail: phq9Detail,
+    psqi: document.getElementById('tt_psqi_score')?.value || document.getElementById('tt_psqi_tong')?.value || '',
+    psqiDetail: collectThuThapPsqiDetail_()
   };
 }
 
@@ -6476,6 +6658,11 @@ function restoreThuThapFormDraft_(data) {
       if (radio) radio.checked = true;
     });
     calcPhq9_();
+  }
+  if (data.psqiDetail) {
+    try { restoreThuThapPsqiDetail_(data.psqiDetail); } catch (e) { /* ignore */ }
+  } else if (data.psqi) {
+    set('tt_psqi_score', data.psqi);
   }
 }
 
