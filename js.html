@@ -614,6 +614,116 @@ function normalizeServerResult(res) {
 }
 
 // ============================================
+// 1.b TỰ ĐỘNG LƯU (AUTOSAVE) — BỘ ĐIỀU KHIỂN CHUNG
+// Debounce input/change -> đẩy nháp thẳng lên Google Sheet (backend autosaveDraft).
+// Có dự phòng localStorage khi mất kết nối. Khôi phục nháp qua banner có xác nhận.
+// ============================================
+const Autosave = (function () {
+    const registry = {};
+    const reg_ = (ctx) => (registry[ctx] = registry[ctx] || {});
+    function currentEmail_() {
+        try { return (typeof CURRENT_USER !== 'undefined' && CURRENT_USER && CURRENT_USER.email) ? CURRENT_USER.email : ''; }
+        catch (_) { return ''; }
+    }
+    const hasRun_ = () => (typeof google !== 'undefined' && google.script && google.script.run);
+    const localKey_ = (ctx) => 'PC_DRAFT::' + ctx + '::' + currentEmail_();
+    function saveLocal_(ctx, data) { try { localStorage.setItem(localKey_(ctx), JSON.stringify({ data: data, at: new Date().toISOString() })); } catch (_) { } }
+    function readLocal_(ctx) { try { const r = localStorage.getItem(localKey_(ctx)); return r ? JSON.parse(r) : null; } catch (_) { return null; } }
+    function clearLocal_(ctx) { try { localStorage.removeItem(localKey_(ctx)); } catch (_) { } }
+    function setStatus_(cfg, html) { if (!cfg.statusId) return; const el = document.getElementById(cfg.statusId); if (el) el.innerHTML = html; }
+    const hms_ = () => new Date().toLocaleTimeString('vi-VN');
+
+    function push_(cfg) {
+        let data; try { data = cfg.collect(); } catch (e) { return; }
+        if (cfg.isEmpty && cfg.isEmpty(data)) return;
+        const json = JSON.stringify(data);
+        const r = reg_(cfg.context);
+        if (json === r.lastJson) return;
+        r.lastJson = json;
+        saveLocal_(cfg.context, data);
+        const entityId = cfg.getEntityId ? (cfg.getEntityId() || '') : '';
+        setStatus_(cfg, '<span class="text-muted"><i class="fas fa-cloud-arrow-up me-1"></i>Đang tự lưu…</span>');
+        if (!hasRun_()) { setStatus_(cfg, '<span class="text-warning"><i class="fas fa-hard-drive me-1"></i>Đã lưu tạm trên máy</span>'); return; }
+        google.script.run
+            .withSuccessHandler((res) => {
+                res = normalizeServerResult(res);
+                if (res.error) { setStatus_(cfg, '<span class="text-warning" title="' + res.error + '"><i class="fas fa-triangle-exclamation me-1"></i>Chưa tự lưu được (giữ bản trên máy)</span>'); return; }
+                setStatus_(cfg, '<span class="text-success"><i class="fas fa-check-circle me-1"></i>Đã tự lưu ' + hms_() + '</span>');
+            })
+            .withFailureHandler(() => { setStatus_(cfg, '<span class="text-warning"><i class="fas fa-triangle-exclamation me-1"></i>Mất kết nối — giữ bản trên máy</span>'); })
+            .autosaveDraft(cfg.context, json, currentEmail_(), entityId);
+    }
+    function schedule_(cfg) { const r = reg_(cfg.context); if (r.timer) clearTimeout(r.timer); r.timer = setTimeout(() => push_(cfg), cfg.debounceMs || 2500); }
+
+    function register(cfg) {
+        if (!cfg || !cfg.context) return;
+        const root = typeof cfg.rootSelector === 'string' ? document.querySelector(cfg.rootSelector) : cfg.rootSelector;
+        if (!root) return;
+        reg_(cfg.context).cfg = cfg;
+        if (!root.dataset.autosaveBound) {
+            root.dataset.autosaveBound = '1';
+            const h = () => schedule_(cfg);
+            root.addEventListener('input', h);
+            root.addEventListener('change', h);
+        }
+    }
+
+    function renderBanner_(context, at) {
+        const r = reg_(context); const bid = r.cfg && r.cfg.bannerId;
+        if (!bid) return; const el = document.getElementById(bid); if (!el) return;
+        const when = at ? new Date(at).toLocaleString('vi-VN') : '';
+        el.innerHTML = '<div class="alert alert-warning d-flex flex-wrap align-items-center py-2 px-3 mb-2">'
+            + '<span><i class="fas fa-clock-rotate-left me-2"></i>Có bản nháp tự lưu' + (when ? ' (lúc ' + when + ')' : '') + '.</span>'
+            + '<span class="ms-auto"><button type="button" class="btn btn-sm btn-primary me-2" onclick="Autosave.applyPending(\'' + context + '\')"><i class="fas fa-rotate-left me-1"></i>Khôi phục</button>'
+            + '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="Autosave.dismiss(\'' + context + '\')">Bỏ nháp</button></span></div>';
+        el.classList.remove('d-none');
+    }
+    function hideBanner_(context) { const r = reg_(context); const bid = r.cfg && r.cfg.bannerId; if (!bid) return; const el = document.getElementById(bid); if (el) { el.innerHTML = ''; el.classList.add('d-none'); } }
+
+    // Tìm nháp (server ưu tiên, dự phòng local) rồi hiện banner cho người dùng chọn khôi phục.
+    function offerRestore(context, applyFn) {
+        const r = reg_(context);
+        if (r.offered) return;
+        r.offered = true;
+        const show = (data, at) => { r.pending = { data: data, apply: applyFn }; renderBanner_(context, at); };
+        const fromLocal = () => { const l = readLocal_(context); if (l && l.data) show(l.data, l.at); };
+        if (!hasRun_()) { fromLocal(); return; }
+        google.script.run
+            .withSuccessHandler((res) => { res = normalizeServerResult(res); if (res && res.hasDraft && res.data) show(res.data, res.updatedAtIso); else fromLocal(); })
+            .withFailureHandler(fromLocal)
+            .loadDraft(context, currentEmail_());
+    }
+    function applyPending(context) {
+        const r = reg_(context); if (!r.pending) { hideBanner_(context); return; }
+        try { r.pending.apply(r.pending.data); } catch (_) { }
+        r.lastJson = JSON.stringify(r.pending.data);
+        r.pending = null; hideBanner_(context);
+    }
+    function dismiss(context) { const r = reg_(context); r.pending = null; clear(context); }
+    function clear(context) {
+        const r = reg_(context); r.lastJson = null; clearLocal_(context); hideBanner_(context);
+        if (!hasRun_()) return;
+        google.script.run.withSuccessHandler(() => { }).withFailureHandler(() => { }).clearDraft(context, currentEmail_());
+    }
+    function flush(context) { const r = reg_(context); if (r && r.cfg) { if (r.timer) clearTimeout(r.timer); push_(r.cfg); } }
+
+    // Khôi phục im lặng (không banner) — dùng cho bộ lọc/tuỳ chọn nhẹ.
+    function restoreSilent(context, applyFn) {
+        const r = reg_(context);
+        if (r.silentDone) return; r.silentDone = true;
+        const apply = (data) => { try { applyFn(data); } catch (_) { } r.lastJson = JSON.stringify(data); };
+        const fromLocal = () => { const l = readLocal_(context); if (l && l.data) apply(l.data); };
+        if (!hasRun_()) { fromLocal(); return; }
+        google.script.run
+            .withSuccessHandler((res) => { res = normalizeServerResult(res); if (res && res.hasDraft && res.data) apply(res.data); else fromLocal(); })
+            .withFailureHandler(fromLocal)
+            .loadDraft(context, currentEmail_());
+    }
+
+    return { register, offerRestore, restoreSilent, applyPending, dismiss, clear, flush };
+})();
+
+// ============================================
 // 2. AUTHENTICATION & THEME (BẢO MẬT & GIAO DIỆN)
 // ============================================
 
@@ -5391,6 +5501,7 @@ function saveDataToSystem() {
             .withSuccessHandler((res) => {
                 alert("Đã lưu hồ sơ thành công!");
                 document.getElementById('total_records_count').innerText = parseInt(document.getElementById('total_records_count').innerText) + 1;
+                try { Autosave.clear('dd_workflow'); } catch (_) { }
             })
             .savePatientRecord(record);
     } else {
@@ -5466,17 +5577,23 @@ function renderHistoryTable(history) {
     }
 }
 
-function loadOldRecordToForm(snapshotJson) {
+function loadOldRecordToForm(snapshotJson, opts) {
+    opts = opts || {};
+    const silent = !!opts.silent;
     if (!snapshotJson) {
-        alert('Hồ sơ này chưa có dữ liệu snapshot chi tiết.');
+        if (!silent) alert('Hồ sơ này chưa có dữ liệu snapshot chi tiết.');
         return;
     }
     let snap;
-    try {
-        snap = JSON.parse(snapshotJson);
-    } catch (e) {
-        alert('Không đọc được dữ liệu hồ sơ cũ.');
-        return;
+    if (typeof snapshotJson === 'object') {
+        snap = snapshotJson;
+    } else {
+        try {
+            snap = JSON.parse(snapshotJson);
+        } catch (e) {
+            if (!silent) alert('Không đọc được dữ liệu hồ sơ cũ.');
+            return;
+        }
     }
 
     const fields = snap.fields || {};
@@ -5529,7 +5646,7 @@ function loadOldRecordToForm(snapshotJson) {
     if (typeof updateKitchenNote === 'function') updateKitchenNote();
     if (typeof renderMedicalRecordToArea === 'function') renderMedicalRecordToArea();
 
-    alert('Đã nạp lại hồ sơ cũ lên form.');
+    if (!silent) alert('Đã nạp lại hồ sơ cũ lên form.');
 }
 
 function loadLastIntakeByPatientId() {
@@ -5680,6 +5797,7 @@ function renderRefList() {
 function openAddRefModal() {
     const modal = new bootstrap.Modal(document.getElementById('addRefModal'));
     modal.show();
+    try { Autosave.offerRestore('ref_add', restoreRefAddDraft_); } catch (_) { }
 }
 
 function toggleRefContentInput() {
@@ -5727,6 +5845,7 @@ function confirmSaveRef() {
         }
         alert(res.message);
         btn.innerText = "Lưu Tài Liệu"; btn.disabled = false;
+        try { Autosave.clear('ref_add'); } catch (_) { }
         bootstrap.Modal.getInstance(document.getElementById('addRefModal')).hide();
         loadReferences(); // Reload list
     }).saveReferenceItem(data);
@@ -5900,11 +6019,112 @@ function initApp() {
     loadDoctorList();
     initClinicalWorkflowNav();
     try { initSidebarPin_(); } catch (e) { console.warn('initSidebarPin_', e); }
+    try { initAutosaveModules_(); } catch (e) { console.warn('initAutosaveModules_', e); }
     setStaffRootNav('dd');
     setTimeout(() => {
         updateIycfReferencePanel();
         updateMicroNutrientsFootnote();
     }, 0);
+}
+
+// Đăng ký tự lưu cho tất cả biểu mẫu có nhập/sửa. Chỉ gắn sự kiện (nhẹ);
+// việc gợi ý khôi phục nháp diễn ra khi mở từng khu vực (offerRestore/restoreSilent).
+function initAutosaveModules_() {
+    // 1) Chuyên môn — Quy trình Dinh dưỡng (mod 1–5)
+    Autosave.register({
+        context: 'dd_workflow',
+        rootSelector: '#section-dd-pack',
+        statusId: 'ddAutosaveStatus',
+        bannerId: 'ddAutosaveBanner',
+        debounceMs: 3000,
+        collect: collectFullModulesSnapshot_,
+        getEntityId: () => document.getElementById('cccd')?.value || '',
+        isEmpty: (d) => { const f = (d && d.fields) || {}; return !(String(f.hoTen || '').trim() || String(f.cccd || '').trim()); }
+    });
+    // Gợi ý khôi phục nháp DD ngay khi vào hệ thống (view mặc định là DD)
+    Autosave.offerRestore('dd_workflow', (data) => loadOldRecordToForm(data, { silent: true }));
+
+    // 2) Chuyên môn — Phiếu Thu thập số liệu
+    Autosave.register({
+        context: 'tt_form',
+        rootSelector: '#thuThapFormCard',
+        statusId: 'ttAutosaveStatus',
+        bannerId: 'ttAutosaveBanner',
+        debounceMs: 2500,
+        collect: collectThuThapFormData_,
+        getEntityId: () => document.getElementById('tt_maBN')?.value || '',
+        isEmpty: (d) => !(String(d.maBN || '').trim() || String(d.hoTen || '').trim())
+    });
+
+    // 3) Chuyên môn — Phiếu Nghiên cứu khoa học (NC CRF)
+    Autosave.register({
+        context: 'nc_form',
+        rootSelector: '#researchNcFormCard',
+        statusId: 'ncAutosaveStatus',
+        bannerId: 'ncAutosaveBanner',
+        debounceMs: 2500,
+        collect: collectResearchNcFlat_,
+        getEntityId: () => document.getElementById('nc_id_nghien_cuu')?.value || '',
+        isEmpty: (d) => !(String(d.nc_id_nghien_cuu || '').trim() || String(d.nc_ho_ten_viet_tat || '').trim())
+    });
+
+    // 4) Danh mục — form Thêm tài liệu tham khảo (nếu có modal)
+    if (document.getElementById('addRefModal')) {
+        Autosave.register({
+            context: 'ref_add',
+            rootSelector: '#addRefModal',
+            statusId: 'refAutosaveStatus',
+            debounceMs: 2500,
+            collect: collectRefAddDraft_,
+            isEmpty: (d) => !(String(d.title || '').trim() || String(d.content || '').trim() || String(d.textContent || '').trim())
+        });
+    }
+
+    // 5) Báo cáo — bộ lọc xuất dữ liệu nghiên cứu (khôi phục im lặng)
+    if (document.getElementById('researchExportView')) {
+        Autosave.register({
+            context: 'report_research_filter',
+            rootSelector: '#researchExportView',
+            statusId: 'reportFilterAutosaveStatus',
+            debounceMs: 1500,
+            collect: collectReportResearchFilter_,
+            isEmpty: () => false
+        });
+    }
+}
+
+function collectRefAddDraft_() {
+    const val = (id) => document.getElementById(id)?.value || '';
+    return {
+        title: val('newRefTitle'),
+        cat: val('newRefCat'),
+        type: val('newRefType'),
+        content: val('newRefContent'),
+        textContent: val('newRefTextContent'),
+        tags: val('newRefTags')
+    };
+}
+function restoreRefAddDraft_(d) {
+    if (!d) return;
+    const set = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = String(v); };
+    set('newRefTitle', d.title); set('newRefCat', d.cat); set('newRefType', d.type);
+    set('newRefContent', d.content); set('newRefTextContent', d.textContent); set('newRefTags', d.tags);
+}
+
+function collectReportResearchFilter_() {
+    const val = (id) => document.getElementById(id)?.value || '';
+    return {
+        from: val('research_from_date'),
+        to: val('research_to_date'),
+        limit: val('research_limit'),
+        keyword: val('research_keyword')
+    };
+}
+function restoreReportResearchFilter_(d) {
+    if (!d) return;
+    const set = (id, v) => { const el = document.getElementById(id); if (el && v != null && v !== '') el.value = String(v); };
+    set('research_from_date', d.from); set('research_to_date', d.to);
+    set('research_limit', d.limit); set('research_keyword', d.keyword);
 }
 
 /** URL shell Thư viện — inject từ server (Mã.js doGet), tránh google.script.run khi mở tab. */
@@ -6042,6 +6262,7 @@ function initThuThapForm_() {
     card.addEventListener('change', persistThuThapDraft_);
     card.addEventListener('input', persistThuThapDraft_);
   }
+  try { Autosave.offerRestore('tt_form', restoreThuThapFormDraft_); } catch (_) { }
 }
 
 function initPhq9ModalTable_() {
@@ -6289,7 +6510,8 @@ function saveThuThapForm() {
         if (status) status.innerHTML = '<span class="text-danger">' + res.error + '</span>';
         return;
       }
-      persistThuThapDraft_();
+      try { sessionStorage.removeItem('TT_FORM_DRAFT'); } catch (_) { }
+      try { Autosave.clear('tt_form'); } catch (_) { }
       if (status) status.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>Đã lưu phiếu thu thập lúc ' + new Date().toLocaleTimeString('vi-VN') + '</span>';
       const tbody = document.getElementById('thuThapTableBody');
       if (tbody) tbody.dataset.loaded = '';
@@ -7647,6 +7869,7 @@ function saveResearchNcForm() {
         }
         if (res.recordId) document.getElementById('nc_record_id').value = res.recordId;
         if (msg) { msg.textContent = 'Đã lưu phiếu NC · Mã bản ghi: ' + (res.recordId || ''); msg.classList.remove('d-none'); }
+        try { Autosave.clear('nc_form'); } catch (_) { }
         researchInitModule_();
     }).withFailureHandler((err) => {
         if (msg) { msg.textContent = err?.message || String(err); msg.classList.remove('d-none', 'alert-success'); msg.classList.add('alert-danger'); }
@@ -7944,6 +8167,8 @@ function researchInitModule_() {
         const d = document.getElementById('nc_ngay_thu_thap');
         if (d) d.value = new Date().toISOString().slice(0, 10);
     }
+    try { Autosave.offerRestore('nc_form', applyResearchNcFlat_); } catch (_) { }
+    try { Autosave.restoreSilent('report_research_filter', restoreReportResearchFilter_); } catch (_) { }
     const badge = document.getElementById('research_db_count_badge');
     if (badge) badge.textContent = 'Đang tải…';
     if (typeof google === 'undefined' || !google.script) {

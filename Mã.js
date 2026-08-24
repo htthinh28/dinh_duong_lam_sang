@@ -700,8 +700,10 @@ function pingAuth() {
         }
       }
     }
+    // Không đọc email người chạy ở đây: API đó thêm scope OAuth 'userinfo.email',
+    // khiến web app (executeAs USER_DEPLOYING) hỏng uỷ quyền và google.script.run
+    // treo -> đăng nhập lỗi (regression từ v70). Giữ scope tối thiểu như bản v69.
     var eff = "";
-    try { eff = Session.getEffectiveUser().getEmail() || ""; } catch (_) {}
     return {
       ok: true,
       spreadsheetId: ss.getId(),
@@ -1333,6 +1335,136 @@ function saveResearchNcForm(flatJson) {
   } catch (e) {
     writeAppLog_("RESEARCH", "SAVE_NC_FORM", "System", "", { error: e.toString() }, "FAILED");
     return { error: e.toString() };
+  }
+}
+
+/* ============================================================
+ * TỰ ĐỘNG LƯU (AUTOSAVE DRAFT) — GENERIC
+ * Lưu nháp thẳng lên Google Sheet "DRAFTS" theo (Context + UserEmail).
+ * QUAN TRỌNG: KHÔNG dùng Session.getEffectiveUser()/getActiveUser() để
+ * tránh thêm scope OAuth 'userinfo.email' (bài học regression đăng nhập v70).
+ * Email người dùng do client (CURRENT_USER) truyền xuống.
+ * ============================================================ */
+var DRAFTS_SHEET_NAME_ = "DRAFTS";
+var DRAFTS_HEADERS_ = ["DraftKey", "Context", "EntityId", "UserEmail", "DataJson", "UpdatedAt", "UpdatedAtIso"];
+
+function ensureDraftsSheet_(ssOpt) {
+  var ss = ssOpt || openCentralSpreadsheet_();
+  var sheet = ss.getSheetByName(DRAFTS_SHEET_NAME_);
+  if (!sheet) {
+    sheet = ss.insertSheet(DRAFTS_SHEET_NAME_);
+    sheet.appendRow(DRAFTS_HEADERS_);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function draftKey_(context, userEmail) {
+  return String(context || "").trim() + "|" + String(userEmail || "").trim().toLowerCase();
+}
+
+/**
+ * Ghi/ghi đè bản nháp của một biểu mẫu lên sheet DRAFTS.
+ * @param {string} context     Định danh biểu mẫu (vd: 'dd_workflow', 'nc_form').
+ * @param {string} dataJson    Chuỗi JSON nội dung form.
+ * @param {string} userEmail   Email người dùng (từ client, không đọc từ Session).
+ * @param {string} entityId    (tuỳ chọn) mã bản ghi đang soạn (CCCD, ID NC…).
+ */
+function autosaveDraft(context, dataJson, userEmail, entityId) {
+  var lock = LockService.getScriptLock();
+  try {
+    context = String(context || "").trim();
+    if (!context) return { error: "Thiếu context." };
+    if (typeof dataJson !== "string") {
+      try { dataJson = JSON.stringify(dataJson); } catch (_) { dataJson = ""; }
+    }
+    if (dataJson.length > 45000) return { error: "Bản nháp quá lớn để tự lưu." };
+    lock.waitLock(8000);
+    var ss = openCentralSpreadsheet_();
+    var sheet = ensureDraftsSheet_(ss);
+    var key = draftKey_(context, userEmail);
+    var now = new Date();
+    var iso = Utilities.formatDate(now, Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
+    var lastRow = sheet.getLastRow();
+    var rowIndex = -1;
+    if (lastRow >= 2) {
+      var keys = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+      for (var i = 0; i < keys.length; i++) {
+        if (String(keys[i][0]) === key) { rowIndex = i + 2; break; }
+      }
+    }
+    var rowValues = [key, context, String(entityId || ""), String(userEmail || ""), dataJson, now, iso];
+    if (rowIndex > 0) {
+      sheet.getRange(rowIndex, 1, 1, DRAFTS_HEADERS_.length).setValues([rowValues]);
+    } else {
+      sheet.appendRow(rowValues);
+    }
+    return { ok: true, updatedAtIso: iso };
+  } catch (e) {
+    return { error: e.toString() };
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
+  }
+}
+
+/**
+ * Đọc bản nháp gần nhất của (context, user).
+ * @return {{ok:boolean, hasDraft:boolean, data?:Object, entityId?:string, updatedAtIso?:string, error?:string}}
+ */
+function loadDraft(context, userEmail) {
+  try {
+    context = String(context || "").trim();
+    if (!context) return { error: "Thiếu context." };
+    var ss = openCentralSpreadsheet_();
+    var sheet = ss.getSheetByName(DRAFTS_SHEET_NAME_);
+    if (!sheet) return { ok: true, hasDraft: false };
+    var lastRow = sheet.getLastRow();
+    if (lastRow < 2) return { ok: true, hasDraft: false };
+    var key = draftKey_(context, userEmail);
+    var values = sheet.getRange(2, 1, lastRow - 1, DRAFTS_HEADERS_.length).getValues();
+    for (var i = 0; i < values.length; i++) {
+      if (String(values[i][0]) === key) {
+        var data = {};
+        try { data = JSON.parse(values[i][4] || "{}"); } catch (_) { data = {}; }
+        return {
+          ok: true,
+          hasDraft: true,
+          data: data,
+          entityId: String(values[i][2] || ""),
+          updatedAtIso: String(values[i][6] || "")
+        };
+      }
+    }
+    return { ok: true, hasDraft: false };
+  } catch (e) {
+    return { error: e.toString() };
+  }
+}
+
+/**
+ * Xoá bản nháp sau khi đã Lưu chính thức thành công.
+ */
+function clearDraft(context, userEmail) {
+  var lock = LockService.getScriptLock();
+  try {
+    context = String(context || "").trim();
+    if (!context) return { error: "Thiếu context." };
+    lock.waitLock(8000);
+    var ss = openCentralSpreadsheet_();
+    var sheet = ss.getSheetByName(DRAFTS_SHEET_NAME_);
+    if (!sheet) return { ok: true };
+    var lastRow = sheet.getLastRow();
+    if (lastRow < 2) return { ok: true };
+    var key = draftKey_(context, userEmail);
+    var keys = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+    for (var i = keys.length - 1; i >= 0; i--) {
+      if (String(keys[i][0]) === key) sheet.deleteRow(i + 2);
+    }
+    return { ok: true };
+  } catch (e) {
+    return { error: e.toString() };
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
   }
 }
 
